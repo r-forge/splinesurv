@@ -1,0 +1,11 @@
+Package: splinesurv
+Version: 0.1-5
+Title: Nonparametric bayesian survival analysis
+Author: Emmanuel Sharef <ess28@cornell.edu>
+Maintainer: Emmanuel Sharef <ess28@cornell.edu>
+Depends: R (>= 2.5.0), MASS, survival
+Suggests: coda
+Description: Utilities for nonparametric Bayesian analysis of clustered 
+ survival data. The baseline hazard function and frailty density are modeled
+ using penalized B-splines.
+License: GPL (>= 2)
