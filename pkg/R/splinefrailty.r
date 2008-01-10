@@ -714,6 +714,7 @@ splinesurv.formula<-function(formula,data=parent.frame(),...)
     n<-nrow(m)
     resp <- model.extract(m, "response")
     if (!is.Surv(resp)) stop("model response must be a Surv object")
+    if(dim(resp)[2]!=2) stop("response must be of type Surv(time,status)")
     if(attr(resp,"type")!="right") stop("right-censored survival data only")
     time<-resp[,"time"]
     delta<-resp[,"status"]
