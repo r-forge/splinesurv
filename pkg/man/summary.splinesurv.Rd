@@ -17,10 +17,8 @@
 }
 \value{
     An item of type \code{summary.splinesurv} with components \code{call, coef,
-    iter, burnin, nknots.l, nknots.u, ord.l, ord.u, knotspacing.l, knotspacing.u}
+    iter, burnin, hazard, frailty, posterior.mean}
     as documented in \code{\link{splinesurv}}, as well as:
-    \item{knotrange.l, knotrange.u}{vectors giving the boundary points of
-        the knots for the baseline hazard and frailty density splines respectively.}
     \item{quantiles}{matrix with the posterior mean and desired quantiles of
         the regression parameters.}
 }

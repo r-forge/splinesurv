@@ -1,19 +1,35 @@
-####
-# PROBLEMS:
-# Consider optionally making use of the coda or mcmc package facilities
-# Change output variable names to something better
-# Needs input checking
+# Todo: (high) Write a method to compute the Hessians analytically
+# Todo: (med) allow plotting spline and parametric component separately
+# Todo: (low) Needs input checking
+# Todo: (low) allow knots to birth/death/move
+# Todo: (low) update history to also include tuning parameter data
+# Todo: (low) allow using tkrplot to explore estimates by iteration
 
-library(survival)
-library(MASS)
+#{{{ #Header
+#library(survival)
+#library(MASS)
+#dyn.load("C/init.so")
+#}}}
 
+{{{ #Simulation
 ##############################################################
-# Generate simulated data
+# \section{Simulation} Generate simulated data
 ##############################################################
+
+# my MYmvrnorm for testing (to make sure normal variates in C code are the same)
+# Todo: Remove this function eventually
+MYmvrnorm<- function (n = 1, mu, Sigma) {
+    l<-length(mu)
+    candnorm<-matrix(rnorm(n*l),nrow=n)
+    out<-candnorm%*%chol(Sigma, pivot=TRUE)
+    out<-out + rep(mu,rep(n,l)) 
+    if(n==1) out<-as.numeric(out)
+    out
+}
 
 generaterandom<-function(n,type,params)
 {
-    if(!(type%in%c("fixed","weibull","gamma","normal","lognormal","normmix","lognormmix"))) stop("Invalid distribution type")
+    if(!(type%in%c("fixed","weibull","gamma","normal","lognormal","normmix","lognormmix","unifmix"))) stop("Invalid distribution type")
     if(type=="fixed"){
         if(!("value"%in%names(params))) stop("Parameter value not specified for type fixed")
         return(rep(params$value,n))
@@ -51,7 +67,7 @@ generaterandom<-function(n,type,params)
         w<-params$w/sum(params$w)
         if(length(w)==1) w=rep(w,length(mu))
         if(length(mu)!=length(sigma2) | length(mu)!=length(w) | length(mu)<2) stop("Bad parameter lengths for type normmix")
-        out<-mvrnorm(n,mu,mdiag(sigma2)) 
+        out<-MYmvrnorm(n,mu,mdiag(sigma2)) 
         return(t(out)[findInterval(runif(n),cumsum(w))+1+0:(n-1)*length(w)])
     }
     if(type=="lognormmix"){
@@ -63,8 +79,19 @@ generaterandom<-function(n,type,params)
         if(length(mu)!=length(sigma2) | length(mu)!=length(w) | length(mu)<2) stop("Bad parameter lengths for type lognormmix")
         sigma2prime<-log(1+sigma2/mu^2)        
         muprime<-log(mu)-1/2*sigma2prime
-        out<-mvrnorm(n,muprime,mdiag(sigma2prime)) 
+        out<-MYmvrnorm(n,muprime,mdiag(sigma2prime)) 
         return(exp(t(out)[findInterval(runif(n),cumsum(w))+1+0:(n-1)*length(w)]))   
+    }
+    if(type=="unifmix"){
+        if(!all(c("w","bounds")%in%names(params))) stop("Parameters w, bounds not specified for type unifmix")
+        w<-params$w/sum(params$w)
+        bounds<-matrix(params$bounds,ncol=2,byrow=TRUE)
+        out<-rep(0,n)
+        for(i in 1:n){
+            which<-sum(runif(1)>cumsum(w))+1
+            out[i]<-runif(1,bounds[which,1],bounds[which,2])
+        }
+        return(out)
     }
 }
 
@@ -86,9 +113,10 @@ generateevents<-function(m,Ji,beta,Ui,Zij,type,params)
         if(length(haz)!=length(breaks)+1) stop("Step function params: haz should be one longer than breaks")
         for(ind in 1:sum(Ji)){
             accept<-FALSE
+            Tijprop<-0
             maxhaz<-max(haz)*Uij[ind]*exp(beta*Zij[ind])
             while(!accept){
-                Tijprop<- -1/maxhaz*log(runif(1))
+                Tijprop<- Tijprop -1/maxhaz*log(runif(1))
                 thishaz<-haz[findInterval(Tijprop,breaks)+1]*Uij[ind]*exp(beta*Zij[ind])
                 if(maxhaz*runif(1)<thishaz){
                     Tij[ind]<-Tijprop
@@ -105,10 +133,10 @@ generateevents<-function(m,Ji,beta,Ui,Zij,type,params)
         if(survfn>.25) warning(paste("Baseline survival over B-spline support is high:",format(survfn,digits=3)))
         for(ind in 1:sum(Ji)){
             accept<-FALSE
-            Tijprop<-rbound+1
+            Tijprop<-0
             while(!accept){
                 maxhaz<-max(w)*Uij[ind]*exp(beta*Zij[ind])
-                while(Tijprop>rbound) Tijprop<- -1/maxhaz*log(runif(1))
+                Tijprop<- min(Tijprop -1/maxhaz*log(runif(1)),rbound-1e-5)
                 thishaz<-predict(b,Tijprop)%*%w*Uij[ind]*exp(beta*Zij[ind])
                 if(maxhaz*runif(1)<thishaz){
                     Tij[ind]<-Tijprop
@@ -124,13 +152,13 @@ bs.survfn<-function(b,w,n,t=NULL)
 {
     rbound<-attr(b,"Boundary.knots")[2]
     x<-seq(from=0,to=rbound,length=n)
-    h<-(predict(b,x)%*%w)/n
+    h<-(predict(b,x)%*%w)
     if(is.null(t)){
-        H<-cumsum(h)
+        H<-cumsum(h*rbound/n)
         S<-exp(-H)
         return(S)
     }else{
-        Ht<-sum(h[x<t])
+        Ht<-sum(h[x<t]*rbound/n)
         St<-exp(-Ht)
         return(St)
     }
@@ -188,11 +216,207 @@ sim.sample<-function(m=10,Ji=rep(5,10),params=NULL)
     return(list(agdata=agdata,Ui=Ui,params=params))
 }
 
+}}}
+
+{{{ #Utility
 ##############################################################
-# B-spline integrals and other matrices
+# \section{Utility} Utility and Extraction functions
 ##############################################################
 
-ki<-function(knots,j) return(match(j,attr(knots,"i")))
+hasspline<-function(curve) return(curve$type=="spline" | curve$type=="both")
+haspar<-function(curve) return(curve$type=="parametric" | curve$type=="both")
+mdiag<-function(x) if(is.vector(x) && length(x)==1 && x<1) return(matrix(x,1,1)) else return(diag(x))
+
+repairfrailtypar<-function(par,ind)
+{
+    if(ind==1) return(c(0,par))
+    if(ind==length(par)) return(c(par,0))
+    return(c(par[1:(ind-1)],0,par[ind:length(par)]))
+}
+
+inverthessian<-function(hess){
+    K<-dim(hess)[1]
+    Sigma<-try(solve(-hess),silent=TRUE)
+    d<-10
+    while(inherits(Sigma,"try-error")){ Sigma<-try(solve(-(hess-10^(-d)*mdiag(K))),silent=TRUE); d<-d-1}
+    while(!all(eigen(Sigma)$val>0)){ Sigma<-solve(-(hess-10^(-d)*mdiag(K))) ;d<-d-1  }
+    return(Sigma)
+}
+
+numHess.par<-function(param.par,fun,eps=1e-5,...)
+{
+    numDer.par<-function(param.par,fun,eps=1e-5,...)
+    {        
+        lik1<-fun(param.par,...)
+        nd<-rep(0,length(param.par))
+        for(i in 1:length(nd))
+        {
+            param.par2<-param.par
+            param.par2[i]<-param.par2[i]+eps
+            lik2<-fun(param.par2,...)
+            nd[i]<-(lik2-lik1)/eps
+        }
+        return(nd)
+    }
+    nh<-matrix(0,length(param.par),length(param.par))
+    gr1<-numDer.par(param.par,fun,eps,...)
+    for(i in 1:length(param.par))
+    {
+        param.par2<-param.par
+        param.par2[i]<-param.par2[i]+eps
+        gr2<-numDer.par(param.par2,fun,eps,...)
+        nh[i,]<-(gr2-gr1)/eps
+    }
+    return(nh)
+}
+
+inithistory<-function(hazard,frailty,regression,control)
+{
+    history<-NULL
+    maxiter<-control$maxiter
+    history$frailty<-matrix(0,maxiter,length(frailty$x))
+    history$coefficients<-matrix(0,maxiter,length(regression$coefficients))
+    if(hazard$hasspline) history$hazard.spline.par<-matrix(0,maxiter,length(hazard$spline.par))
+    if(frailty$hasspline) history$frailty.spline.par<-matrix(0,maxiter,length(frailty$spline.par))
+    if(hazard$haspar) history$hazard.param.par<-matrix(0,maxiter,length(hazard$param.par))
+    if(frailty$haspar) history$frailty.param.par<-matrix(0,maxiter,length(frailty$param.par))
+    if(hazard$hasspline & hazard$haspar) history$hazard.weight<-matrix(0,maxiter,1)
+    if(frailty$hasspline & frailty$haspar) history$frailty.weight<-matrix(0,maxiter,1)
+    history$priorvar<-matrix(0,maxiter,7); 
+    colnames(history$priorvar)<-c("coefficients","hazard.spline","frailty.spline",
+            "hazard.param","frailty.param","hazard.weight","frailty.weight")
+    history$accept<-matrix(0,maxiter,8)
+    colnames(history$accept)<-c(colnames(history$priorvar),"frailty")
+    history<-updatehistory(history,1,hazard,frailty,regression)
+    return(history)
+}
+
+updatehistory<-function(history,i,hazard,frailty,regression)
+{
+    history$frailty[i,]<-frailty$x
+    history$coefficients[i,]<-regression$coefficients
+    if(hazard$hasspline) history$hazard.spline.par[i,]<-hazard$spline.par
+    if(frailty$hasspline) history$frailty.spline.par[i,]<-frailty$spline.par
+    if(hazard$haspar) history$hazard.param.par[i,]<-hazard$param.par
+    if(frailty$haspar) history$frailty.param.par[i,]<-frailty$param.par
+    if(hazard$hasspline & hazard$haspar) history$hazard.weight[i]<-hazard$weight
+    if(frailty$hasspline & frailty$haspar) history$frailty.weight[i]<-frailty$weight
+    history$priorvar[i,]<-c(regression$priorvar,hazard$spline.priorvar,frailty$spline.priorvar,
+        hazard$param.priorvar,frailty$param.priorvar,hazard$weight.priorvar,frailty$weight.priorvar)
+    history$accept[i,]<-c(regression$accept,hazard$spline.accept,frailty$spline.accept,
+        hazard$param.accept,frailty$param.accept,hazard$weight.accept,frailty$weight.accept,frailty$accept)
+
+    return(history)
+}
+
+rinvgamma<-function(n,shape,scale=1)
+{
+
+    return(1/rgamma(n,shape,rate=scale))
+} 
+
+logit<-function(p) log(p/(1-p))
+invlogit<-function(x) 1/(1+exp(-x))
+
+accrate.predict.lm<-function(x,m) (predict(m,data.frame(x=x))-.25)^2
+
+submean<-function(x,subset,f=mean) {
+    if(is.null(x)) return(NULL)
+    if(!is.null(dim(x))) return(apply(x[subset,,drop=F],2,f))
+    else return(f(x[subset]))
+}
+
+makeoutputcurve<-function(curve)
+{
+    outcurve<-list(name=curve$name,
+                    type=curve$type,
+                    spline.knots=curve$spline.knots,
+                    spline.nknots=curve$spline.nknots,
+                    spline.knotspacing=curve$spline.knotspacing,
+                    spline.ord=curve$spline.ord,
+                    spline.norm=curve$spline.norm,
+                    spline.penalty=curve$spline.penalty,
+                    param.dist=curve$param.dist
+                )
+    return(outcurve)   
+}
+}}}
+
+{{{ #Initialize
+##############################################################
+# \section{Initialize} Initialize knots, penalties, etc for spline components
+##############################################################
+
+makeknots<-function(curve,x,bounds=NULL)
+{
+    if(!curve$hasspline) return(curve)
+    knots<-curve$spline.knots; nknots<-curve$spline.nknots;
+    knotspacing<-curve$spline.knotspacing; ord<-curve$spline.ord
+    K<-ord+nknots
+    if(is.null(bounds)) bounds<-c(min(x),max(x))
+    if(is.null(knots)){
+        if(knotspacing=="quantile"){
+            ibounds<-c(min(x),max(x))
+            nintknots<-nknots; lrep<-ord; rrep<-ord
+            if(ibounds[1]==bounds[1]) {nintknots<-nintknots+1; lrep<-ord-1}
+            if(ibounds[2]==bounds[2]) {nintknots<-nintknots+1; rrep<-ord-1}
+            knots<-quantile(x,seq(from=0,to=1,length=nintknots))
+            knots<-c(rep(bounds[1],lrep),knots,rep(bounds[2],rrep))
+        }
+        if(knotspacing=="equal"){
+            knots<-seq(from=bounds[1],to=bounds[2],length=nknots+2)
+            knots<-c(rep(bounds[1],ord-1),knots,rep(bounds[2],ord-1))
+        }
+        if(knotspacing=="mindiff"){
+            ibounds<-c(min(x),max(x))
+            nintknots<-nknots; lrep<-ord; rrep<-ord
+            if(ibounds[1]==bounds[1]) {nintknots<-nintknots+1; lrep<-ord-1}
+            if(ibounds[2]==bounds[2]) {nintknots<-nintknots+1; rrep<-ord-1}
+            p<-seq(from=0,to=1,length=nintknots)
+            q<-quantile(x,p)
+            while(min(diff(q))<diff(ibounds/100))
+            {
+                mind<-which.min(diff(q))
+                p[mind+1]<-(p[mind+1]+p[mind+2])/2
+                q<-quantile(x,p)
+            }
+            knots<-c(rep(bounds[1],lrep),q,rep(bounds[2],rrep))
+        }
+    }
+    attr(knots,"boundary")<-bounds
+    attr(knots,"index")<-seq(from=-(ord-1),length=length(knots),by=1)
+    attr(knots,"order")<-ord
+    curve$spline.knots<-knots
+    return(curve)
+}
+
+makesplinebasis<-function(curve,quick=FALSE,usec=TRUE)
+{
+    if(!curve$hasspline) return(curve)
+    knots<-curve$spline.knots; ord<-curve$spline.ord; x<-curve$x
+    if(usec) B<-csplinedesign(knots,x=x,ord=ord) else B<-splineDesign(knots,x=x,ord=ord)
+    if(usec) Bint<-cevalBinte(knots,ord) else Bint<-evalBinte(knots,ord)
+    if(curve$spline.norm) for(i in 1:dim(B)[1]) B[i,]<-B[i,]/Bint
+    if(!quick) { 
+        if(curve$name=="hazard")  {
+            if (usec) C<-cevalCinte(knots,ord,x,Bint)
+            else C<-evalCinte(knots,ord,x,Bint)
+        }
+        else C<-NULL
+        if(curve$name=="frailty") {
+            if(usec) E<-cevalEinte(knots,ord)
+            else E<-evalEinte(knots,ord)
+        }
+        else E<-NULL
+        curve$spline.basiscum<-C
+        curve$spline.basisexp<-E
+    }
+    curve$spline.basisint<-Bint
+    curve$spline.basis<-B
+    return(curve)
+}
+
+ki<-function(knots,j) return(j+attr(knots,"o"))
 
 evalBinte<-function(knots,ord)
 {
@@ -296,6 +520,24 @@ mysplineDesign<-function (knots, x, ord = 4)
     design
 }
 
+makepenalty<-function(curve,usec=TRUE)
+{
+    if(!curve$hasspline) return(curve)
+    penalty<-curve$spline.penalty
+    ord<-curve$spline.ord; nknots<-curve$spline.nknots; knots<-curve$spline.knots
+    if(penalty=="2diff") P<-makePenalty.2diff(ord+nknots)
+    if(penalty=="2deriv" | penalty=="log2deriv") {
+        if(usec) P<-cmakePenalty.2deriv(ord,knots)
+        else  P<-makePenalty.2deriv(ord,knots)
+        if(curve$spline.norm){
+            Bint<-curve$spline.basisint
+            P<-P/(Bint%*%t(Bint))
+        }
+    }
+    if(penalty=="none") P<-0
+    curve$spline.penaltymatrix<-P
+    return(curve)
+}
 
 makePenalty.2diff<-function(K){
     D<-matrix(0,K-2,K)
@@ -323,360 +565,651 @@ makePenalty.2deriv<-function(ord,knots)
     return(out)
 }
 
-
-plotspline<-function(knots,theta,ord,npoints=1000,plotknots=TRUE,plotmean=FALSE,plotsplines=FALSE,norm=FALSE,xlim=NULL,ylim=NULL,...)
+smoothpen<-function(curve,der=0)
 {
-    if(is.null(xlim)) xlim=attr(knots,"b")
-    x=seq(from=xlim[1],to=xlim[2],length=npoints)
-    dx=diff(xlim)/npoints
-    spl<-splineDesign(knots, x=x, ord=ord)
-    if(norm){
-        Bint<-evalBinte(knots,ord)
-        for(i in 1:dim(spl)[1]) spl[i,]<-spl[i,]/Bint
+    type<-curve$spline.penalty
+    name<-curve$name
+    theta<-curve$spline.par
+    P<-curve$spline.penaltymatrix
+    sigma2<-curve$spline.priorvar
+    if(type=="2diff"){
+        if(der==0) return(max( t(theta)%*%P%*%theta / (2*sigma2),0))
+        if(der==1) return( P%*%theta /sigma2)
+        if(der==2) return( P / sigma2)
     }
-    splsum<-spl%*%exp(theta) 
-    if(norm) splsum<-splsum/sum(exp(theta))
-    #if(plotsplines) ymax<-max(max(spl),max(splsum)) else 
-    ymax<-max(splsum)
-    if(is.null(ylim)) ylim<-c(0,ymax)
-    if(plotsplines){
-        matplot(x,spl/max(spl)*ylim[2]/2,type="l",lty=2,xlim=xlim,ylim=ylim,...)
-        lines(x,splsum,col="red",lwd=2,lty=1)
-    }else{
-        plot(x,splsum,col="red",type="l",lwd=2,lty=1,xlim=xlim,ylim=ylim,...)
-    }
-    if(plotknots) abline(v=knots,col="grey")
-    if(plotmean){
-        Bint<-colSums(spl)/dx
-        spl.norm<-spl%*%mdiag(1/Bint)
-        Eint<-rep(0,dim(spl)[2])
-        for(i in 1:dim(spl)[2]) Eint[i]<-sum(spl.norm[,i]*x)/dx
-        E<-Eint%*%exp(theta)/sum(exp(theta))
-        abline(v=E,col="grey",lwd=2)
-    }
-}
-
-plotspline.meta<-function(fit,which="base",...)
-{
-    plotbase<-FALSE;plotfrail<-FALSE;plotdens<-FALSE
-    if(which=="base") plotbase<-TRUE
-    if(which=="frail") plotfrail<-TRUE
-    if(which=="coef") plotdens<-TRUE
-    if(which=="all") {
-        par(mfrow=c(3,1))
-        plotbase<-TRUE;plotfrail<-TRUE;plotdens<-TRUE
-    }
-    if(plotbase){
-        knots<-fit$spline$knots.haz
-        ord<-fit$spline$ord.haz
-        theta<-fit$posterior.mean$splinepar.haz
-        plotspline(knots,theta,ord,...)
-    }
-    if(plotfrail){
-        knots<-fit$spline$knots.frail
-        ord<-fit$spline$ord.frail
-        theta<-fit$posterior.mean$splinepar.frail
-        plotspline(knots,theta,ord,norm=TRUE,...)
-    }
-    if(plotdens){
-        burnin<-fit$control$burnin
-        if(is.null(burnin)) burnin<-fit$call$control$burnin
-        if(is.null(burnin)) burnin<-dim(fit$history$coefficients)[2]
-        for(i in 1:dim(fit$history$coefficients)[2]){
-            betai<-fit$history$coefficients[burnin:(dim(fit$history$coefficients)[1]),i]
-            plot(density(betai),...)
-        }
-    }
-}
-
-accrate.predict.s<-function(x,s) predict(s,x)$y-.25
-accrate.predict.s2<-function(x,s) predict(s,x)$y-.25
-accrate.predict.lm<-function(x,m) (predict(m,data.frame(x=x))-.25)^2
-accrate.predict.lm2<-function(x,m) (predict(m,data.frame(x=x))-.25)^2
-
-##############################################################
-# Likelihoods, gradients and hessians
-##############################################################
-
-mdiag<-function(x) if(is.vector(x) && length(x)==1 && x<1) return(matrix(x,1,1)) else return(diag(x))
-
-################# For frailties
-
-mklik.Ui<-function(u,whichi,i.all,delta,beta,Z,C.l,theta.l,B.u,theta.u)
-{
-    iind<-i.all==whichi
-    delta<-delta[iind]
-    Z<-Z[iind,]; dim(Z)<-c(sum(iind),length(beta))
-    C.l<-C.l[iind,]; dim(C.l)<-c(sum(iind),length(theta.l))
-    B.u<-B.u[whichi,]; dim(B.u)<-c(1,length(theta.u))
-    #Z<-matrix(Z[iind,],sum(iind),length(beta))
-    #C.l<-matrix(C.l[iind,],sum(iind),length(theta.l))
-    #B.u<-matrix(B.u[whichi,],1,length(theta.u))
-    
-    lik.Ui<-0
-    lik.Ui<-lik.Ui+sum(delta*log(u))
-    lik.Ui<-lik.Ui-sum(u*(C.l%*%exp(theta.l))*exp(Z%*%beta))
-    lik.Ui<-lik.Ui+log(B.u%*%exp(theta.u))
-    
-    lik.Ui<-as.numeric(lik.Ui)
-    return(lik.Ui)
-}
-
-################# For beta
-
-mklik.b<-function(beta,delta,Z,U.u,C.l,theta.l,sigma2.b)
-{
-    lik.b<-0
-    lik.b<-lik.b+t(delta)%*%Z%*%beta
-    lik.b<-lik.b-U.u%*%((C.l%*%exp(theta.l))*exp(Z%*%beta))
-    lik.b<-lik.b-t(beta)%*%beta/(2*sigma2.b)
-    lik.b<-as.numeric(lik.b)
-    return(lik.b)
-}
-
-mkgrad.b<-function(beta,delta,Z,U.u,C.l,theta.l,sigma2.b)
-{
-    grad.b<-rep(0,length(beta))
-    grad.b<-grad.b+t(Z)%*%delta
-    grad.b<-grad.b-t(Z)%*%((C.l%*%exp(theta.l))*exp(Z%*%beta)*U.u)
-    grad.b<-grad.b-beta/sigma2.b
-    grad.b<-as.numeric(grad.b)
-    return(grad.b)
-}
-
-mkhess.b<-function(beta,delta,Z,U.u,C.l,theta.l,sigma2.b)
-{
-    hess.b<-matrix(0,length(beta),length(beta))
-    hess.b<-hess.b-t(Z)%*%mdiag(as.vector((C.l%*%exp(theta.l))*(exp(Z%*%beta))*U.u))%*%Z
-    hess.b<-hess.b-mdiag(length(beta))/sigma2.b
-    return(hess.b)
-}
-
-
-################# For theta_lambda
-
-mklik.l<-function(theta.l,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty)
-{   
-    lik.l<-0
-    lik.l<-lik.l+t(log(B.l%*%exp(theta.l)))%*%delta
-    lik.l<-lik.l-t(U.u*C.l%*%exp(theta.l))%*%exp(Z%*%beta)
-    lik.l<-lik.l-smoothpen.l(theta.l,P.l,penalty,0)/(2*sigma2.l)
-    lik.l<-as.numeric(lik.l)
-    return(lik.l)
-}
-
-mkgrad.l<-function(theta.l,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty)
-{
-    grad.l<-rep(0,length(theta.l))
-    grad.l<-grad.l+exp(theta.l)*t(B.l)%*%(1/(B.l%*%exp(theta.l))*delta)
-    grad.l<-grad.l-exp(theta.l)*t(C.l)%*%(exp(Z%*%beta)*U.u)
-    grad.l<-grad.l-smoothpen.l(theta.l,P.l,penalty,1)/(2*sigma2.l)
-    grad.l<-as.numeric(grad.l)
-    return(grad.l)
-}
-
-mkhess.l<-function(theta.l,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty)
-{
-    hess.l<-matrix(0,length(theta.l),length(theta.l))
-    hess.l<-hess.l+mdiag(exp(theta.l)*as.vector(t(B.l)%*%(1/(B.l%*%exp(theta.l))*delta)))
-    hess.l<-hess.l-mdiag(exp(theta.l))%*%t(B.l)%*%mdiag(delta/as.vector(B.l%*%exp(theta.l))^2)%*%B.l%*%mdiag(exp(theta.l))
-    hess.l<-hess.l-mdiag(exp(theta.l)*as.vector(t(C.l)%*%(exp(Z%*%beta)*U.u)))
-    hess.l<-hess.l-smoothpen.l(theta.l,P.l,penalty,2)/(2*sigma2.l)
-    return(hess.l)
-}
-
-################# For theta_u
-
-mklik.u<-function(theta.u,B.u,E.u,sigma2.u,P.u,M,penalty,fix)
-{
-    theta.u<-theta.u.repair(theta.u,fix)
-    m<-dim(B.u)[1]
-    lik.u<-0
-    lik.u<-lik.u+sum(log(B.u%*%exp(theta.u)))
-    lik.u<-lik.u-m*log(sum(exp(theta.u)))
-    lik.u<-lik.u-smoothpen.u(theta.u,P.u,penalty,0)/(2*sigma2.u)
-    lik.u<-lik.u-M*( (t(E.u)%*%exp(theta.u))/sum(exp(theta.u)) )^2
-    lik.u<-as.numeric(lik.u)
-    return(lik.u)
-}
-
-mkgrad.u<-function(theta.u,B.u,E.u,sigma2.u,P.u,M,penalty,fix)
-{
-    theta.u<-theta.u.repair(theta.u,fix)
-    m<-dim(B.u)[1]
-    grad.u<-rep(0,length(theta.u))
-    grad.u<-grad.u+exp(theta.u)*(t(B.u)%*%(1/B.u%*%exp(theta.u)))
-    grad.u<-grad.u-m/sum(exp(theta.u))*exp(theta.u)
-    grad.u<-grad.u-smoothpen.u(theta.u,P.u,penalty,1)/(2*sigma2.u)
-    grad.u<-grad.u-2*M*t(E.u)%*%exp(theta.u)/sum(exp(theta.u))^2*E.u*exp(theta.u)
-    grad.u<-grad.u+2*M*(t(E.u)%*%exp(theta.u))^2/sum(exp(theta.u))^3*exp(theta.u)
-    grad.u<-as.numeric(grad.u)
-    return(grad.u[-fix])
-}
-
-mkhess.u<-function(theta.u,B.u,E.u,sigma2.u,P.u,M,penalty,fix)
-{
-    theta.u<-theta.u.repair(theta.u,fix)
-    m<-dim(B.u)[1]
-    hess.u<-matrix(0,length(theta.u),length(theta.u))
-    hess.u<-hess.u+mdiag(exp(theta.u))%*%mdiag(as.vector(t(B.u)%*%mdiag(as.vector(1/B.u%*%exp(theta.u)))%*%rep(1,m)))
-    hess.u<-hess.u-mdiag(exp(theta.u))%*%t(B.u)%*%mdiag(1/as.vector(B.u%*%exp(theta.u))^2)%*%B.u%*%mdiag(exp(theta.u))
-    hess.u<-hess.u-m/sum(exp(theta.u))^2*(sum(exp(theta.u))*mdiag(exp(theta.u))-exp(theta.u)%*%t(exp(theta.u)))
-    hess.u<-hess.u-smoothpen.u(theta.u,P.u,penalty,2)/(2*sigma2.u)
-    hess.u<-hess.u-2*M/sum(exp(theta.u))^3 * ( sum(exp(theta.u))*((exp(theta.u)*E.u)%*%t((exp(theta.u)*E.u))+as.numeric(t(E.u)%*%exp(theta.u))*mdiag(E.u*exp(theta.u))) 
-                                                -2*as.numeric(t(E.u)%*%exp(theta.u))*mdiag(E.u)%*%exp(theta.u)%*%t(exp(theta.u)) )
-    hess.u<-hess.u+2*M/sum(exp(theta.u))^4 * ( sum(exp(theta.u))*( 2*as.numeric(t(E.u)%*%exp(theta.u))*exp(theta.u)%*%t(exp(theta.u))%*%mdiag(E.u)+as.numeric(t(E.u)%*%exp(theta.u))^2*mdiag(exp(theta.u)))
-                                                -3*as.numeric(t(E.u)%*%exp(theta.u))^2*exp(theta.u)%*%t(exp(theta.u)) )
-    hess.u<-hess.u[-fix,-fix]
-    return(hess.u)
-}
-
-theta.u.repair<-function(theta.u,fix)
-{
-    if(fix==1) return(c(1,theta.u))
-    if(fix==length(theta.u)) return(c(theta.u,1))
-    return(c(theta.u[1:(fix-1)],1,theta.u[fix:length(theta.u)]))
-}
-
-################# Smoothness penalty functions and gradients/hessians
-
-smoothpen.l<-function(theta.l,P.l,penalty,der)
-{
-    if(penalty=="2diff"){
-        if(der==0) pen<-t(theta.l)%*%P.l%*%theta.l
-        if(der==1) pen<-2*P.l%*%theta.l
-        if(der==2) pen<-2*P.l
-    }
-    if(penalty=="2deriv"){
-        if(der==0) pen<-t(exp(theta.l))%*%P.l%*%exp(theta.l)
-        if(der==1) pen<-2*mdiag(exp(theta.l))%*%P.l%*%exp(theta.l)
+    if(type=="2deriv"){
+        et<-exp(theta)
+        if(der==0) return(max( t(et)%*%P%*%et / (2*sigma2),0))
+        if(der==1) return( mdiag(et)%*%P%*%et / sigma2 )
         if(der==2) {
-            pen<-2*mdiag(exp(theta.l))%*%P.l%*%mdiag(exp(theta.l))
-            pen<-pen+2*mdiag(as.vector(P.l%*%exp(theta.l)))%*%mdiag(exp(theta.l))
+            pen<-mdiag(et)%*%P%*%mdiag(et)
+            pen<-pen+mdiag(as.vector(P%*%et))%*%mdiag(et)
+            return(pen / sigma2 )
         }
     }
-    return(pen)       
+    if(type=="log2deriv"){
+        et<-exp(theta)
+        ePe<- as.numeric(t(et)%*%P%*%et) 
+        if(der==0) return(max(log(ePe+1)/ (2*sigma2),0))
+        if(der==1) return( mdiag(et)%*%P%*%et / sigma2 /(ePe+1))
+        if(der==2) {
+            stop("second derivative not implemented")
+        }
+    }
+    if(type=="none"){
+        if(der==0) return(0)
+        if(der==1) return(rep(0,length(theta)))
+        if(der==2) return(matrix(0,length(theta),length(theta)))
+    }
 }
 
-smoothpen.u<-function(theta.u,P.u,penalty,der)
+
+}}}
+
+{{{ #CurveUpdate
+##############################################################
+# \section{CurveUpdate} Curve updating routines
+##############################################################
+
+fitparametric<-function(curve,x)
 {
-    if(penalty=="2diff"){
-        if(der==0) pen<-t(theta.u)%*%P.u%*%theta.u
-        if(der==1) pen<-2*P.u%*%theta.u
-        if(der==2) pen<-2*P.u
-    }
-    if(penalty=="2deriv"){
-        st<-sum(exp(theta.u))
-        tpt<-as.numeric(t(exp(theta.u))%*%P.u%*%exp(theta.u))
-        if(der==0) pen<-tpt/st^2
-        if(der==1) {
-            dpt<-mdiag(exp(theta.u))%*%P.u%*%exp(theta.u)
-            pen<-2/st^2 * ( dpt - tpt/st*exp(theta.u) )
+    name<-curve$name
+    dist<-curve$param.dist
+    if(dist=="none") return(curve)
+    if(name=="frailty")
+    {
+        Ui<-x
+        if(dist=="gamma")
+            par<-log(var(Ui))
+        if(dist=="lognormal")
+        {
+            varu<-var(Ui)
+            par<-log(log(varu+1))
         }
-        if(der==2) { 
-            tt<-exp(theta.u)%*%t(exp(theta.u)) 
-            dp<-mdiag(exp(theta.u))%*%P.u             
-            dptt<-dp%*%tt
-            dpd<-dp%*%mdiag(exp(theta.u))
-            pen<-2/st^2 * (dpd + mdiag(as.vector(P.u%*%exp(theta.u)))%*%mdiag(exp(theta.u)) )
-            pen<-pen - 2*tpt/st^3 *(mdiag(exp(theta.u))-3/st*tt)
-            pen<-pen - 4/st^3 *(dptt+t(dptt))
-        }
+        curve$param.par<-par
+        curve$x<-Ui
     }
-    return(pen)
+    if(name=="hazard")
+    {
+        agdata<-x
+        varnames<-colnames(agdata)[-(1:4)]
+        qvarnames<-paste("`",varnames,"`",sep="")
+        fit<-survreg(as.formula(paste("Surv(time,delta)~",paste(qvarnames,collapse="+"))),data=agdata,dist=dist)
+        if(dist=="exponential"){
+            par<-log(fit$icoef[1])
+        }
+        if(dist=="weibull"){
+            lambda<-exp(-fit$icoef[1])
+            gamma<-1/exp(fit$icoef[2])
+            par<-c(log(lambda),log(gamma))
+        }
+        if(dist=="lognormal"){
+            par<-c(fit$icoef[1],fit$icoef[2])
+        }
+        names(par)<-NULL
+        curve$param.par<-par
+        curve$x<-agdata$time
+    }
+    curve<-evalparametric(curve)
+    return(curve)
 }
 
+evalparametric<-function(curve,i=0)
+{
+    if(!curve$haspar) return(curve)
+    if(i==0) ind<-1:length(curve$x) else ind<-i
+    name<-curve$name
+    dist<-curve$param.dist
+    if(dist=="none") return(curve)
+    par<-curve$param.par
+    x<-curve$x[ind]
+    if(name=="hazard"){
+        if(dist=="exponential"){
+            lambda<-exp(par)
+            y<-rep(lambda,length(x))
+            ycum<-x*lambda
+        }
+        if(dist=="weibull"){
+            lambda<-exp(par[1])
+            alpha<-exp(par[2])
+             y<-alpha*lambda*x^(alpha-1)
+             ycum<-lambda*x^alpha
+        }
+        if(dist=="lognormal")
+            stop("lognormal distribution currently not fully supported")
+    }
+    if(name=="frailty"){
+        ycum<-NULL
+        if(dist=="gamma"){
+            alpha<-exp(-par)
+            y<-dgamma(x,shape=alpha,rate=alpha)
+        }
+        if(dist=="lognormal"){
+            alpha<-exp(par)
+            y<-exp(-(log(x)+alpha/2)^2/(2*alpha))/(x*sqrt(2*pi*alpha))
+        }
+    }
+    curve$param.y[ind]<-y 
+    curve$param.ycum[ind]<-ycum
+    if(curve$hasspline) {
+         curve<-weightcurve(curve,i)
+    }else{
+        curve$y[ind]<-curve$param.y[ind]
+        curve$ycum[ind]<-curve$param.ycum[ind]
+    }  
+    return(curve)
+}
+
+evalspline<-function(curve,i=0,quick=FALSE)
+{
+    if(!curve$hasspline) return(curve)
+    if(i==0) {
+		ind<-1:length(curve$x)
+		curve$spline.y<-NULL
+	}else{ind<-i}
+    spline.par<-curve$spline.par
+    if(curve$spline.norm) 
+        curve$spline.y[ind]<-as.vector(curve$spline.basis[ind,,drop=FALSE]%*%exp(spline.par)/sum(exp(spline.par)))
+    else
+        curve$spline.y[ind]<-as.vector(curve$spline.basis[ind,,drop=FALSE]%*%exp(spline.par))
+    if(curve$name=="hazard" & !quick)
+        curve$spline.ycum[ind]<-as.vector(curve$spline.basiscum[ind,,drop=FALSE]%*%exp(spline.par))
+    else
+        curve$spline.ycum<-NULL
+    if(curve$haspar) {
+        curve<-weightcurve(curve,i)
+    }else{
+        curve$y[ind]<-curve$spline.y[ind]
+        curve$ycum[ind]<-curve$spline.ycum[ind]
+    }
+    return(curve)
+}
+
+updatespline<-function(curve,spline.par)
+{
+    if(!curve$hasspline) return(curve)
+    if(curve$name=="frailty") spline.par<-repairfrailtypar(spline.par,curve$spline.fixedind)
+    curve$spline.par<-spline.par
+    curve<-evalspline(curve)
+    return(curve)
+}
+
+updatecurvex<-function(curve,i)
+{
+    if(curve$name!="frailty") stop("Only frailty bases can be updated")
+    if(curve$hasspline){
+        knots<-curve$spline.knots; ord<-curve$spline.ord; x<-curve$x[i]
+        curve$spline.basis[i,]<-mysplineDesign(knots,x,ord)/curve$spline.basisint 
+        curve<-evalspline(curve,i)
+    }
+    curve<-evalparametric(curve,i)
+    return(curve)   
+}
+
+updateparametric<-function(curve,param.par)
+{
+    if(!curve$haspar) return(curve)
+    curve$param.par<-param.par
+    curve<-evalparametric(curve)
+    return(curve)
+}
+
+weightcurve<-function(curve,i=0)
+{
+    if(i==0) ind<-1:length(curve$x) else ind<-i
+    curve$y[ind]<-curve$weight*curve$spline.y[ind]+(1-curve$weight)*curve$param.y[ind]
+    if(curve$name=="hazard")
+        curve$ycum[ind]<-curve$weight*curve$spline.ycum[ind]+(1-curve$weight)*curve$param.ycum[ind]
+    return(curve)
+}
+
+updateregression<-function(regression,coef)
+{
+    regression$coefficients<-coef
+    regression$lp<-as.vector(regression$covariates%*%regression$coefficients)
+    return(regression)
+}
+
+}}}
+
+{{{ #Likelihood
 ##############################################################
-# Metropolis-Hastings routines
+# \section{Likelihood} Likelihoods, gradients and hessians
 ##############################################################
 
-mh.U<-function(Ui,i.all,delta,beta,Z,C.l,theta.l,B.u,theta.u,nu2.U,gamma.U,knots.u,ord.u,Bint.u)
+mklik.coef<-function(coef,hazard,frailty,regression)
 {
-    acc<-NULL
-    for(i in 1:length(Ui)){
-        u<-Ui[i]
-        baselik<-mklik.Ui(u,i,i.all,delta,beta,Z,C.l,theta.l,B.u,theta.u)
-        #cand<-abs(rnorm(1,u,gamma.U*nu2.U))
-        v<-gamma.U*nu2.U
+    status<-regression$status
+    regression<-updateregression(regression,coef)
+    lp<-regression$lp
+    frailrep<-rep(frailty$x,regression$Ji)
+    lik<-status%*%lp
+    lik<-lik-sum(frailrep*hazard$ycum*exp(lp))
+    lik<-lik-sum(coef^2)/(2*regression$priorvar)
+    return(as.numeric(lik))
+}
+
+mkhess.coef<-function(coef,hazard,frailty,regression)
+{
+    status<-regression$status
+    regression<-updateregression(regression,coef)
+    lp<-regression$lp
+    frailrep<-rep(frailty$x,regression$Ji)
+    Z<-regression$covariates
+    hess<--t(Z)%*%(rep(frailrep*exp(lp)*hazard$ycum,dim(Z)[2])*Z)
+    hess<-hess-mdiag(rep(1,length(coef)))/regression$priorvar
+    return(hess)
+}
+
+mklik.frail<-function(i,hazard,frailty,regression)
+{
+    ind<-which(regression$cluster==i)
+    Ui<-frailty$x[i]
+    status<-regression$status[ind]
+    lp<-regression$lp[ind]
+    cumhaz<-hazard$ycum[ind]
+    lik<-sum(status*log(Ui)-Ui*cumhaz*exp(lp))+log(frailty$y[i])
+    return(lik)   
+}
+
+mklik.spline.haz<-function(spline.par,hazard,frailty,regression)
+{
+    if(!hazard$hasspline) return(0)
+    status<-regression$status
+    lp<-regression$lp
+    hazard<-updatespline(hazard,spline.par)
+    frailrep<-rep(frailty$x,regression$Ji)
+    lik<-sum(status*log(hazard$y) - frailrep*hazard$ycum*exp(lp))
+    lik<-lik-hazard$spline.penaltyfactor*smoothpen(hazard,0)
+    lik<-lik-sum(ifelse(spline.par< hazard$spline.min,(spline.par-hazard$spline.min)^2,0))    
+    lik<-as.numeric(lik)
+    return(lik)
+}
+
+mkgr.spline.haz<-function(spline.par,hazard,frailty,regression)
+{
+    if(!hazard$hasspline) return(rep(0,length(spline.par)))
+    status<-regression$status
+    lp<-regression$lp
+    hazard<-updatespline(hazard,spline.par)
+    frailrep<-rep(frailty$x,regression$Ji)
+    Det<-diag(exp(hazard$spline.par))
+    gr<-Det%*%t(hazard$spline.basis)%*%(status/hazard$y)
+    gr<-gr-Det%*%t(hazard$spline.basiscum)%*%(frailrep*exp(lp))
+    gr<-hazard$weight*gr
+    gr<-gr-hazard$spline.penaltyfactor*smoothpen(hazard,1)
+    gr<-gr-ifelse(spline.par< hazard$spline.min,2*(spline.par-hazard$spline.min),0)    
+    gr<-as.numeric(gr)
+    return(gr)
+}
+
+
+mklik.spline.frail<-function(spline.par,hazard,frailty,regression)
+{
+    if(!frailty$hasspline) return(0)
+    frailty<-updatespline(frailty,spline.par)
+    M<-frailty$spline.meanpenalty
+    lik<-sum(log(frailty$y))
+    lik<-lik-frailty$spline.penaltyfactor*smoothpen(frailty,0)
+    lik<-lik-M*(frailty$spline.basisexp%*%exp(frailty$spline.par))^2
+    lik<-lik-sum(ifelse(spline.par< frailty$spline.min,(spline.par-frailty$spline.min)^2,0))    
+    lik<-as.numeric(lik)
+    return(lik)
+}
+
+mklik.param.haz<-function(param.par,hazard,frailty,regression)
+{
+    if(!hazard$haspar) return(0)
+    hazard<-updateparametric(hazard,param.par)
+    status<-regression$status
+    lp<-regression$lp
+    frailrep<-rep(frailty$x,regression$Ji)
+    lik<-sum(status*log(hazard$y) - frailrep*hazard$ycum*exp(lp))
+    lik<-lik-sum(param.par^2)/(2*hazard$param.priorvar)
+    return(lik)
+}
+
+mklik.param.frail<-function(param.par,hazard,frailty,regression)
+{
+    if(!frailty$haspar) return(0)
+    frailty<-updateparametric(frailty,param.par)
+    lik<-sum(log(frailty$y))-sum(param.par^2)/(2*frailty$param.priorvar)
+    return(lik)
+}
+
+mklik.weight.haz<-function(weight,hazard,frailty,regression)
+{
+    hazard$weight<-weight
+    hazard<-weightcurve(hazard)
+    status<-regression$status
+    lp<-regression$lp
+    frailrep<-rep(frailty$x,regression$Ji)
+    lik<-sum(status*log(hazard$y)-frailrep*hazard$ycum*exp(lp))
+    #lik<-lik-hazard$weight^2/(2*hazard$weight.priorvar)
+    lik <- lik + (hazard$weight.hyper[1]-1)*log(hazard$weight) + (hazard$weight.hyper[2]-1)*log(1-hazard$weight)
+    return(lik) 
+}
+
+mklik.weight.frail<-function(weight,hazard,frailty,regression)
+{
+    frailty$weight<-weight
+    frailty<-weightcurve(frailty)
+    lik<-sum(log(frailty$y))
+    #lik<-lik-frailty$weight^2/(2*frailty$weight.priorvar)
+    lik <- lik + (frailty$weight.hyper[1]-1)*log(frailty$weight) + (frailty$weight.hyper[2]-1)*log(1-frailty$weight)
+    return(lik) 
+}
+
+}}}
+
+{{{ #Metropolis
+##############################################################
+# \section{Metropolis} Metropolis-Hastings
+##############################################################
+
+acceptreject<-function(baselik,candlik,ratio=1)
+{
+    if(is.nan(candlik)) candlik<--Inf
+    r<-exp(candlik-baselik)*ratio
+    p.accept<-min(1,r)
+    if(is.nan(p.accept)) p.accept<-0
+    if(runif(1)<p.accept){
+        return(TRUE)
+    }else{
+        return(FALSE)
+    }
+}
+
+mh<-function(par,fun,candcov,tun,...)
+{
+    baselik<-fun(par,...)
+    cand<-MYmvrnorm(1,par,candcov*tun)
+    candlik<-fun(cand,...)
+    acc<-acceptreject(baselik,candlik)
+    if(acc) out<-cand else out<-par
+    return(list(par=out,acc=acc))    
+}
+
+
+mh.frail<-function(hazard,frailty,regression)
+{
+    acc<-rep(0,regression$m)
+    for(i in 1:regression$m){
+        baselik<-mklik.frail(i,hazard,frailty,regression)
+        u<-frailty$x[i]
+        v<-frailty$tun
         cand<-rgamma(1,shape=u^2/v,scale=v/u)
-        B.c<-B.u
-        if(is.nan(cand) || cand>attr(knots.u,"b")[2] | cand<attr(knots.u,"b")[1]) {
+        if(is.nan(cand) || (frailty$hasspline && 
+          (cand>attr(frailty$spline.knots,"b")[2] | cand<attr(frailty$spline.knots,"b")[1]))) {
             candlik<- -Inf
         }else{
-            B.c[i,]<-mysplineDesign(knots.u,x=cand,ord=ord.u)/Bint.u
-            candlik<-mklik.Ui(cand,i,i.all,delta,beta,Z,C.l,theta.l,B.c,theta.u)
+            temp<-frailty
+            temp$x[i]<-cand
+            temp<-updatecurvex(temp,i)
+            candlik<-mklik.frail(i,hazard,temp,regression)
         }
-        if(is.nan(candlik)) candlik<--Inf
         puc<-suppressWarnings(dgamma(cand,shape=u^2/v,scale=v/u)) # transition u->cand
         pcu<-suppressWarnings(dgamma(u,shape=cand^2/v,scale=v/cand)) # transition cand->u
-        r<-exp(candlik-baselik)*pcu/puc
-        p.accept<-min(1,r)
-        if(is.nan(p.accept)) p.accept<-0
-        if(runif(1)<p.accept){
-            Ui[i]<-cand
-            acc<-c(acc,1)
-        }else{
-            acc<-c(acc,0)
-        }
-        if(Ui[i]>attr(knots.u,"b")[2] | Ui[i]<attr(knots.u,"b")[1]) browser()
+        acc[i]<-acceptreject(baselik,candlik,pcu/puc)
+        if(acc[i]) frailty<-temp
     }
-    return(list(Ui=Ui,acc=mean(acc)))
+    frailty$accept<-mean(acc)
+    return(frailty)
 }
 
-mh.b<-function(beta,delta,Z,U.u,C.l,theta.l,sigma2.b,Sigma.b,gamma.b)
+mh.frailty.spline<-function(hazard,frailty,regression)
 {
-    baselik<-mklik.b(beta,delta,Z,U.u,C.l,theta.l,sigma2.b)
-    cand<-mvrnorm(1,beta,Sigma.b*gamma.b)
-    candlik<-mklik.b(cand,delta,Z,U.u,C.l,theta.l,sigma2.b)
-    if(is.nan(candlik)) candlik<--Inf
-    r<-exp(candlik-baselik)
-    p.accept<-min(1,r)
-    if(runif(1)<p.accept){
-        beta<-cand
-        acc<-1
-    }else{
-        acc<-0
-    }
-    return(list(beta=beta,acc=acc))
+    if(!frailty$hasspline) return(frailty)
+    mhout<-mh(frailty$spline.par[-frailty$spline.fixedind],mklik.spline.frail,frailty$spline.candcov,frailty$spline.tun,
+        hazard=hazard,frailty=frailty,regression=regression)
+    if(mhout$acc)  frailty<-updatespline(frailty,mhout$par)
+    frailty$spline.accept<-mhout$acc
+    return(frailty)
 }
 
-mh.l<-function(theta.l,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty,Sigma.l,gamma.l)
+mh.hazard.spline<-function(hazard,frailty,regression)
 {
-    baselik<-mklik.l(theta.l,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty)
-    cand<-mvrnorm(1,theta.l,Sigma.l*gamma.l)
-    candlik<-mklik.l(cand,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty)
-    if(is.nan(candlik)) candlik<--Inf
-    r<-exp(candlik-baselik)
-    p.accept<-min(1,r)
-    if(runif(1)<p.accept){
-        theta.l<-cand
-        acc<-1
-    }else{
-        acc<-0
-    }
-    return(list(theta.l=theta.l,acc=acc))
+    if(!hazard$hasspline) return(hazard)
+    mhout<-mh(hazard$spline.par,mklik.spline.haz,hazard$spline.candcov,hazard$spline.tun,
+        hazard=hazard,frailty=frailty,regression=regression)
+    if(mhout$acc)  hazard<-updatespline(hazard,mhout$par)
+    hazard$spline.accept<-mhout$acc
+    return(hazard)
 }
 
-mh.u<-function(theta.u,B.u,E.u,sigma2.u,P.u,M,penalty,fix,Sigma.u,gamma.u)
+mh.frailty.param<-function(hazard,frailty,regression)
 {
-    K.u<-length(theta.u)
-    baselik<-mklik.u(theta.u[-fix],B.u,E.u,sigma2.u,P.u,M,penalty,fix)
-    cand<-mvrnorm(1,theta.u[-fix],Sigma.u*gamma.u)
-    candlik<-mklik.u(cand,B.u,E.u,sigma2.u,P.u,M,penalty,fix)
-    if(is.nan(candlik)) candlik<--Inf
-    r<-exp(candlik-baselik)
-    p.accept<-min(1,r)
-    if(runif(1)<p.accept){
-        theta.u<-theta.u.repair(cand,fix)
-        acc<-1
-    }else{
-        acc<-0
-    }
-    return(list(theta.u=theta.u,acc=acc))
+    if(!frailty$haspar) return(frailty)
+    mhout<-mh(frailty$param.par,mklik.param.frail,frailty$param.candcov,frailty$param.tun,
+        hazard=hazard,frailty=frailty,regression=regression)
+    if(mhout$acc) frailty<-updateparametric(frailty,mhout$par)
+    frailty$param.accept<-mhout$acc
+    return(frailty)
 }
 
+mh.hazard.param<-function(hazard,frailty,regression)
+{
+    if(!hazard$haspar) return(hazard)
+    mhout<-mh(hazard$param.par,mklik.param.haz,hazard$param.candcov,hazard$param.tun,
+        hazard=hazard,frailty=frailty,regression=regression)
+    if(mhout$acc) hazard<-updateparametric(hazard,mhout$par)
+    hazard$param.accept<-mhout$acc
+    return(hazard)
+}
+
+mh.coef<-function(hazard,frailty,regression)
+{
+    mhout<-mh(regression$coefficients,mklik.coef,regression$candcov,regression$tun,
+        hazard=hazard,frailty=frailty,regression=regression)
+    if(mhout$acc) regression<-updateregression(regression,mhout$par)
+    regression$accept<-mhout$acc
+    return(regression)
+}
+
+mh.weight<-function(which,hazard,frailty,regression)
+{
+    #browser()
+    which<-match.arg(which,c("hazard","frailty"))
+    if(which=="frailty"){
+    	curve<-frailty
+	fun<-mklik.weight.frail
+    }
+    if(which=="hazard"){
+    	curve<-hazard
+	fun<-mklik.weight.haz
+    }
+    if(!curve$haspar | !curve$hasspline) return(curve)
+    w<-min(max(curve$weight,.01),.99)
+    v<-curve$weight.tun
+    alpha<-w*(w*(1-w)/v-1)
+    beta<-(1-w)/w*alpha
+    cand<-rbeta(1,alpha,beta)
+    if(is.nan(cand)){
+    	curve$weight.accept<-FALSE;
+        return(curve)
+    }
+    alphac<-cand*(cand*(1-cand)/v-1)
+    betac<-(1-cand)/cand*alphac
+    baselik<-fun(w,hazard,frailty,regression)
+    candlik<-fun(cand,hazard,frailty,regression)
+    puc<-suppressWarnings(dbeta(cand,alpha,beta))
+    pcu<-suppressWarnings(dbeta(w,alphac,betac))
+    acc<-acceptreject(baselik,candlik,pcu/puc)
+    if(acc){
+	curve$weight<-cand
+	curve<-weightcurve(curve)
+    }
+    curve$weight.accept<-acc
+    return(curve)
+}
+
+
+updatepostvar.curve<-function(curve)
+{
+    if(curve$hasspline) curve$spline.priorvar<-rinvgamma(1,length(curve$spline.par)/2+curve$spline.hyper[1],
+        scale=curve$spline.penaltyfactor*smoothpen(curve)*curve$spline.priorvar+curve$spline.hyper[2])
+    if(curve$haspar) curve$param.priorvar<-rinvgamma(1,length(curve$param.par)/2+curve$param.hyper[1],
+        scale=sum(curve$param.par^2)/2+curve$param.hyper[2])
+#    if(curve$hasspline & curve$haspar) curve$weight.priorvar<-rinvgamma(1,1/2+curve$weight.hyper[1],
+#        scale=curve$weight^2/2+curve$weight.hyper[2])
+    return(curve)
+}
+
+updatepostvar.coef<-function(regression)
+{
+    regression$priorvar<-rinvgamma(1,length(regression$coefficients)/2+regression$hyper[1],
+        scale=sum(regression$coefficients^2)/2+regression$hyper[2])
+    return(regression)
+}
+
+}}}
+
+{{{ #C-wrappers
+    
+csplinedesign<-function(knots,x,ord)
+{
+    K<-length(knots)-2*ord
+    design<-matrix(0,length(x),K+ord)
+    out<-.C("csplinedesign",
+            des=as.double(design),
+            x=as.double(x),
+            nx=as.integer(length(x)),
+            knots=as.double(knots),
+            ord=as.integer(ord),
+            K=as.integer(K)
+        )
+    des<-matrix(out$des,length(x),K+ord)
+    return(des)
+}
+
+cevalEinte<-function(knots,ord)
+{
+    K<-length(knots)-2*ord
+    einte<-rep(0,K+ord);
+    out<-.C("cevalEinte",
+            einte=as.double(einte),
+            knots=as.double(knots),
+            ord=as.integer(ord),
+            K=as.integer(K)
+           )
+    einte<-out$einte
+    return(einte)
+}
+
+cevalBinte<-function(knots,ord)
+{
+    K<-length(knots)-2*ord;
+    binte<-rep(0,K+ord);
+    out<-.C("cevalBinte",
+            binte=as.double(binte),
+            knots=as.double(knots),
+            ord=as.integer(ord),
+            K=as.integer(K)
+          )
+    binte<-out$binte
+    return(binte)
+}
+
+cevalCinte<-function(knots,ord,obs,Binte)
+{
+    K<-length(knots)-2*ord;
+    cinte<-matrix(0,length(obs),length(Binte))
+    out<-.C("cevalCinte",
+            cinte=as.double(cinte),
+            x=as.double(obs),
+            nx=as.integer(length(obs)),
+            knots=as.double(knots),
+            ord=as.integer(ord),
+            K=as.integer(K),
+            binte=as.double(Binte)
+        )
+    cinte<-matrix(out$cinte,length(obs),K+ord)
+    return(cinte)
+}
+
+cmakePenalty.2deriv<-function(ord,knots){
+    K<-length(knots)-2*ord;
+    P<-matrix(0,K+ord,K+ord)
+    out<-.C("cMakePenalty2diff",
+        P=as.double(P),
+        knots=as.double(knots),
+        ord=as.integer(ord),
+        K=as.integer(K)
+    )
+    P<-matrix(out$P,K+ord,K+ord)
+    return(P)
+}
+
+rmklik.spline.haz<-function(spline.par,status,lp,frailrep,hazParY,hazParYcum,weight,B,C,P,penaltyType,sigma2)
+{
+    hazSplineY <- B%*%exp(spline.par)
+    hazY <- weight * hazSplineY + (1-weight) * hazParY
+    hazSplineYcum <- C%*%exp(spline.par)
+    hazYcum <- weight * hazSplineYcum + (1-weight) * hazParYcum
+    lik<-sum(status*log(hazY) - frailrep*hazYcum*exp(lp))
+    lik<-as.numeric(lik)
+    if(penaltyType==1) lik <- lik-t((spline.par))%*%P%*%(spline.par)/(2*sigma2)
+    if(penaltyType==2) lik <- lik-t(exp(spline.par))%*%P%*%exp(spline.par)/(2*sigma2)
+    return(lik)
+}
+
+cmklik.spline.haz<-function(par,status,lp,frailrep,hazParY,hazParYcum,weight,B,C,P,penaltyType,sigma2,min)
+{
+    lik<-as.double(rep(0,1))
+    out<-.C("cInitLikHazSpline",
+            lik=lik,par=par,status=status,lp=lp,frailrep=frailrep,hazParY=hazParY,
+            hazParYcum=hazParYcum,weight=weight,B=B,C=C,P=P,
+            penaltyType=penaltyType,sigma2=sigma2,ny=as.integer(length(lp)),
+            nj=as.integer(length(par)),DUP=FALSE)
+    lik<-out$lik
+    lik<-lik-sum(ifelse(par< min,(par-min)^2,0))    
+    return(lik)
+}
+
+rmkgr.spline.haz<-function(spline.par,status,lp,frailrep,hazParY,hazParYcum,weight,B,C,P,penaltyType,sigma2)
+{
+    B<-matrix(B,length(lp),length(spline.par))
+    C<-matrix(C,length(lp),length(spline.par))
+    hazSplineY <- B%*%exp(spline.par)
+    hazY <- weight * hazSplineY + (1-weight) * hazParY
+    hazSplineYcum <- C%*%exp(spline.par)
+    hazYcum <- weight * hazSplineYcum + (1-weight) * hazParYcum
+    gr<-rep(0,length(spline.par))
+    status=status/hazY
+    lp=exp(lp)*frailrep
+    gr<-gr+t(B)%*%status
+    gr<-gr-t(C)%*%lp
+    gr<-gr*exp(spline.par)
+    return(gr)
+}
+
+cmkgr.spline.haz<-function(par,status,lp,frailrep,hazParY,hazParYcum,weight,B,C,P,penaltyType,sigma2,min)
+{
+    gr<-as.double(rep(0,length(par)))
+    out<-.C("cInitGrHazSpline",
+            gr=gr,par=par,status=status,lp=lp,frailrep=frailrep,hazParY=hazParY,
+            hazParYcum=hazParYcum,weight=weight,B=B,C=C,P=P,
+            penaltyType=penaltyType,sigma2=sigma2,ny=as.integer(length(lp)),
+            nj=as.integer(length(par)),DUP=FALSE)
+    gr<-out$gr
+    gr<-gr-ifelse(par< min,2*(par-min),0)    
+    return(gr)
+}
+
+cmklik.spline.frail<-function(par,fixedind, frailParY,weight,B, E, M, P, penaltyType, sigma2, min)
+{
+    par<-as.double(repairfrailtypar(par,fixedind))
+    lik<-as.double(0);
+    out<-.C("cInitLikFrailSpline", lik=lik, par=par, frailParY=frailParY,weight=weight, B=B, E=E, M=M, P=P, penaltyType=penaltyType, sigma2=sigma2, ny=as.integer(length(frailParY)), nj=as.integer(length(par)),DUP=FALSE)
+    lik<-out$lik
+    lik<-lik-sum(ifelse(par< min,(par-min)^2,0))    
+    return(lik)
+}
+}}}
+
+{{{ #S3Methods
 ##############################################################
-# S3 Methods for fitting, printing, summary, etc
+# \section{S3Methods} S3 Methods for fitting, printing, summary, etc
 ##############################################################
 
 ################# Methods for fitting
@@ -714,7 +1247,6 @@ splinesurv.formula<-function(formula,data=parent.frame(),...)
     n<-nrow(m)
     resp <- model.extract(m, "response")
     if (!is.Surv(resp)) stop("model response must be a Surv object")
-    if(dim(resp)[2]!=2) stop("response must be of type Surv(time,status)")
     if(attr(resp,"type")!="right") stop("right-censored survival data only")
     time<-resp[,"time"]
     delta<-resp[,"status"]
@@ -745,6 +1277,7 @@ splinesurv.formula<-function(formula,data=parent.frame(),...)
     fit$call<-call
     colnames(fit$history$frailty)<-clusternames
     if(!is.null(fit$posterior.mean)) names(fit$posterior.mean$frailty)<-clusternames
+    fit$terms<-newTerms
     return(fit)
 }
 
@@ -752,7 +1285,6 @@ splinesurv.formula<-function(formula,data=parent.frame(),...)
 
 print.splinesurv<-function(x,...)
 {
-    cat("Regression parameter posterior means:\n")
     coef<-as.matrix(x$posterior.mean$coef,ncol=1)
     colnames(coef)<-"coef"
     print(coef,...)
@@ -768,16 +1300,12 @@ summary.splinesurv<-function(object,quantiles=c(.025,.975),...)
     colnames(out$coef)<-"mean"
     out$iter<-x$control$iter
     out$burnin<-x$control$burnin
-    out$nknots.haz<-length(x$spline$knots.haz)
-    out$nknots.frail<-length(x$spline$knots.frail)
-    out$ord.haz<-x$spline$ord.haz
-    out$ord.frail<-x$spline$ord.frail    
-    out$knotspacing.haz<-x$spline$knotspacing.haz
-    out$knotspacing.frail<-x$spline$knotspacing.frail
-    out$knotrange.haz<-attr(x$spline$knots.haz,"boundary")
-    out$knotrange.frail<-attr(x$spline$knots.frail,"boundary")
+    out$hazard<-x$hazard
+    out$frailty<-x$frailty
+    out$posterior.mean<-x$posterior.mean
     out$quantiles<-NULL
-    goodcoef<-x$history$coefficients[(out$burnin+2):(out$iter+1),,drop=FALSE]
+    if(out$iter<out$burnin) out$burnin<-0
+    goodcoef<-x$history$coefficients[(out$burnin+1):(out$iter),,drop=FALSE]
     if(length(quantiles)){
         for(q in quantiles){
             out$quantiles<-cbind(out$quantiles,apply(goodcoef,2,function(x) quantile(x,q)))
@@ -798,36 +1326,240 @@ print.summary.splinesurv<-function(x,...)
     printpars<-paste(names(x$dots),unlist(x$dots),sep="=",collapse=",")
     if(nchar(printpars)) printpars<-paste(",",printpars)
     eval(parse(text=paste("print(cbind(x$coef,x$quantiles,...)",printpars,")")))
-    cat("\nBaseline hazard spline: Order ",x$ord.haz," B-spline\n\twith ", x$nknots.haz-2*x$ord.haz+2," interior knots distributed ", if(x$knotspacing.haz=="equal") "evenly" else "by quantiles",
-        " on (",paste(format(x$knotrange.haz,digits=2),collapse=","),")",sep="")
-    cat("\nFrailty density spline: Order ",x$ord.frail," B-spline\n\twith ", x$nknots.frail-2*x$ord.frail+2," interior knots distributed ", if(x$knotspacing.frail=="equal") "evenly" else "by quantiles",
-        " on (",paste(format(x$knotrange.frail,digits=2),collapse=","),")\n",sep="")
-    
+    cat("\nBaseline hazard:")
+    printcurvesummary(x$hazard,x$posterior.mean$hazard.weight,x$posterior.mean$hazard.param.par)
+    cat("\nFrailty density:")
+    printcurvesummary(x$frailty,x$posterior.mean$frailty.weight,x$posterior.mean$frailty.param.par)
     invisible(x)
 }
 
-################# Methods for plotting
-
-plot.splinesurv<-function(x,which=c("base","frail","coef","all"),...)
+printcurvesummary<-function(curve,w=NULL,param.par=NULL)
 {
-    if(length(which)>=1 && which[1]%in%c("base","frail","coef","all")){
-        plotspline.meta(x,which[1],...)
+    haspar<-curve$type=="both" || curve$type=="parametric"
+    hasspline<-curve$type=="both" || curve$type=="spline"
+    if(hasspline) {
+        cat("\n\tSpline")
+        if(haspar) cat(" ( weight =", format(w,digits=3),"):") else cat(":")
+        cat("\n\t\tOrder:",curve$spline.ord)
+        cat("\n\t\tInterior knots:",curve$spline.nknots-2*curve$spline.ord+2)
+        cat("\n\t\tKnot distribution:", curve$spline.knotspacing)
+        cat("\n\t\tKnot boundaries: ", paste(format(attr(curve$spline.knots,"b"),digits=2),collapse=","))
+    }
+    if(haspar){
+        cat("\n\tParametric")
+        if(hasspline) cat(" ( weight =",format(1-w,digits=3),"):") else cat(":")
+        dist<-curve$param.dist
+        cat("\n\t\tDistribution:",curve$param.dist)
+        if(curve$name=="hazard" & dist=="exponential"){
+            cat("\n\t\tRate:",format(exp(param.par),digits=3))
+        }
+        if(curve$name=="hazard" & dist=="weibull"){
+            cat("\n\t\tRate:",format(exp(param.par[1]),digits=3))
+            cat("\n\t\tScale:",format(exp(param.par[2]),digits=3)) 
+        }
+        if(curve$name=="frailty" & (dist=="gamma" | dist=="lognormal")){
+            cat("\n\t\tVariance:",format(exp(param.par),digits=3))
+        }
+        
     }
 }
 
 
+################# Methods for plotting
+
+
+plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),newdata=NULL,iter=NULL,plotknots=TRUE,npoints=100,legend=NULL,
+    lty=1,col=2,lwd=2,lty.knots=1,col.knots=8,lwd.knots=1,xlab=NULL,ylab=NULL,main=NULL,xlim=NULL,ylim=NULL,...)
+{
+    oldask<-par("ask")
+    which<-match.arg(which)
+    if(which=="all") par(ask=TRUE)
+    if(which=="hazard" | which=="all"){
+        knots<-x$hazard$spline.knots
+        if(is.null(xlim)) xlim1=range(x$data$time) else xlim1<-xlim
+        times=seq(from=xlim1[1],to=xlim1[2],length=npoints)
+        if(is.null(xlab)) xlab1<-"Time" else xlab1<-xlab
+        if(is.null(ylab)) ylab1<-"Hazard" else ylab1<-ylab
+        if(is.null(newdata)){
+            haz<-predict(x,x=times,iter=iter)
+            if(is.null(main)) main1<-"Baseline hazard" else main1<-main
+            plot(haz,type="l",lty=lty,col=col,lwd=lwd,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
+            if(plotknots) {
+                abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
+                lines(haz,lty=lty,col=col,lwd=lwd)
+            }
+        }else{
+            if(is.null(main)) main1<-"Hazard" else main1<-main
+            haz<-predict(x,type="risk",x=times,newdata=newdata,iter=iter)
+            if(length(col)==1 & length(lty)==1 & length(lwd)==1) col=1:dim(newdata)[1]
+            matplot(haz[1],haz[-1],type="l",col=col,lwd=lwd,lty=lty,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
+            if(is.null(legend)) legend<-rownames(newdata)
+            if(plotknots) abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
+            legend("topleft",legend=legend,col=col,lty=lty,lwd=lwd)
+        }
+    }
+    if(which=="survival" | which=="all"){
+        knots<-x$hazard$spline.knots
+        if(is.null(xlim)) xlim1=range(x$data$time) else xlim1<-xlim
+        times=seq(from=xlim1[1],to=xlim1[2],length=npoints)
+        if(is.null(xlab)) xlab1<-"Time" else xlab1<-xlab
+        if(is.null(ylab)) ylab1<-"Survival" else ylab1<-ylab
+        if(is.null(newdata)){
+            haz<-predict(x,x=times,iter=iter)
+            dx<-mean(diff(times))
+            survival<-exp(-cumsum(haz$haz*dx))
+            if(is.null(main)) main1<-"Survivor function" else main1<-main
+            plot(times,survival,type="l",lty=lty,col=col,lwd=lwd,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
+            if(plotknots){
+                abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
+                lines(times,survival,type="l",lty=lty,col=col,lwd=lwd)
+            }
+        }else{
+            if(is.null(main)) main1<-"Survivor function" else main1<-main
+            haz<-predict(x,type="risk",x=times,newdata=newdata,iter=iter)[,-1,drop=FALSE]
+            survival<-exp(-apply(haz*diff(times),2,cumsum))
+            if(length(col)==1 & length(lty)==1 & length(lwd)==1) col=1:dim(newdata)[1]
+            matplot(times,survival,type="l",col=col,lwd=lwd,lty=lty,main=main1,xlab1=xlab,ylab1=ylab,xlim1=xlim,ylim=ylim,...)
+            if(is.null(legend)) legend<-rownames(newdata)
+            if(plotknots) abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
+            legend("topright",legend=legend,col=col,lty=lty,lwd=lwd)
+        }
+    }
+    if(which=="frailty" | which=="all"){
+        knots<-x$frailty$spline.knots
+        if(is.null(xlim)) {
+               if(hasspline(x$frailty)) xlim1=attr(knots,"b") 
+               else xlim1<-range(x$posterior.mean$frailty)
+       }else{xlim1<-xlim}
+        Ui=seq(from=xlim1[1],to=xlim1[2],length=npoints)
+        if(is.null(xlab)) xlab1<-"x" else xlab1<-xlab
+        if(is.null(ylab)) ylab1<-"Density" else ylab1<-ylab
+        if(is.null(main)) main1<-"Frailty density" else main1<-main
+        dens<-predict(x,type="frailty",x=Ui,iter=iter)
+        plot(dens,type="l",lty=lty,col=col,lwd=lwd,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
+        if(plotknots){
+            abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
+            lines(dens,type="l",lty=lty,col=col,lwd=lwd)
+        }
+    }
+    if(which=="coef" | which=="all"){
+        burnin<-x$control$burnin
+        if(is.null(burnin)) burnin<-x$call$control$burnin
+        if(is.null(burnin)) burnin<-dim(x$history$coefficients)[2]
+        if(is.null(xlab)) xlab1<-"x" else xlab1<-xlab
+        if(is.null(ylab)) ylab1<-"Posterior density" else ylab1<-ylab
+        coefs<-x$history$coefficients
+        coefnames<-colnames(coefs)
+        if(length(coefnames)>1) par(ask=TRUE)
+        for(i in 1:dim(coefs)[2]){
+            if(is.null(main)) main1<-paste("Coefficient of",coefnames[i]) else main1<-main
+            betai<-coefs[burnin:(dim(coefs)[1]),i]
+            plot(density(betai),lty=lty,col=col,lwd=lwd,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim,ylim=ylim,...)
+        }     
+    }
+    par(ask=oldask)
+}
+
+################# predict method
+
+predict.splinesurv<-function(object,type=c("hazard","lp","risk","frailty"),x=NULL,newdata=NULL,iter=NULL,...)
+{
+    type<-match.arg(type)
+    fit<-object; haz<-1
+    ntimes<-100
+    if(type=="hazard" | (type=="risk" & !is.null(x))){
+        if(type=="hazard" & !is.null(newdata)) stop("newdata not allowed for type \"hazard\"")
+        if(is.null(x) | is.character(x))   times<-seq(from=min(fit$data$time),to=max(fit$data$time),length=ntimes) else times<-x
+        hazard<-fit$hazard
+        hazard$x<-times; hazard$haspar<-haspar(hazard); hazard$hasspline<-hasspline(hazard); hazard$spline.norm<-FALSE
+        if(is.null(iter)){
+            hazard$spline.par<-fit$posterior.mean$hazard.spline.par
+            hazard$param.par<-fit$posterior.mean$hazard.param.par
+            hazard$weight<-fit$posterior.mean$hazard.weight
+        }else{
+            hazard$spline.par<-fit$history$hazard.spline.par[iter,]
+            hazard$param.par<-fit$history$hazard.param.par[iter,]
+            hazard$weight<-fit$history$hazard.weight[iter,]
+        }
+        hazard<-makesplinebasis(hazard,quick=TRUE)
+        hazard<-evalparametric(hazard)
+        hazard<-evalspline(hazard,quick=TRUE)
+        haz<-hazard$y
+        if(type=="hazard") return(data.frame(time=times,hazard=haz))
+    } 
+    if(type=="lp" | type=="risk")
+    {
+        if(is.null(newdata)) {
+            vars<-model.matrix(fit$terms,model.frame(fit))[,-1,drop=FALSE]
+        }else{
+            temp<-cbind(data.frame(i=0,j=0,time=0,delta=0,newdata))
+            vars<-model.matrix(fit$terms,model.frame(fit,data=temp))[,-1,drop=FALSE]
+        }
+        if(is.null(iter))
+            coef<-fit$posterior.mean$coefficients
+        else
+            coef<-fit$history$coefficients[iter,]
+        lp<-as.numeric(vars%*%coef)
+        if(type=="lp") return(data.frame(lp))
+    }
+    if(type=="risk")
+    {
+        pred<-exp(lp)
+        if(is.null(newdata)) {
+            Ji<-table(fit$data$i)
+            if(is.null(iter))
+                frailty<-rep(fit$posterior.mean$frailty,Ji)
+            else
+                frailty<-rep(fit$history$frailty[iter,],Ji)
+            pred<-frailty*pred
+        }
+        risk<-outer(haz,pred,"*")
+        colnames(risk)<-if(is.null(newdata)) rownames(fit$data) else rownames(newdata)
+        if(dim(risk)[1]==1){
+             risk<-as.data.frame(t(risk))
+             colnames(risk)<-"risk"
+        }else{
+            risk<-data.frame(time=times,risk)
+        }
+        return(risk)
+    }
+    if(type=="frailty")
+    {
+        frailty<-fit$frailty
+        if(is.null(x)) x<-seq(from=min(frailty$spline.knots),to=max(frailty$spline.knots),length=ntimes)
+        frailty$x<-x; frailty$haspar<-haspar(frailty); frailty$hasspline<-hasspline(frailty); frailty$spline.norm<-TRUE
+        if(is.null(iter)){
+            frailty$spline.par<-fit$posterior.mean$frailty.spline.par
+            frailty$param.par<-fit$posterior.mean$frailty.param.par
+            frailty$weight<-fit$posterior.mean$frailty.weight
+        }else{
+            frailty$spline.par<-fit$history$frailty.spline.par[iter,]
+            frailty$param.par<-fit$history$frailty.param.par[iter,]
+            frailty$weight<-fit$history$frailty.weight[iter,]
+        }
+        frailty<-makesplinebasis(frailty,quick=TRUE)
+        frailty<-evalparametric(frailty)
+        frailty<-evalspline(frailty,quick=TRUE)
+        density<-frailty$y        
+        return(data.frame(x=x,density=density))
+    }
+}
+
+}}}
+
+{{{ #Main
 ##############################################################
-# MAIN FUNCTION
+# \section{Main} MAIN FUNCTION
 ##############################################################
 
 
-splinesurv.agdata<-function(x,verbose=3,initial=NULL,control=NULL,spline=NULL,coda=FALSE,...)
+splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=NULL,coda=FALSE,initial=NULL,verbose=3,usec=TRUE,...)
 {
         
     if(verbose>=1) cat("Initializing...\n")
     
     agdata<-x
-    
+    rm(x)
     call<-match.call()
     m<-length(unique(agdata$i))
     Ji<-table(agdata$i)
@@ -839,67 +1571,138 @@ splinesurv.agdata<-function(x,verbose=3,initial=NULL,control=NULL,spline=NULL,co
     control.default<-list(
         burnin=500, # Length of the burn-in period
         maxiter=1000, # Max number of iterations
-        cal.gamma=TRUE, # Auto-calibrate tuning parameters
-        calint=1e2, # Interval for calibration of the acceptance rate
-        alpha=rep(.01,6), # Hyperparameters
-        M=1e3,  # Penalty parameter for density mean
-        gamma=rep(1,4) # Tuning parameters
+        tun.auto=TRUE, # Auto-calibrate tuning parameters
+        tun.int=100 # Interval for calibration of the acceptance rate
     )
     control<-control.default
-    controlnames<-c("burnin","burnin.max","burnin.min","terminate","maxiter","cal.gamma","calint","alpha","M","gamma")
+    controlnames<-names(control)
     innames<-names(control.in)
-    validnames<-intersect(innames,controlnames)
     if(!is.null(control.in)){
-        for(n in validnames) eval(parse(text=paste("control$",n,"<-control.in$",n,sep="")))
+        for(n in innames) eval(parse(text=paste("control$",match.arg(n,controlnames),"<-control.in$",n,sep="")))
     }
-    burnin<-control$burnin; maxiter<-control$maxiter; cal.gamma<-control$cal.gamma
-    calint<-control$calint; alpha<-control$alpha; M<-control$M;gamma<-control$gamma
-        
-    # Parse input (spline)
-    spline.in<-spline
-    spline.default<-list(
-        ord.haz=4, # Order of the baseline hazard spline
-        ord.frail=4, # Order of the frailty density spline
-        knotspacing.haz="quantile", # Spacing of the knots (if automatically chosen)
-        knotspacing.frail="equal", # Spacing of the knots
-        nknots.haz=NULL, # Number of knots (hazard) 
-        nknots.frail=NULL, # Number of knots (frailty)
-        knots.haz=NULL, # knot positions (hazard)
-        knots.frail=NULL, # knot positions (frailty)
-        penalty.haz="2deriv",
-        penalty.frail="2diff"
+    if(control$burnin>control$maxiter) {
+        stop("Burnin cannot be greater than maxiter")
+    }
+     
+     # Parse input (frailty)   
+    frailty.in<-frailty
+    frailty.default<-list(
+        type="spline",
+        spline.ord=4,
+        spline.knotspacing="equal",
+        spline.nknots=NULL,
+        spline.knots=NULL,
+        spline.par=NULL,
+        spline.min=-5,
+        spline.penalty="2diff",
+        spline.penaltyfactor=1,
+        spline.meanpenalty=100,
+        spline.priorvar=0.1,
+        spline.hyper=c(0.01,0.01),
+        spline.tun=1,
+        spline.accept=0,       
+        param.dist="none",
+        param.par=NULL,
+        param.priorvar=0.1,
+        param.hyper=c(0.01,0.01),
+        param.tun=1,
+        param.accept=0,
+        weight=0.5,
+        weight.priorvar=0.1,
+        weight.hyper=c(1,2),
+        weight.tun=0.01,
+        weight.accept=0,
+        accept=0
     )
-    spline<-spline.default
-    if(!is.null(spline.in)){
-        for(n in names(spline.in)) eval(parse(text=paste("spline$",n,"<-spline.in$",n,sep="")))
+    frailty<-frailty.default
+    frailtynames<-names(frailty)
+    if(!is.null(frailty.in)){
+        for(n in names(frailty.in)) eval(parse(text=paste("frailty$",match.arg(n,frailtynames),"<-frailty.in$",n,sep="")))
     }
-    #for(n in c("ord.haz","ord.frail","knotspacing.haz","knotspacing.frail","nknots.haz","nknots.frail","knots.haz","knots.frail")) eval(parse(text=paste(n,"<-spline$",n,sep="")))
-    ord.l<-spline$ord.haz; knotspacing.l<-spline$knotspacing.haz; nknots.l<-spline$nknots.haz; knots.l<-spline$knots.haz; penalty.l<-spline$penalty.haz
-    ord.u<-spline$ord.frail; knotspacing.u<-spline$knotspacing.frail; nknots.u<-spline$nknots.frail; knots.u<-spline$knots.frail; penalty.u<-spline$penalty.frail
-        
-    ### Hyperparameters
-    if(length(alpha)!=6) stop("alpha needs to have length 6")
-    alpha.b<-alpha[1:2]
-    alpha.l<-alpha[3:4]
-    alpha.u<-alpha[5:6]
+    frailty$type<-match.arg(frailty$type,c("spline","parametric","both"))
+    frailty$hasspline<-frailty$type=="spline" | frailty$type=="both"
+    frailty$haspar<-frailty$type=="parametric" | frailty$type=="both"
+    frailty$spline.knotspacing<-match.arg(frailty$spline.knotspacing,c("equal"))
+    frailty$spline.penalty<-match.arg(frailty$spline.penalty,c("2diff","2deriv","log2deriv","none"))
+    frailty$param.dist<-match.arg(frailty$param.dist,c("none","gamma","lognormal"))
+    if(m==1 & frailty$haspar) stop("parametric component not allowed for single cluster")
+    if(frailty$haspar & frailty$param.dist=="none") {
+        warning("no distribution specified for frailty parametric component -- setting to gamma")
+        frailty$param.dist<-"gamma"
+    }
+    frailty$spline.norm<-TRUE
+    frailty$name<-"frailty"
     
-    # sigma^2 initial values
-    sigma2.b<-.1
-    sigma2.l<-.1
-    sigma2.u<-.1
+     # Parse input (frailty)   
+    hazard.in<-hazard
+    hazard.default<-list(
+        type="spline",
+        spline.ord=4,
+        spline.knotspacing="quantile",
+        spline.nknots=NULL,
+        spline.knots=NULL,
+        spline.par=NULL,
+        spline.min=-5,
+        spline.penalty="2deriv",
+        spline.penaltyfactor=1,
+        spline.priorvar=0.1,
+        spline.hyper=c(0.01,0.01),
+        spline.tun=1,      
+        spline.accept=0, 
+        param.dist="none",
+        param.par=NULL,
+        param.priorvar=0.1,
+        param.hyper=c(0.01,0.01),
+        param.tun=1,
+        param.accept=0,
+        weight=0.5,
+        weight.priorvar=0.1,
+        weight.hyper=c(1,2),
+        weight.tun=0.01,
+        weight.accept=0
+    )
+    hazard<-hazard.default
+    haznames<-names(hazard)
+    if(!is.null(hazard.in)){
+        for(n in names(hazard.in)) eval(parse(text=paste("hazard$",match.arg(n,haznames),"<-hazard.in$",n,sep="")))
+    }
+    hazard$type<-match.arg(hazard$type,c("spline","parametric","both"))
+    hazard$hasspline<-hazard$type=="spline" | hazard$type=="both"
+    hazard$haspar<-hazard$type=="parametric" | hazard$type=="both"
+    hazard$spline.knotspacing<-match.arg(hazard$spline.knotspacing,c("quantile","equal","mindiff"))
+    hazard$spline.penalty<-match.arg(hazard$spline.penalty,c("2diff","2deriv","log2deriv","none"))
+    hazard$param.dist<-match.arg(hazard$param.dist,c("none","exponential","weibull","lognormal")) 
+    if(hazard$haspar & hazard$param.dist=="none") {
+        warning("no distribution specified for hazard parametric component -- setting to weibull")
+        hazard$param.dist<-"weibull"
+    }
+    if(!hazard$haspar) hazard$weight<-1
+    if(!hazard$hasspline) hazard$weight<-0
+    if(!frailty$haspar) frailty$weight<-1
+    if(!frailty$hasspline) frailty$weight<-0
     
-    # Tuning parameters default values
-    gamma.U<-gamma[1]
-    gamma.b<-gamma[2]
-    gamma.l<-gamma[3]
-    gamma.u<-gamma[4]
+    hazard$spline.norm<-FALSE
+    hazard$name<-"hazard"
+    hazard$x<-agdata$time
+     
+    # Parse input (regression)
+    reg.in<-regression
+    reg.default<-list(
+        priorvar=0.1,
+        hyper=c(0.01,0.01),
+        tun=1,
+        accept=0
+    )
+    regression<-reg.default
+    regnames<-names(regression)
+    if(!is.null(reg.in)) for(n in names(reg.in)) eval(parse(text=paste("regression$",match.arg(n,regnames),"<-reg.in$",n,sep="")))
+
+     # Automatic number of knots
+    if(is.null(hazard$spline.nknots)) hazard$spline.nknots<-min(round(sum(Ji)/4),35)
+    if(is.null(frailty$spline.nknots)) frailty$spline.nknots<-min(round(m/4),35)
     
-    # Automatic number of knots
-    if(is.null(nknots.l)) nknots.l<-min(round(sum(Ji)/4),35)
-    if(is.null(nknots.u)) nknots.u<-min(round(m/4),35)
     
     if(verbose>=2) cat("\tFitting Cox survival models...\n")
-
     
     # Cox fit with gamma frailties for initial values of Ui and beta
     varnames<-colnames(agdata)[-(1:4)]
@@ -915,260 +1718,390 @@ splinesurv.agdata<-function(x,verbose=3,initial=NULL,control=NULL,spline=NULL,co
     }else{
         coxfit<-coxph(as.formula(paste("Surv(time,delta)~",paste(qvarnames,collapse="+"))),data=agdata)
         Ui<-1
-    }        
+    } 
+    frailty$x<-Ui   
     beta<-coxfit$coef
-
-    if(verbose>=2) cat("\tInitializing spline bases...\n")
-
-    # Vector lenghts
-    K.u<-nknots.u+ord.u
-    K.l<-nknots.l+ord.l
-    p<-length(beta)
+    regression$m<-m
+    regression$Ji<-Ji
+    regression$covariates<-as.matrix(agdata[,-(1:4)],sum(Ji),length(beta))
+    regression$time<-agdata$time
+    regression$status<-agdata$delta
+    regression$cluster<-as.integer(agdata$i)
+    regression<-updateregression(regression,beta)
+        
+    rm(coxfit)
     
-    # Knots for the splines
-    bounds.l<-c(min(agdata$time),max(agdata$time))
-    if(is.null(knots.l)){
-        if(knotspacing.l=="quantile"){
-            ibounds.l<-c(min(agdata$time[agdata$delta==1]),max(agdata$time[agdata$delta==1]))
-            nintknots<-nknots.l; lrep<-ord.l; rrep<-ord.l
-            if(ibounds.l[1]==bounds.l[1]) {nintknots<-nintknots+1; lrep<-ord.l-1}
-            if(ibounds.l[2]==bounds.l[2]) {nintknots<-nintknots+1; rrep<-ord.l-1}
-            knots.l<-quantile(agdata$time[agdata$delta==1],seq(from=0,to=1,length=nintknots))
-            knots.l<-c(rep(bounds.l[1],lrep),knots.l,rep(bounds.l[2],rrep))
-        }
-        if(knotspacing.l=="equal"){
-            knots.l<-seq(from=bounds.l[1],to=bounds.l[2],length=nknots.l+2)
-            knots.l<-c(rep(bounds.l[1],ord.l-1),knots.l,rep(bounds.l[2],ord.l-1))
-        }
-    }
-    attr(knots.l,"boundary")<-bounds.l
-    attr(knots.l,"index")<-seq(from=-(ord.l-1),length=length(knots.l),by=1)
-
-    #browser()
-
-    bounds.u<-c(0,2*max(Ui))
-    if(bounds.u[1]<0) bounds.u[1]<-0
-    if(is.null(knots.u)){
-        if(knotspacing.u=="quantile"){
-            stop("Quantile knot spacing not allowed for frailty density")
-        }
-        if(knotspacing.u=="equal"){    
-            knots.u<-seq(from=bounds.u[1],to=bounds.u[2],length=nknots.u+2)
-            knots.u<-c(rep(bounds.u[1],ord.u-1),knots.u,rep(bounds.u[2],ord.u-1))
-        }
-    }
-    attr(knots.u,"boundary")<-bounds.u
-    attr(knots.u,"index")<-seq(from=-(ord.u-1),length=length(knots.u),by=1)
+    # Parametric fits
+    if(verbose>=2 & (frailty$haspar | hazard$haspar)) cat("\tFitting parametric components...\n")
     
+    hazard<-fitparametric(hazard,agdata)
+    frailty<-fitparametric(frailty,Ui)
+
+    # Spline knots
+    if(verbose>=2 & (frailty$hasspline | hazard$hasspline)) cat("\tComputing spline knots...\n")
+
+    hazard<-makeknots(hazard,agdata$time[agdata$delta==1],bounds=c(min(agdata$time),max(agdata$time)))
+    frailty<-makeknots(frailty,Ui,bounds=c(0,2*max(Ui)))
+        
     # Evaluate the splines and integrals
-    B.u<-splineDesign(knots.u,x=Ui,ord=ord.u)
-    Bint.u<-evalBinte(knots.u,ord.u)
-    for(i in 1:dim(B.u)[1]) B.u[i,]<-B.u[i,]/Bint.u
-    E.u<-evalEinte(knots.u,ord.u)
+    if(verbose>=2 & (frailty$hasspline | hazard$hasspline)) cat("\tConstructing spline basis functions...\n")
     
-    B.l<-splineDesign(knots.l,x=agdata$time,ord=ord.l)
-    Bint.l<-evalBinte(knots.l,ord.l)
-    C.l<-evalCinte(knots.l,ord.l,agdata$time,Bint.l)
-    
-    if(verbose>=2) cat("\tInitializing penalty matrices...\n")
+    hazard<-makesplinebasis(hazard, usec=usec)
+    frailty<-makesplinebasis(frailty, usec=usec)
+       
+    if(verbose>=2 & (frailty$hasspline | hazard$hasspline)) cat("\tInitializing penalty matrices...\n")
 
     # Penalty matrices
-    if(penalty.l=="2diff") P.l<-makePenalty.2diff(K.l)
-    if(penalty.u=="2diff") P.u<-makePenalty.2diff(K.u)
-    if(penalty.l=="2deriv") P.l<-makePenalty.2deriv(ord.l,knots.l)
-    if(penalty.u=="2deriv") P.u<-makePenalty.2deriv(ord.u,knots.u)/(Bint.u%*%t(Bint.u))        
+    hazard<-makepenalty(hazard, usec=usec)
+    frailty<-makepenalty(frailty, usec=usec)    
+        
 
-    # Other matrices and vectors
-    delta<-agdata$delta
-    Z<-agdata[,-(1:4)]; Z<-as.matrix(Z,sum(Ji),p)
-    U.u<-rep(Ui,Ji)
-    i.all<-agdata$i
-    
-    if(verbose>=2) cat("\tObtaining initial values for spline parameters...\n")
+    if(verbose>=2 & (frailty$hasspline | hazard$hasspline))  cat("\tObtaining initial values for spline parameters...\n")
 
-    # Initial values for the theta vectors
-    theta.l<-rep(1,K.l)
-    theta.u<-rep(1,K.u)
-    #fixthetau<-round(K.u/2)
-    fixthetau<-max(1,which.min((knots.u-mean(Ui))^2)-ord.u)
-    #if(penalty.l=="2deriv") sigma2.l<-1/rgamma(1,K.l/2+alpha.l[1],1/(as.numeric(smoothpen.l(theta.l,P.l,penalty.l,0))/2+alpha.l[2]))
-    #if(penalty.u=="2deriv") sigma2.u<-1/rgamma(1,K.u/2+alpha.u[1],1/(as.numeric(smoothpen.u(theta.u,P.u,penalty.u,0))/2+alpha.u[2]))                
-    opt.theta.l<-optim(theta.l,fn=mklik.l,gr=mkgrad.l,method="BFGS",control=list(fnscale=-1),delta=delta,beta=beta,Z=Z,U.u=U.u,B.l=B.l,C.l=C.l,sigma2.l=sigma2.l,P.l=P.l,penalty=penalty.l,hessian=FALSE)
-    theta.l<-opt.theta.l$par
-    opt.theta.u<-optim(theta.u[-fixthetau],fn=mklik.u,gr=mkgrad.u,method="BFGS",control=list(fnscale=-1),B.u=B.u,E.u=E.u,sigma2.u=sigma2.u,P.u=P.u,M=M,penalty=penalty.u,hessian=FALSE,fix=fixthetau)    
-    theta.u<-theta.u.repair(opt.theta.u$par,fixthetau)
+    {{{# Initial values for the theta vectors
     
-    #browser()
-    
+    if(hazard$haspar & hazard$hasspline){
+        oldhazweight<-hazard$weight
+        hazard$weight<-1;
+        hazard<-weightcurve(hazard)
+    }
+    if(hazard$haspar & hazard$hasspline){
+        oldfrailweight<-frailty$weight
+        frailty$weight<-1;
+        frailty<-weightcurve(frailty)
+    }
+
+    # Initial values for hazard parameters 
+    if(hazard$hasspline){
+	    theta.haz<-rep(0,hazard$spline.nknots+hazard$spline.ord)
+        if(usec){
+            par<-as.double(theta.haz); status<-as.double(regression$status);
+            lp<-as.double(regression$lp); frailrep<-as.double(rep(frailty$x,Ji));
+            hazParY<-as.double(if(hazard$haspar) hazard$param.y else rep(0,length(lp))); 
+            hazParYcum<-as.double(if(hazard$haspar) hazard$param.ycum else rep(0,length(lp))); 
+            weight<-hazard$weight; B<-as.double(hazard$spline.basis);
+            C<-as.double(hazard$spline.basiscum);
+            P<-as.double(hazard$spline.penaltyfactor * hazard$spline.penaltymatrix);
+            penaltyType<-as.integer(pmatch(hazard$spline.penalty,c("none","2diff","2deriv","log2deriv"))-1);
+            splinemin<-as.double(hazard$spline.min)
+            sigma2<-100; sigma2target<-hazard$spline.priorvar
+            # compute initial values by slowly decreasing the prior variance
+            while(sigma2>sigma2target){
+                sigma2<-as.double(sigma2/10)
+                opt.theta.haz<-optim(par,fn=cmklik.spline.haz,gr=cmkgr.spline.haz,
+                status=status,lp=lp,frailrep=frailrep,hazParY=hazParY,hazParYcum=hazParYcum,weight=weight,B=B,C=C,P=P,penaltyType=penaltyType,sigma2=sigma2,min=splinemin,
+                method="BFGS",control=list(fnscale=-1))
+                par<-as.double(opt.theta.haz$par)
+            }
+            opt.theta.haz<-optim(par,fn=cmklik.spline.haz,gr=cmkgr.spline.haz,
+            status=status,lp=lp,frailrep=frailrep,hazParY=hazParY,hazParYcum=hazParYcum,weight=weight,B=B,C=C,P=P,penaltyType=penaltyType,sigma2=sigma2,min=splinemin,
+            method="BFGS",control=list(fnscale=-1, maxit=1),hessian=TRUE)
+            rm(par,status,lp,hazParY,hazParYcum,weight,B,C,P,penaltyType,splinemin,sigma2)
+            gcout<-gc()
+        }else{
+            hazard<-updatespline(hazard,theta.haz)
+            gcout<-gc()
+            sigma2<-100; sigma2target<-hazard$spline.priorvar
+            # compute initial values by slowly decreasing the prior variance
+            while(sigma2>sigma2target){
+                sigma2<-sigma2/10;
+                hazard$spline.priorvar<-sigma2
+                opt.theta.haz<-optim(hazard$spline.par,
+                        fn=mklik.spline.haz,
+                        gr=mkgr.spline.haz,
+                        method="BFGS",
+                        control=list(fnscale=-1),
+                        hazard=hazard,
+                        frailty=frailty,
+                        regression=regression,
+                        hessian=FALSE)
+                hazard<-updatespline(hazard,opt.theta.haz$par)
+            }
+            opt.theta.haz<-optim(hazard$spline.par,
+                    fn=mklik.spline.haz,
+                    gr=mkgr.spline.haz,
+                    method="BFGS",
+                    control=list(fnscale=-1),
+                    hazard=hazard,
+                    frailty=frailty,
+                    regression=regression,
+                    hessian=TRUE)
+        }
+        gcout<-gc()
+        hazard<-updatespline(hazard,opt.theta.haz$par)
+
+    }
+
+        # Initial values for frailty parameters
+    if(frailty$hasspline){
+	    frailty$spline.fixedind<-max(1,which.min((frailty$spline.knots-mean(frailty$x))^2)-frailty$spline.ord)
+	    theta.frail<-rep(0,frailty$spline.nknots+frailty$spline.ord-1)
+        #if(usec){
+        #    frailParY<-as.double(if(frailty$haspar) frailty$param.y else rep(0,length(frailty$x))); 
+        #    fixedind<-as.integer(frailty$spline.fixedind)
+        #    weight<-as.double(frailty$weight)
+        #    B<-as.double(frailty$spline.basis);
+        #    E<-as.double(frailty$spline.basisexp);
+        #    M<-as.double(frailty$spline.meanpenalty);
+        #    P<-as.double(frailty$spline.penaltyfactor * frailty$spline.penaltymatrix);
+        #    penaltyType<-as.integer(pmatch(frailty$spline.penalty,c("none","2diff","2deriv","log2deriv"))-1);
+        #    splinemin<-as.double(frailty$spline.min)
+        #    sigma2<-as.double(frailty$spline.priorvar)
+        #    opt.theta.frail<-optim(theta.frail,
+        #        fn=cmklik.spline.frail,
+        #        fixedind=fixedind, frailParY=frailParY,weight=weight,B=B,E=E,M=M,P=P,penaltyType=penaltyType,sigma2=sigma2, min=splinemin,
+        #        method="BFGS", control=list(fnscale=-1), hessian=TRUE)
+        #}
+        #else
+        {
+            opt.theta.frail<-optim(theta.frail,
+                    fn=mklik.spline.frail,
+                    method="BFGS",
+                    control=list(fnscale=-1),
+                    hazard=hazard,
+                    frailty=frailty,
+                    regression=regression,
+                    hessian=TRUE)    
+        }
+        gcout<-gc()
+        frailty<-updatespline(frailty,opt.theta.frail$par)
+    }
+
+    gcout<-gc()
+    if(hazard$hasspline & hazard$haspar){
+        hazard$weight<-oldhazweight
+        hazard<-weightcurve(hazard);
+    }
+    if(frailty$hasspline & frailty$haspar){
+        frailty$weight<-oldfrailweight
+        frailty<-weightcurve(frailty)
+    }
+
+    gcout<-gc() 
     # Evaluate variances and hessians for candidate generation
-    nu2.U<-diff(range(Ui))^2/6
-    hess.b<-mkhess.b(beta,delta,Z,U.u,C.l,theta.l,sigma2.b)
-    Sigma.b<-solve(-hess.b)
-    hess.l<-mkhess.l(theta.l,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty.l)
-    Sigma.l<-try(solve(-hess.l),silent=TRUE)
-    d<-10
-    while(inherits(Sigma.l,"try-error")){ Sigma.l<-try(solve(-(hess.u-10^(-d)*mdiag(K.u-1))),silent=TRUE); d<-d-1}
-    d<-10
-    while(!all(eigen(Sigma.l)$val>0)){ Sigma.l<-solve(-(hess.l-10^(-d)*mdiag(K.l))) ;d<-d-1  }
-    #if(det(Sigma.l<0)) stop("Bad Hessian for baseline spline likelihood")
-    hess.u<-mkhess.u(theta.u[-fixthetau],B.u,E.u,sigma2.u,P.u,M,penalty.u,fixthetau)
-    Sigma.u<-try(solve(-hess.u),silent=TRUE)
-    d<-10
-    while(inherits(Sigma.u,"try-error")){ Sigma.u<-try(solve(-(hess.u-10^(-d)*mdiag(K.u-1))),silent=TRUE); d<-d-1}
-    d<-10
-    while(!all(eigen(Sigma.u)$val>0)){ Sigma.u<-solve(-(hess.u-10^(-d)*mdiag(K.u-1))); d<-d-1}
-
-    #if(det(Sigma.u<0)) stop("Bad Hessian for frailty density spline likelihood")
+    frailty$tun<-diff(range(Ui))^2/6
+    hess.coef<-mkhess.coef(regression$coefficients,hazard,frailty,regression)
+    Sigma.coef<-solve(-hess.coef)
+    regression$candcov<-Sigma.coef
+    regression$cholcandcov<-chol(Sigma.coef,pivot=TRUE)
+    if(hazard$hasspline){
+        hess.haz<-opt.theta.haz$hess
+        Sigma.haz<-inverthessian(hess.haz)
+        hazard$spline.candcov<-Sigma.haz
+        hazard$spline.cholcandcov<-chol(Sigma.haz,pivot=TRUE)
+        rm(hess.haz,Sigma.haz)
+    }
+    if(frailty$hasspline){
+        hess.frail<-opt.theta.frail$hess
+        Sigma.frail<-inverthessian(hess.frail)
+        frailty$spline.candcov<-Sigma.frail
+        frailty$spline.cholcandcov<-chol(Sigma.frail,pivot=TRUE)
+        rm(hess.frail,Sigma.frail)
+    }
+    if(hazard$haspar){ 
+        temphaz<-list(haspar=hazard$haspar,hasspline=hazard$hasspline,weight=hazard$weight,spline.y=hazard$spline.y,spline.ycum=hazard$spline.ycum,name=hazard$name,param.dist=hazard$param.dist,x=hazard$x,y=hazard$y,ycum=hazard$ycum,param.y=hazard$param.y,param.ycum=hazard$param.ycum,param.par=hazard$param.par,param.priorvar=hazard$param.priorvar)
+        eps<-1e-5
+        par<-temphaz$param.par
+        hess<-matrix(0,length(par),length(par))
+        for(i in 1:length(par)){
+            for(j in 1:length(par)){
+            par1<-par;par2<-par;par3<-par;
+            if(i==j) {par1[i]<-par[i]+eps;par2<-par1;par3[i]<-par[i]+2*eps}
+            else {par1[i]<-par[i]+eps; par2[j]<-par[j]+eps; par3<-par1; par3[j]<-par[j]+eps}
+            g1<-(mklik.param.haz(par1,temphaz,frailty,regression)-mklik.param.haz(par,temphaz,frailty,regression))/eps
+            g2<-(mklik.param.haz(par3,temphaz,frailty,regression)-mklik.param.haz(par2,temphaz,frailty,regression))/eps
+            hess[i,j]<-(g2-g1)/eps
+            }
+        }
+        Sigma.par.haz<-inverthessian(hess)
+        hazard$param.candcov<-Sigma.par.haz
+        hazard$param.cholcandcov<-chol(Sigma.par.haz,pivot=TRUE)
+        rm(Sigma.par.haz,hess,temphaz)
+    }
+    if(frailty$haspar){
+        Sigma.par.frail<-inverthessian(numHess.par(frailty$param.par,mklik.param.frail,hazard=hazard,frailty=frailty,regression=regression))
+        frailty$param.candcov<-Sigma.par.frail
+        frailty$param.cholcandcov<-chol(Sigma.par.frail,pivot=TRUE)
+        rm(Sigma.par.frail)
+    }
     
+    
+    }}}
+
+    #browser()
+    gcout<-gc()
     # Store initial values in parameter history
-    paramhist<-list(Ui=Ui,beta=beta,theta.l=theta.l,theta.u=theta.u,sigma2.b=sigma2.b,sigma2.l=sigma2.l,sigma2.u=sigma2.u,acc.U=0,acc.b=0,acc.l=0,acc.u=0)
-    avg.gammahist<-NULL
+    history<-inithistory(hazard,frailty,regression,control)
+    avg.tunhist<-NULL
     avg.accepthist<-NULL
     
     ######################
-    # main<-function() Main Loop
+     main<-function() {}
         
     #browser()
     if(verbose>=1) cat("Starting MCMC...\n")
     
-    iter<-0
-    acc.U<-0;acc.b<-0;acc.l<-0;acc.u<-0
-    while(iter<maxiter)
+    iter<-1
+    
+    if(verbose>=3) cat(iter," ")
+
+    
+    while(iter<control$maxiter)
     {
-        iter<-iter+1
-        
-        # MH update of frailties
-        mhout.U<-mh.U(Ui,i.all,delta,beta,Z,C.l,theta.l,B.u,theta.u,nu2.U,gamma.U,knots.u,ord.u,Bint.u)
-        Ui<-mhout.U$Ui
-        acc.U<-mhout.U$acc
-        U.u<-rep(Ui,Ji)
-        B.u<-splineDesign(knots.u,x=Ui,ord=ord.u)
-        for(i in 1:dim(B.u)[1]) B.u[i,]<-B.u[i,]/Bint.u
-        
-        # MH update of regression parameters
-        mhout.b<-mh.b(beta,delta,Z,U.u,C.l,theta.l,sigma2.b,Sigma.b,gamma.b)
-        beta<-mhout.b$beta
-        acc.b<-mhout.b$acc
-        
-        # MH update of baseline parameters
-        mhout.l<-mh.l(theta.l,delta,beta,Z,U.u,B.l,C.l,sigma2.l,P.l,penalty.l,Sigma.l,gamma.l)
-        theta.l<-mhout.l$theta.l
-        acc.l<-mhout.l$acc
-        
-        # MH update of frailty density parameters
-        mhout.u<-mh.u(theta.u,B.u,E.u,sigma2.u,P.u,M,penalty.u,fixthetau,Sigma.u,gamma.u)
-        theta.u<-mhout.u$theta.u
-        acc.u<-mhout.u$acc
-        
-        # Update of the sigmas
-        sigma2.b<-1/rgamma(1,length(beta)/2+alpha.b[1],rate=as.numeric(t(beta)%*%beta)/2+alpha.b[2])
-        sigma2.l<-1/rgamma(1,K.l/2+alpha.l[1],rate=smoothpen.l(theta.l,P.l,penalty.l,0)/2+alpha.l[2])
-        sigma2.u<-1/rgamma(1,K.u/2+alpha.u[1],rate=smoothpen.u(theta.u,P.u,penalty.u,0)/2+alpha.u[2])
-        #if(penalty.l=="2diff") sigma2.l<-1/rgamma(1,K.l/2+alpha.l[1],1/(as.numeric(t(theta.l)%*%P.l%*%theta.l)/2+alpha.l[2]))
-        #if(penalty.u=="2diff") sigma2.u<-1/rgamma(1,K.u/2+alpha.u[1],1/(as.numeric(t(theta.u)%*%P.u%*%theta.u)/2+alpha.u[2]))
-        #if(penalty.l=="2deriv") sigma2.l<-1/rgamma(1,K.l/2+alpha.l[1],1/(as.numeric(t(exp(theta.l))%*%P.l%*%exp(theta.l))/2+alpha.l[2]))
-        #if(penalty.l=="2deriv") sigma2.u<-1/rgamma(1,K.u/2+alpha.u[1],1/(as.numeric(t(exp(theta.u))%*%P.u%*%exp(theta.u))/2+alpha.u[2]))        
-        
-        # Update parameter history
-        paramhist$Ui<-rbind(paramhist$Ui,Ui)
-        paramhist$beta<-rbind(paramhist$beta,beta)
-        paramhist$theta.l<-rbind(paramhist$theta.l,theta.l)
-        paramhist$theta.u<-rbind(paramhist$theta.u,theta.u)
-        paramhist$acc.U<-c(paramhist$acc.U,acc.U)
-        paramhist$acc.b<-c(paramhist$acc.b,acc.b)
-        paramhist$acc.l<-c(paramhist$acc.l,acc.l)
-        paramhist$acc.u<-c(paramhist$acc.u,acc.u)
-        paramhist$sigma2.b<-c(paramhist$sigma2.b,sigma2.b)
-        paramhist$sigma2.l<-c(paramhist$sigma2.l,sigma2.l)
-        paramhist$sigma2.u<-c(paramhist$sigma2.u,sigma2.u)
-        
-        
-       # if(iter%%1000==0) browser()
-        
-        # Periodic calibration check
-        if(iter%%calint==0 & iter<maxiter){
+        if(usec){
+            # C version of the main loop
+            gcout<-gc()
+            nexttunint<-iter-iter%%control$tun.int+control$tun.int
+            enditer <- min(nexttunint, control$maxiter)
+            out<-.Call("SplineSurvMainLoop",hazard,frailty,regression,history,iter,enditer,verbose) 
+            iter<-enditer
+        }else{
+
+            # R version of the main loop
+
+            iter<-iter+1
+
+            if(verbose>=3) cat(iter," ")
+                
+            # MH update of frailties
+            frailty<-mh.frail(hazard,frailty,regression)
             
+            # MH update of regression parameters
+            regression<-mh.coef(hazard,frailty,regression)
+
+            # MH update of baseline parameters
+            hazard<-mh.hazard.spline(hazard,frailty,regression)
+            
+            # MH update of frailty density parameters
+            frailty<-mh.frailty.spline(hazard,frailty,regression)
+                    
+            # MH update of parametric baseline parameters
+            hazard<-mh.hazard.param(hazard,frailty,regression)
+            
+            # MH update of parametric frailty parameters
+            frailty<-mh.frailty.param(hazard,frailty,regression)
+
+            # MH update of weights
+            hazard<-mh.weight("hazard",hazard,frailty,regression)
+            frailty<-mh.weight("frailty",hazard,frailty,regression)
+
+            # Update of the sigmas / taus
+            hazard<-updatepostvar.curve(hazard)
+            frailty<-updatepostvar.curve(frailty)
+            regression<-updatepostvar.coef(regression)
+                    
+            {{{# Update parameter history
+            history$frailty[iter,]<-frailty$x
+            history$coefficients[iter,]<-regression$coefficients
+            if(hazard$hasspline) history$hazard.spline.par[iter,]<-hazard$spline.par
+            if(frailty$hasspline) history$frailty.spline.par[iter,]<-frailty$spline.par
+            if(hazard$haspar) history$hazard.param.par[iter,]<-hazard$param.par
+            if(frailty$haspar) history$frailty.param.par[iter,]<-frailty$param.par
+            if(hazard$hasspline & hazard$haspar) history$hazard.weight[iter]<-hazard$weight
+            if(frailty$hasspline & frailty$haspar) history$frailty.weight[iter]<-frailty$weight
+            history$priorvar[iter,]<-c(regression$priorvar,hazard$spline.priorvar,frailty$spline.priorvar,
+                hazard$param.priorvar,frailty$param.priorvar,hazard$weight.priorvar,frailty$weight.priorvar)
+            history$accept[iter,]<-c(regression$accept,hazard$spline.accept,frailty$spline.accept,
+                hazard$param.accept,frailty$param.accept,hazard$weight.accept,frailty$weight.accept,frailty$accept)
+            }}}
+        }
+
+        {{{  # Periodic calibration check
+        if(iter%%control$tun.int==0 & iter<control$maxiter){
+  
             if(verbose==1 | verbose==2) cat(iter," ")
             
-            #if(iter>=burnin.max) burnin<-iter
-        
+            calinds<-(iter-control$tun.int+1):iter   
+
             # Calibration of the tuning parameters for acceptance rate
-            if(cal.gamma & iter<=burnin){
+            if(control$tun.auto & iter<=control$burnin){
                if(verbose>=3) cat("\n Calibration ...\n")
-              # if(iter==500) browser()
-               gamma<-c(gamma.U,gamma.b,gamma.l,gamma.u)
-                avg.gammahist<-rbind(avg.gammahist,gamma)
-                avg.accepthist<-rbind(avg.accepthist,c(mean(paramhist$acc.U[(iter-calint+1):iter]),mean(paramhist$acc.b[(iter-calint+1):iter]),
-                                                       mean(paramhist$acc.l[(iter-calint+1):iter]),mean(paramhist$acc.u[(iter-calint+1):iter])))
-                for(g in 1:4){
-                    if(all(avg.accepthist[,g]>.25)) gamma[g]<-gamma[g]*2
-                    if(all(avg.accepthist[,g]<.25)) gamma[g]<-gamma[g]/2
+                      
+                #browser()
+                          
+                tunnames<-c("regression$tun",
+                    "hazard$spline.tun",
+                    "frailty$spline.tun",
+                    "hazard$param.tun",
+                    "frailty$param.tun",
+                    "hazard$weight.tun",
+                    "frailty$weight.tun",
+                    "frailty$tun")             
+                alltun<-rep(0,length(tunnames))
+                for(i in 1:length(alltun)) eval(parse(text=paste("alltun[",i,"]<-",tunnames[i])))
+                avg.tunhist<-rbind(avg.tunhist,alltun)
+                avg.accepthist<-rbind(avg.accepthist,
+                                      apply(history$accept[calinds,],2,mean))
+                for(g in 1:length(alltun)){
+                    if(all(avg.accepthist[,g]>.25)) alltun[g]<-alltun[g]*2
+                    if(all(avg.accepthist[,g]<.25)) alltun[g]<-alltun[g]/2
                     if(any(avg.accepthist[,g]>.25) & any(avg.accepthist[,g]<.25)){
-                        fit<-lm(y~x,data.frame(x=avg.gammahist[,g],y=avg.accepthist[,g]))
-                        gamma[g]<-max(.01,nlm(accrate.predict.lm,gamma[g],m=fit)$est)
+                        fit<-lm(y~x,data.frame(x=avg.tunhist[,g],y=avg.accepthist[,g]))
+                        out<-try(max(1e-3,nlm(accrate.predict.lm,alltun[g],m=fit)$est))
+                        if(inherits(out,"try-error"))
+                            alltun[g]<-avg.tunhist[which.min((avg.accepthist-.25)^2)]
+                        else
+                            alltun[g]<-out
                     }
                 }
-                gamma.U<-gamma[1];gamma.b<-gamma[2];gamma.l<-gamma[3];gamma.u<-gamma[4]
-                if(verbose>=4){
-                    cat("Acceptance rates (U,b,l,u): ",avg.accepthist[dim(avg.accepthist)[1],],"\n")
-                    cat("Tuning parameters (U,b,l,u): ",gamma,"\n")
-                }
-            }
-            # Check whether burnin is done
-            if(verbose>=4){
-                thisUi<-matrix(paramhist$Ui[(iter-calint+1):iter,],calint,m)
-                thisbeta<-matrix(paramhist$beta[(iter-calint+1):iter,],calint,length(beta))
-                thistheta.l<-matrix(paramhist$theta.l[(iter-calint+1):iter,],calint,K.l)
-                thistheta.u<-matrix(paramhist$theta.u[(iter-calint+1):iter,],calint,K.u)
-                avgUi<-apply(thisUi,2,mean)
-                avgbeta<-apply(thisbeta,2,mean)
-                avgtheta.l<-apply(thistheta.l,2,mean)
-                avgtheta.u<-apply(thistheta.u,2,mean)
-                avgsigma2.b<-mean(paramhist$sigma2.b[(iter-calint+1):iter])
-                avgsigma2.u<-mean(paramhist$sigma2.u[(iter-calint+1):iter])
-                avgsigma2.l<-mean(paramhist$sigma2.l[(iter-calint+1):iter])
-                if(verbose>=5){
-                    cat("Ui: ",avgUi,"\n")
-                    cat("beta: ",avgbeta,"\n")
-                    cat("theta.l: ",avgtheta.l,"\n")
-                    cat("theta.u: ",avgtheta.u,"\n")
-                    cat("sigma2: ",avgsigma2.b,avgsigma2.l,avgsigma2.u,"\n")
-                }
-            }
-        }
-        
-        if(verbose>=3) cat(iter," ")
+                for(i in 1:length(alltun)) eval(parse(text=paste(tunnames[i],"<-alltun[",i,"]")))
 
+                if(verbose>=4){
+                    outmat<-cbind(avg.accepthist,alltun); rownames(outmat)<-tunnames; colnames(outmat)<-c("acceptance","tuning")
+                    print(outmat)
+                }
+            }
+            # Print full iteration info
+            if(verbose>=5){
+                cat("Frailties: ",submean(history$frailty,calinds),"\n")
+                cat("Coefficients: ",submean(history$coefficients,calinds),"\n")
+                cat("Hazard.spline: ",submean(history$hazard.spline.par,calinds),"\n")
+                cat("Frailty.spline: ",submean(history$frailty.spline.par,calinds),"\n")
+                cat("Hazard.param: ",submean(history$hazard.param.par,calinds),"\n")
+                cat("Frailty.param: ",submean(history$frailty.param.par,calinds),"\n")
+                cat("Prior variances: ",submean(history$priorvar,calinds),"\n")
+            }
+            
+            #browser()
+            
+        }
+        }}}
+        
     }
+    gcout<-gc()
     if(verbose>0) cat("Done!\n")
-    outspline=list(knots.u=knots.u,knots.l=knots.l,ord.u=ord.u,ord.l=ord.l,knotspacing.l=knotspacing.l,knotspacing.u=knotspacing.u)
-    if(burnin<iter){
-        sub<-(1:(iter+1))>(burnin+1)
-        npost<-sum(sub)
-        postmean.Ui<-apply(matrix(paramhist$Ui[sub,],npost,m),2,mean)
-        postmean.beta<-apply(matrix(paramhist$beta[sub,],npost,length(beta)),2,mean)
-        postmean.l<-apply(matrix(paramhist$theta.l[sub,],npost,K.l),2,mean)
-        postmean.u<-apply(matrix(paramhist$theta.u[sub,],npost,K.u),2,mean)
-        postmean<-list(Ui=postmean.Ui,beta=postmean.beta,theta.l=postmean.l,theta.u=postmean.u)
-        names(postmean$beta)<-varnames
+    hazard<-makeoutputcurve(hazard)
+    frailty<-makeoutputcurve(frailty)
+   
+   {{{ # Construct output
+    if(control$burnin<iter){
+        sub<-(1:(iter))>(control$burnin)
+        posterior.mean<-list(coefficients=submean(history$coefficients,sub),
+                            frailty=submean(history$frailty,sub),
+                            hazard.spline.par=submean(history$hazard.spline.par,sub),
+                            hazard.param.par=submean(history$hazard.param.par,sub),
+                            hazard.weight=submean(history$hazard.weight,sub),
+                            frailty.spline.par=submean(history$frailty.spline.par,sub),
+                            frailty.param.par=submean(history$frailty.param.par,sub),
+                            frailty.weight=submean(history$frailty.weight,sub)
+                        )
+        names(posterior.mean$coefficients)<-varnames
     }else{
         postmean=NULL
     }
-    posterior.mean<-list(frailty=postmean$Ui,coefficients=postmean$beta,splinepar.haz=postmean$theta.l,splinepar.frail=postmean$theta.u)
-    outspline2<-list(knots.haz=knots.l,knots.frail=knots.u,ord.haz=ord.l,ord.frail=ord.u,knotspacing.haz=knotspacing.l,knotspacing.frail=knotspacing.u)
-    history<-list(frailty=paramhist$Ui,coefficients=paramhist$beta,splinepar.haz=paramhist$theta.l,splinepar.frail=paramhist$theta.u,
-        sigma2=cbind(paramhist$sigma2.b,paramhist$sigma2.l,paramhist$sigma2.u),acc=cbind(paramhist$acc.U,paramhist$acc.b,paramhist$acc.l,paramhist$acc.u))
     if(coda){
         library(coda)
         history$frailty<-mcmc(history$frailty); history$coefficients<-mcmc(history$coefficients)
-        history$splinepar.haz<-mcmc(history$splinepar.haz); history$splinepar.frail<-as.mcmc(history$splinepar.frail)
-        history$sigma2<-mcmc(history$sigma2); history$acc<-mcmc(history$acc)
+        history$hazard.spline.par<-mcmc(history$hazard.spline.par); history$frailty.spline.par<-as.mcmc(history$frailty.spline.par)
+        history$hazard.param.par<-mcmc(history$hazard.param.par); history$frailty.param.par<-mcmc(history$frailty.param.par)
+        history$priorvar<-mcmc(history$priorvar); history$accept<-mcmc(history$accept)
     }
-    colnames(history$sigma2)<-c("sigma2.coef","sigma2.par.haz","sigma2.par.frail")
-    colnames(history$acc)<-c("acc.frail","acc.coef","acc.par.haz","acc.par.frail")
     rownames(history$frailty)<-rownames(history$coefficients)<-rownames(history$splinepar.haz)<-rownames(history$splinepar.frail)<-NULL
     control$iter<-iter
-    out<-list(call=call,history=history,posterior.mean=posterior.mean,spline=outspline2,control=control)
+    }}}
+
+    out<-list(call=call,history=history,posterior.mean=posterior.mean,hazard=hazard,frailty=frailty,control=control,data=agdata)
     class(out)<-"splinesurv"
     return(out)
 }
+}}}

@@ -7,7 +7,8 @@ Nonparametric bayesian survival analysis
 \description{
 Utilities for nonparametric Bayesian analysis of clustered
 survival data. The baseline hazard function and frailty density
-are modeled using penalized B-splines.
+are modeled using penalized B-splines, and may optionally have
+a parametric component.
 }
 \details{
     The core function is \code{\link{splinesurv}}, and methods for printing and 
@@ -16,7 +17,7 @@ are modeled using penalized B-splines.
 
     \tabular{ll}{
     Package: \tab splinesurv\cr
-    Version: \tab 0.1-2\cr
+    Version: \tab 0.3-4\cr
     Depends: \tab R (>= 2.5.0), MASS, survival\cr
     Suggests: \tab coda\cr
     License: \tab GPL (>= 2)\cr

@@ -1,5 +1,5 @@
 Package: splinesurv
-Version: 0.1-5
+Version: 0.3-4
 Title: Nonparametric bayesian survival analysis
 Author: Emmanuel Sharef <ess28@cornell.edu>
 Maintainer: Emmanuel Sharef <ess28@cornell.edu>

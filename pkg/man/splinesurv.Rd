@@ -12,14 +12,17 @@
     parameters, frailties, and parameters specifying the hazard and frailty
     distribution.
     
-    The baseline hazard and random effects desity are modeled as penalized B-splines,
-    with the penalty depending on either the integrated squared second derivative
-    of the curve, or the sum of squared second differences in the spline parameters.
+    The baseline hazard and random effects density are modeled as convex 
+    combinations of a parametric component (for example, a gamma frailty, or
+    a weibull baseline hazard) and a nonparametric component modeled as a
+    penalized B-splines, with the penalty depending on either the integrated 
+    squared second derivative of the curve, or the sum of squared second 
+    differences in the spline parameters. 
 }
 \synopsis{\method{splinesurv}{formula}(formula, data = parent.frame(), ...)}
 \usage{
 \method{splinesurv}{formula}(formula, data = parent.frame(), verbose = 3,
-           control = NULL, spline = NULL, initial = NULL, coda = FALSE,...)
+           hazard = NULL, frailty = NULL, control = NULL, coda = FALSE, initial = NULL,...)
 }
 \arguments{
     \item{formula}{a formula object, similar to \code{\link{coxph}}. The response to the
@@ -31,6 +34,44 @@
         in the formula.}
     \item{verbose}{an integer from 0 to 5 that determines the quantity of output
         printed to the screen. Setting \code{verbose=0} is completely silent.}
+    \item{hazard}{a list containing parameters defining the baseline hazard,
+    	with the following optional components. For any component that is not
+	set, the default is used.
+	\describe{
+	    \item{\code{type}}{a string that determines whether the hazard
+	    	is parametric, nonparametric, or has both components. Takes
+		on values \code{"spline"}, \code{"parametric"} or \code{"both"},
+		with \code{"spline"} as default.}
+            \item{\code{spline.ord}}{an integer greater than 1, giving the order of 
+                the spline defining the baseline hazard. Defaults to
+                \code{ord.haz=4}, corresponding to cubic B-splines.}
+            \item{\code{spline.nknots}}{an integer giving the number of interior
+                knots used in the baseline hazard spline. If \code{NULL}, the
+                number of knots is chosen automatically, which is the default.}
+            \item{\code{spline.knotspacing}}{string that determines the way that knots are
+                automatically chosen, if applicable. Possible values are \code{"quantile"}
+                to place knots at quantiles of observed event times, or \code{"equal"} to
+                equally space knots over the range of observed times. Defaults to \code{"quantile"}.}
+            \item{\code{spline.knots}}{a vector of length \code{spline.nknots+2*spline.ord-2} giving the 
+                positions of all the knots used in the baseline hazard spline (including
+                boundary knots). If \code{NULL}, knots are chosen automatically. 
+                Defaults to \code{NULL}.}
+            \item{\code{spline.penalty}}{a string giving the type of penalty to be used for
+                the baseline hazard splines. Possible values are \code{"2diff"}, for
+                a penalty on the second differences, or \code{"2deriv"} for a penalty on
+                the integrated squared second derivative. Defaults to \code{"2deriv".}
+    }
+            \item{\code{param.dist}}{a string giving the desired parametric form of the hazard. Currently supported are \code{"exponential"} and \code{"weibull"}.}
+            \item{\code{...}}{other parameters can be set as well, including tuning parameters, prior variances, hyperparameters, initial values for weights, etc, but this should not be attempted by someone unfamiliar with the source code.}
+	}
+    }
+    \item{frailty}{a list containing parameters defining the frailty density, analogous to \code{hazard}, except for the following additions and differences:
+	\describe{
+            \item{\code{spline.knotspacing}}{as before, but defaults to \code{"equal"}.}
+            \item{\code{spline.penalty}}{as before, but defaults to \code{"2diff"}.}
+            \item{\code{param.dist}}{a string giving the desired parametric form of the frailty. Currently supported are \code{"gamma"} and \code{"lognormal"}.}
+	}
+    }
     \item{control}{a list containing control parameters for the MCMC and optimization,
         with the following optional components. For any component
         that is not set, the default is used.
@@ -39,56 +80,12 @@
                 as burn-in. Default is \code{burnin=500}.}
             \item{\code{maxiter}}{an integer giving the total number of MCMC iterations,
                 must be greater than \code{burnin}. Default is \code{maxiter=1000}.}
-            \item{\code{cal.gamma}}{logical, determines whether to adaptively calibrate
-                the tuning parameters 
-                \eqn{(\gamma_U,\gamma_\beta,\gamma_\lambda,\gamma_u)}{(gamma.U, gamma.b, gamma.l, gamma.u)}
-                during the burn-in period to achieve an acceptance rate of 0.25. 
+            \item{\code{tun.auto}}{logical, determines whether to adaptively calibrate
+                the tuning parameters during the burn-in period to achieve an acceptance rate of 0.25. 
                 Defaults to \code{TRUE}.}
-            \item{\code{calint}}{an integer giving number of iterations between calibration
-                of the tuning parameters, if \code{cal.gamma=TRUE}. 
-                Default is \code{calint=100}.}
-            \item{\code{gamma}}{a vector of length 4, containing initial values for the
-                tuning parameters \eqn{(\gamma_U,\gamma_\beta,\gamma_\lambda,\gamma_u)}{(gamma.U, gamma.b, gamma.l, gamma.u)}
-                in that order. If \code{cal.gamma=FALSE}, they remain unchanged. Defaults to
-                \code{gamma=rep(1,4)}}
-            \item{\code{alpha}}{a vector of length 6, giving the two hyperparameters for
-                the inverse-gamma priors of \eqn{\sigma^2_\beta,\sigma^2_\lambda,\sigma^2_u}{sigma2.b, sigma2.l, sigma2.u}
-                in that order. Defaults to \code{alpha=rep(0.01,6)}.}
-            \item{\code{M}}{a large number determining the weight of the penalty to ensure that
-                the mean of the frailty density is 1. Defaults to \code{M=1000}.}
-        }
-    }
-    \item{spline}{a list containing parameters defining the B-splines for the
-        baseline hazard and frailty distribution, with the following optional
-        components. For any component that is not set, the default is used.
-        \describe{
-            \item{\code{ord.haz}}{an integer greater than 1, giving the order of 
-                the spline defining the baseline hazard. Defaults to
-                \code{ord.haz=4}, corresponding to cubic B-splines.}
-            \item{\code{nknots.haz}}{an integer giving the number of interior
-                knots used in the baseline hazard spline. If \code{NULL}, the
-                number of knots is chosen automatically. Defaults to \code{NULL}.}
-            \item{\code{knotspacing.haz}}{string that determines the way that knots are
-                automatically chosen, if applicable. Possible values are \code{"quantile"}
-                to place knots at quantiles of observed event times, or \code{"equal"} to
-                equally space knots over the range of observed times. Defaults to \code{"quantile"}.}
-            \item{\code{knots.haz}}{a vector of length \code{knots.haz+2*ord.haz-2} giving the 
-                positions of all the knots used in the baseline hazard spline (including
-                boundary knots). If \code{NULL}, knots are chosen automatically. 
-                Defaults to \code{NULL}.}
-            \item{\code{ord.frail}}{analogous to \code{ord.haz}, but for the frailty density
-                spline.}
-            \item{\code{nknots.frail}}{analogous to \code{nknots.haz}.}
-            \item{\code{knotspacing.frail}}{analogous to \code{knotspacing.haz}, except that \code{"quantile"}
-                is not allowed.}
-            \item{\code{knots.frail}}{analogous to \code{knots.haz}.}
-            \item{\code{penalty.haz}}{a string giving the type of penalty to be used for
-                the baseline hazard splines. Possible values are \code{"2diff"}, for
-                a penalty on the second differences, or \code{"2deriv"} for a penalty on
-                the integrated squared second derivative. Defaults to \code{"2deriv"}.}
-            \item{\code{penalty.frail}}{a string giving the type of penalty to be used for
-                the frailty density splines. Analogous to \code{penalty.haz}, but defaults
-                to \code{"2diff"}.}
+            \item{\code{tun.int}}{an integer giving the interval in iterations between calibration
+                of the tuning parameters, if \code{tun.auto=TRUE}. 
+                Default is \code{100}.}
         }
     }
     \item{initial}{a list containing initial values for the chain. Not implemented and
@@ -100,27 +97,36 @@
 \value{
     An object of class \code{splinesurv}, with the following components
     \item{call}{the original call to the model-fitting function}
+    \item{posterior.mean}{a list containing the posterior means of all parameters, with the following components
+    	\describe{
+	    \item{\code{coefficients}}{regression coefficients}
+	    \item{\code{frailty}}{frailty estimates}
+	    \item{\code{hazard.spline.par}}{parameters defining the spline component (if applicable)}
+	    \item{\code{hazard.param.par}}{parameters defining the parametric component (if applicable)}
+	    \item{\code{hazard.weight}}{weight of the spline component (if applicable)}
+	    \item{\code{frailty.spline.par}}{parameters defining the spline component (if applicable)}
+	    \item{\code{frailty.param.par}}{parameters defining the parametric component (if applicable)}
+	    \item{\code{frailty.weight}}{weight of the spline component (if applicable)}
+	}
+    }
     \item{history}{a list containing the parameter history of the 
-        MCMC iterations, with the following components:
+        MCMC iterations, with the following components, either as matrices or vectors of length \code{maxiter}:
         \describe{
             \item{\code{frailty}}{matrix of frailty estimates at each iteration.}
             \item{\code{coefficients}}{matrix of regression parameter estimates at each iteration.}
-            \item{\code{splinepar.haz}}{matrix of parameters defining the baseline hazard spline.}
-            \item{\code{splinepar.frail}}{matrix of parameters defining the frailty density spline.}
-            \item{\code{sigma2}}{matrix of dispersion parameters for 
-            the regression parameters, hazard spline, and frailty density spline in that order.}
-            \item{\code{acc}}{binary vectors of Metropolis-Hastings acceptance
-            indicators for the frailties, the regression parameters, hazard spline, and frailty 
-            density spline respectively.}
+            \item{\code{hazard.spline.par}}{matrix of parameters defining the baseline hazard spline.}
+            \item{\code{frailty.spline.par}}{matrix of parameters defining the frailty density spline.}
+            \item{\code{priorvar}}{matrix of prior variance parameters for 
+            the regression parameters, hazard spline, frailty density spline, hazard parameters, frailty parameters, hazard weight, frailty weight, in that order.}
+            \item{\code{accept}}{binary vectors of Metropolis-Hastings acceptance
+            indicators for the regression parameters, hazard spline, frailty 
+            density spline, hazard parameters, frailty parameters, hazard weight, frailty weight, and frailties respectively.}
         }
         If in the input, \code{coda=TRUE}, then the returned objects are of class \code{mcmc} instead of \code{matrix}.
     }
-    \item{spline}{a list analogous to \code{spline} in the input, describing the final knot
-        placement for the baseline hazard and frailty density splines. If knots were pre-determined,
-        this is the same as the input, but if they were chosen automatically, this contains the 
-        selected knots.}
-    \item{control}{a list analogous to \code{control} in the input, containing the control
-        parameters used in the procedure, even those not set explicitly in the call.}
+    \item{frailty}{a list analogous to \code{frailty} in the input, additionally containing the number and placement of knots, if not specified in the input}
+    \item{hazard}{a list analogous to \code{hazard} in the input, additionally containing the number and placement of knots, if not specified in the input}
+    \item{control}{a list analogous to \code{control} in the input, containing the control parameters used in the procedure, even those not set explicitly in the call.}
 }
 \references{E. Sharef, D. Ruppert and R. Strawderman. \dQuote{A Bayesian approach 
 to clustered survival analysis with nonparametric baseline hazard and frailty 
@@ -135,12 +141,11 @@ distributions}, \emph{in preparation}.
     agdata <- s$agdata
     
     ## Run a (very) short MCMC chain
-    fit <- splinesurv(Surv(time, delta) ~ Z + cluster(i), data = agdata, control = list(maxiter = 100, burnin = 50))
+    fit <- splinesurv(Surv(time, delta) ~ Z + cluster(i), data = agdata, control = list(maxiter = 50, burnin = 25))
     
-    ## Run another chain,  with linear B-splines,  
+    ## Run another chain,  with a Weibull hazard and linear B-spline frailties
     # and a different penalty and knotspacing for the hazard
-    fit2 <- splinesurv(Surv(time, delta) ~ Z + cluster(i), data = agdata, control = list(maxiter = 100, burnin = 50), spline = list(ord.frail = 2, ord.haz = 2, knotspacing.haz = "equal"))
-
+    fit2 <- splinesurv(Surv(time, delta) ~ Z + cluster(i), data = agdata, control = list(maxiter = 50, burnin = 25), hazard = list(type = "parametric", param.dist = "weibull"), frailty = list(type = "spline", spline.ord = 2))
     ## View summaries and plots of the fits
     summary(fit)
     plot(fit, "all")
