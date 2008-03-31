@@ -1,5 +1,6 @@
-# Todo: (high) Write a method to compute the Hessians analytically
+# Todo: (high) try normalizing the penalties for the frailty estimates
 # Todo: (med) allow plotting spline and parametric component separately
+# Todo: (med) allow plotting credible bands for the splines
 # Todo: (low) Needs input checking
 # Todo: (low) allow knots to birth/death/move
 # Todo: (low) update history to also include tuning parameter data
@@ -572,34 +573,32 @@ smoothpen<-function(curve,der=0)
     theta<-curve$spline.par
     P<-curve$spline.penaltymatrix
     sigma2<-curve$spline.priorvar
+    if(der>=2) stop("second derivative not implemented")
     if(type=="2diff"){
         if(der==0) return(max( t(theta)%*%P%*%theta / (2*sigma2),0))
         if(der==1) return( P%*%theta /sigma2)
-        if(der==2) return( P / sigma2)
+        #if(der==2) return( P / sigma2)
     }
     if(type=="2deriv"){
         et<-exp(theta)
         if(der==0) return(max( t(et)%*%P%*%et / (2*sigma2),0))
         if(der==1) return( mdiag(et)%*%P%*%et / sigma2 )
-        if(der==2) {
-            pen<-mdiag(et)%*%P%*%mdiag(et)
-            pen<-pen+mdiag(as.vector(P%*%et))%*%mdiag(et)
-            return(pen / sigma2 )
-        }
+        #if(der==2) {
+        #    pen<-mdiag(et)%*%P%*%mdiag(et)
+        #    pen<-pen+mdiag(as.vector(P%*%et))%*%mdiag(et)
+        #    return(pen / sigma2 )
+        #}
     }
     if(type=="log2deriv"){
         et<-exp(theta)
         ePe<- as.numeric(t(et)%*%P%*%et) 
         if(der==0) return(max(log(ePe+1)/ (2*sigma2),0))
         if(der==1) return( mdiag(et)%*%P%*%et / sigma2 /(ePe+1))
-        if(der==2) {
-            stop("second derivative not implemented")
-        }
     }
     if(type=="none"){
         if(der==0) return(0)
         if(der==1) return(rep(0,length(theta)))
-        if(der==2) return(matrix(0,length(theta),length(theta)))
+        #if(der==2) return(matrix(0,length(theta),length(theta)))
     }
 }
 
@@ -1274,6 +1273,7 @@ splinesurv.formula<-function(formula,data=parent.frame(),...)
     agdata[,-2]<-agdata[order(agdata$i),-2]
     class(agdata)<-c("agdata","data.frame")
     fit<-splinesurv.agdata(agdata,...)
+    gcout<-gc()
     fit$call<-call
     colnames(fit$history$frailty)<-clusternames
     if(!is.null(fit$posterior.mean)) names(fit$posterior.mean$frailty)<-clusternames
@@ -1376,8 +1376,9 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
     if(which=="all") par(ask=TRUE)
     if(which=="hazard" | which=="all"){
         knots<-x$hazard$spline.knots
+        if(is.null(knots)) knots<-range(x$data$time)
         if(is.null(xlim)) xlim1=range(x$data$time) else xlim1<-xlim
-        times=seq(from=xlim1[1],to=xlim1[2],length=npoints)
+        times=seq(from=max(xlim1[1],min(knots)),to=min(xlim1[2],max(knots)),length=npoints)
         if(is.null(xlab)) xlab1<-"Time" else xlab1<-xlab
         if(is.null(ylab)) ylab1<-"Hazard" else ylab1<-ylab
         if(is.null(newdata)){
@@ -1400,8 +1401,9 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
     }
     if(which=="survival" | which=="all"){
         knots<-x$hazard$spline.knots
+        if(is.null(knots)) knots<-range(x$data$time)
         if(is.null(xlim)) xlim1=range(x$data$time) else xlim1<-xlim
-        times=seq(from=xlim1[1],to=xlim1[2],length=npoints)
+        times=seq(from=max(xlim1[1],min(knots)),to=min(xlim1[2],max(knots)),length=npoints)
         if(is.null(xlab)) xlab1<-"Time" else xlab1<-xlab
         if(is.null(ylab)) ylab1<-"Survival" else ylab1<-ylab
         if(is.null(newdata)){
@@ -1427,11 +1429,12 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
     }
     if(which=="frailty" | which=="all"){
         knots<-x$frailty$spline.knots
+        if(is.null(knots)) knots<-range(x$posterior.mean$frailty)
         if(is.null(xlim)) {
                if(hasspline(x$frailty)) xlim1=attr(knots,"b") 
                else xlim1<-range(x$posterior.mean$frailty)
        }else{xlim1<-xlim}
-        Ui=seq(from=xlim1[1],to=xlim1[2],length=npoints)
+        Ui=seq(from=max(xlim1[1],min(knots)),to=min(xlim1[2],max(knots)),length=npoints)
         if(is.null(xlab)) xlab1<-"x" else xlab1<-xlab
         if(is.null(ylab)) ylab1<-"Density" else ylab1<-ylab
         if(is.null(main)) main1<-"Frailty density" else main1<-main
@@ -2073,6 +2076,7 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
     hazard<-makeoutputcurve(hazard)
     frailty<-makeoutputcurve(frailty)
    
+    gcout<-gc()
    {{{ # Construct output
     if(control$burnin<iter){
         sub<-(1:(iter))>(control$burnin)
@@ -2100,6 +2104,7 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
     control$iter<-iter
     }}}
 
+    gcout<-gc()
     out<-list(call=call,history=history,posterior.mean=posterior.mean,hazard=hazard,frailty=frailty,control=control,data=agdata)
     class(out)<-"splinesurv"
     return(out)
