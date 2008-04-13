@@ -1,10 +1,7 @@
-# Todo: (high) try normalizing the penalties for the frailty estimates
+# Todo: (med) allow exporting and importing initial values
 # Todo: (med) allow plotting spline and parametric component separately
 # Todo: (med) allow plotting credible bands for the splines
 # Todo: (low) Needs input checking
-# Todo: (low) allow knots to birth/death/move
-# Todo: (low) update history to also include tuning parameter data
-# Todo: (low) allow using tkrplot to explore estimates by iteration
 
 #{{{ #Header
 #library(survival)
@@ -1383,8 +1380,8 @@ printcurvesummary<-function(curve,w=NULL,param.par=NULL)
 plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),newdata=NULL,iter=NULL,plotknots=TRUE,npoints=100,legend=NULL,
     lty=1,col=2,lwd=2,lty.knots=1,col.knots=8,lwd.knots=1,xlab=NULL,ylab=NULL,main=NULL,xlim=NULL,ylim=NULL,tk=FALSE,...)
 {
-    if(tk) splinesurvtkplot(x,newdata=NULL,plotknots=TRUE,npoints=100,legend=NULL,
-    lty=1,col=2,lwd=2,lty.knots=1,col.knots=8,lwd.knots=1,xlab=NULL,ylab=NULL,main=NULL,xlim=NULL,ylim=NULL,tk=FALSE,...)
+    if(tk) splinesurvtkplot(x,newdata=newdata,plotknots=plotknots,npoints=npoints,legend=legend,
+    lty=lty,col=col,lwd=lwd,lty.knots=lty.knots,col.knots=col.knots,lwd.knots=lwd.knots,xlab=xlab,ylab=ylab,main=main,xlim=xlim,ylim=ylim,...)
     oldask<-par("ask")
     which<-match.arg(which)
     if(which=="all") par(ask=TRUE)
