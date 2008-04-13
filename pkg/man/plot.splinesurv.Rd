@@ -8,7 +8,7 @@
 \method{plot}{splinesurv}(x, which = c("hazard", "survival", "frailty", "coef", "all"), 
 newdata = NULL, iter=NULL, plotknots = TRUE, npoints = 100, legend = NULL, lty = 1, 
 col = 2, lwd = 2, lty.knots = 1, col.knots = 8, lwd.knots = 1, xlab = NULL, 
-ylab = NULL, main = NULL, xlim = NULL, ylim = NULL, ...)
+ylab = NULL, main = NULL, xlim = NULL, ylim = NULL, tk = FALSE, ...)
 }
 \arguments{
     \item{x}{an object of type \code{\link{splinesurv}}.}
@@ -32,6 +32,7 @@ ylab = NULL, main = NULL, xlim = NULL, ylim = NULL, ...)
     \item{main}{main plot title}
     \item{xlim}{x-axis limits}
     \item{ylim}{y-axis limits}
+    \item{tk}{boolean indicator whether to use the tkrplot GUI}
     \item{...}{additional parameters passed on to \code{\link{plot}}}
 }
 \keyword{survival}

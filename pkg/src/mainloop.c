@@ -10,6 +10,7 @@
 #include "init.h"
 
 #define DEBUG
+#define LIK_MOD 10
 
 typedef enum {pnone=0, pdiff=1, pderiv=2, plogderiv=3} penalty;
 typedef enum {Dnone=0, Dexponential=1, Dweibull=2, Dlognormal=3, Dgamma=4} distribution;
@@ -71,7 +72,8 @@ typedef struct regress {
     int m,  // # of clusters
         n,  // # of observations
         p,  // # of regression parameters
-        *Ji, // subjects per cluster
+        *Ji, // subjects per cluster (length m)
+        *Jicum, // cumsum of Ji (length m+1)
         *cluster; // Cluster ID
     double *coefficients, // coefficient estimates
            *covariates, // covariate estimates
@@ -79,6 +81,8 @@ typedef struct regress {
            *elp, // exponential of linear predictor
            *status, 
            *time,
+           *frailrep, // repeated frailties
+           *frailelp, // frailty * elp
            *CandCov,  // covariance matrix of candidates
            *CholCov, // Cholesky factor of covariance
            *priorvar, // variance of prior
@@ -121,19 +125,32 @@ SEXP getListElement(SEXP list, const char *str)
     return elmt;
 }
 
-void dcopyWrapper( int n, double *x, double *y)
+inline void dcopyWrapper( int n, double *x, double *y)
 {
     int c1=1;
     F77_CALL(dcopy)(&n, x, &c1, y, &c1);
 }
 
-double ddotWrapper( int n, double *x, double *y)
+inline double ddotWrapper( int n, double *x, double *y)
 {
     int c1=1;
     return F77_CALL(ddot)(&n, x, &c1, y, &c1);
 }
 
-void mvrnorm(int n, double *out, double *mu, double *CholSigma, double tun)
+inline void diagmvWrapper(int n, double *v1, double *v2, double *out)
+{
+    int c1 = 1;
+    int c0 = 0;
+    double d1 = 1.0;
+    double d0 = 0.0;
+    char uplo = 'u';
+    F77_CALL(dsbmv)( &uplo, &n, &c0,
+        &d1, v1, &c1, 
+        v2, &c1,
+        &d0, out, &c1);
+}
+
+inline void mvrnorm(int n, double *out, double *mu, double *CholSigma, double tun)
 {
     double * temp = (double *) malloc(n * sizeof(double));
     GetRNGstate();
@@ -151,7 +168,7 @@ void mvrnorm(int n, double *out, double *mu, double *CholSigma, double tun)
     free(temp);
 }
 
-double rinvgamma(double shape, double scale)
+inline double rinvgamma(double shape, double scale)
 {
     GetRNGstate();
     double out = 1.0 / rgamma(shape, 1.0/scale);
@@ -248,6 +265,9 @@ void FreeCurveMem(curveP theCurve)
 void PopulateLocalRegression( regressionP theReg, SEXP Rregression){
     theReg->m = asInteger(getListElement(Rregression, "m"));
     theReg->Ji = INTEGER(getListElement(Rregression, "Ji"));
+    theReg->Jicum = (int *) malloc( (theReg->m + 1) * sizeof(int));
+    theReg->Jicum[0] = 0;
+    for(int i=0; i < theReg->m; i++) theReg->Jicum[i+1] = theReg->Jicum[i] + theReg->Ji[i];
     theReg->n = (int) (length(getListElement(Rregression,"cluster")));
     theReg->p = (int) (length(getListElement(Rregression,"coefficients")));
     theReg->cluster = INTEGER(getListElement(Rregression, "cluster"));
@@ -257,6 +277,8 @@ void PopulateLocalRegression( regressionP theReg, SEXP Rregression){
     theReg->lp = REAL(getListElement(Rregression,"lp"));
     theReg->status = REAL(getListElement(Rregression,"status"));
     theReg->time = REAL(getListElement(Rregression,"time"));
+    theReg->frailrep = (double *) malloc( theReg->n * sizeof(double));    
+    theReg->frailelp = (double *) malloc( theReg->n * sizeof(double));    
     theReg->CandCov = REAL(getListElement(Rregression,"candcov"));
     theReg->CholCov = REAL(getListElement(Rregression,"cholcandcov"));
     theReg->priorvar = REAL(getListElement(Rregression,"priorvar"));
@@ -270,6 +292,9 @@ void PopulateLocalRegression( regressionP theReg, SEXP Rregression){
 void FreeRegMem(regressionP theReg)
 {
     free(theReg->elp);
+    free(theReg->frailrep);
+    free(theReg->frailelp);
+    free(theReg->Jicum);
 }
 
 
@@ -401,11 +426,18 @@ double EvalSplineAtOnePoint(curveP theCurve, double x)
     return splY;
 }
 
-void UpdateSplinePar(curveP theCurve, double * newpar)
+void UpdateSplinePar(curveP theCurve, double * newpar, int j)
 {
     if(!theCurve->hasSpline) return;
-    dcopyWrapper(theCurve->nj, newpar, theCurve->SplinePar);
-    for(int i=0; i<theCurve->nj; i++) theCurve->SplineEPar[i] = exp(theCurve->SplinePar[i]);
+    if(j>=0){
+        theCurve->SplinePar[j] = newpar[j];
+        theCurve->SplineEPar[j] = exp(newpar[j]);
+    }else{
+        dcopyWrapper(theCurve->nj, newpar, theCurve->SplinePar);
+        for(int i=0; i<theCurve->nj; i++) theCurve->SplineEPar[i] = exp(theCurve->SplinePar[i]);
+    }
+    theCurve->SplineEParSum = 0;
+    if(!theCurve->isHazard) for(int j=0; j<theCurve->nj; j++) theCurve->SplineEParSum+=theCurve->SplineEPar[j];
     EvalSpline(theCurve, -1);
 }
 
@@ -483,87 +515,103 @@ void UpdateCurveX(curveP theCurve, double x, int i)
     EvalParametric(theCurve,i);
 }
 
-double LikelihoodFrailty(int i, curveP hazard, curveP frailty, regressionP regression)
+inline double LikelihoodFrailty(int i, curveP hazard, curveP frailty, regressionP regression)
 {
    double Ui = frailty->X[i];
    double lUi = log(Ui);
    int clust = i+1;
    double lik = 0;
+   int c1 = 1;
    lik += log(frailty->Y[i]);
-   for(int ind = 0; ind < hazard->nx; ind++){
-        if(regression->cluster[ind] < clust) continue;
-        if(regression->cluster[ind] > clust) break;
-        lik += (regression->status[ind] * lUi);
-        lik -= Ui * hazard->Ycum[ind] * regression->elp[ind];
-   }
+   int start = regression->Jicum[i];
+   int n = regression->Jicum[i+1] - start;
+   lik += lUi * F77_CALL(dasum)(&n, regression->status+start, &c1);
+   lik -= Ui * ddotWrapper(n, hazard->Ycum+start, regression->elp+start);
    return(lik);
 }
 
-double LikelihoodRegression(curveP hazard,curveP frailty,regressionP regression)
-{
-   double lik; 
-   double * elp = regression->elp;
-   int * cluster = regression->cluster;
-   double * frailX = frailty->X;
-   double * hazYcum = hazard->Ycum;
-
-   lik = ddotWrapper(regression->n, regression->status, regression->lp);
-   for(int i=0; i< regression->n; i++) lik-=frailX[cluster[i]-1] * hazYcum[i] * elp[i];
-   int c1=1;
-   lik -= pow(F77_CALL(dnrm2)(&(regression->p), regression->coefficients, &c1),2)/(2*regression->priorvar[0]);
-   return lik;
-}
-
-double LikelihoodSplineHazard(curveP hazard, curveP frailty, regressionP regression)
+inline double LikelihoodHazardLogSum(int nx, double *status, double *Y)
 {
     double lik=0;
-    double * elp = regression->elp;
-    int * cluster = regression->cluster;
-    double * frailX = frailty->X;
-    double * hazYcum = hazard->Ycum;
-    //unMOD double * hazYcum = hazard->SplineYcum;
+    double thislik = 1;
+    for(int i=0; i<nx; i++) {
+        thislik *= status[i] > 0 ? Y[i] : 1.0;
+        if(i % LIK_MOD == 0){
+            lik += log(thislik);
+            thislik = 1;
+        }
+    }  
+    lik+=log(thislik);
+    return lik;  
+}
 
-    for(int i=0; i<hazard->nx; i++) lik+=regression->status[i]*log(hazard->Y[i]);
-    //unMOD for(int i=0; i<hazard->nx; i++) lik+=regression->status[i]*log(hazard->SplineY[i]);
-    for(int i=0; i< regression->n; i++) lik-=frailX[cluster[i]-1] * hazYcum[i] * elp[i];
-    lik -= hazard->SplinePenaltyFactor[0]*SmoothnessPenalty(hazard); 
-    for(int i=0; i<hazard->nj; i++) lik -= hazard->SplinePar[i]<hazard->SplineMin[0] ? pow(hazard->SplinePar[i] - hazard->SplineMin[i],2) : 0.0;
+inline double LikelihoodFrailtyLogSum(int nx, double *Y)
+{
+    double lik=0;
+    double thislik = 1;
+
+    for(int i=0; i<nx; i++) {
+        thislik *= Y[i];
+        if(i % LIK_MOD == 0){
+            lik += log(thislik);
+            thislik = 1;
+        }
+    }
+    lik += log(thislik);
     return lik;
 }
 
-double LikelihoodSplineFrailty(curveP hazard, curveP frailty, regressionP regression)
+inline double LikelihoodRegression(curveP hazard,curveP frailty,regressionP regression)
 {
-    double lik=0;
+    double lik; 
+    double * hazYcum = hazard->Ycum;
+    double * frailelp = regression->frailelp;
+    lik = ddotWrapper(regression->n, regression->status, regression->lp);
+    lik -= ddotWrapper(regression->n, frailelp, hazYcum);
+    int c1 = 1;
+    lik -= pow(F77_CALL(dnrm2)(&(regression->p), regression->coefficients, &c1),2)/(2*regression->priorvar[0]);
+    return lik;
+}
 
-    for(int i=0; i<frailty->nx; i++) lik+=log(frailty->Y[i]);
-    //unMOD for(int i=0; i<frailty->nx; i++) lik+=log(frailty->SplineY[i]);
+
+inline double LikelihoodSplineHazard(curveP hazard, curveP frailty, regressionP regression)
+{
+    double * frailelp = regression->frailelp;
+    double * hazYcum = hazard->Ycum;
+    
+    double lik = LikelihoodHazardLogSum(hazard->nx, regression->status, hazard->Y);
+    lik -= ddotWrapper(regression->n, frailelp, hazYcum);
+    lik -= hazard->SplinePenaltyFactor[0]*SmoothnessPenalty(hazard); 
+    for(int i=0; i<hazard->nj; i++) lik -= hazard->SplinePar[i]<hazard->SplineMin[0] ? pow(hazard->SplinePar[i] - hazard->SplineMin[0],2) : 0.0;
+    return lik;
+}
+
+
+inline double LikelihoodSplineFrailty(curveP hazard, curveP frailty, regressionP regression)
+{
+    double lik =  LikelihoodFrailtyLogSum(frailty->nx, frailty->Y);
     lik -= frailty->SplinePenaltyFactor[0]*SmoothnessPenalty(frailty); 
     lik -= frailty->SplineMeanPenalty[0] * pow(ddotWrapper(frailty->nj, frailty->SplineBasisExp, frailty->SplineEPar),2);
-    for(int i=0; i<frailty->nj; i++) lik -= frailty->SplinePar[i]<frailty->SplineMin[0] ? pow(frailty->SplinePar[i] - frailty->SplineMin[i],2) : 0.0;
+    for(int i=0; i<frailty->nj; i++) lik -= frailty->SplinePar[i]<frailty->SplineMin[0] ? pow(frailty->SplinePar[i] - frailty->SplineMin[0],2) : 0.0;
     return lik;
 }
 
-double LikelihoodParamHazard(curveP hazard, curveP frailty, regressionP regression)
+inline double LikelihoodParamHazard(curveP hazard, curveP frailty, regressionP regression)
 {
-    double lik=0;
-    double * elp = regression->elp;
-    int * cluster = regression->cluster;
-    double * frailX = frailty->X;
+    double * frailelp = regression->frailelp;
     double * hazYcum = hazard->Ycum;
-    //unMOD double * hazYcum = hazard->ParamYcum;
-    for(int i=0; i<hazard->nx; i++) lik+=regression->status[i]*log(hazard->Y[i]);
-    //unMOD for(int i=0; i<hazard->nx; i++) lik+=regression->status[i]*log(hazard->ParamY[i]);
-    for(int i=0; i< regression->n; i++) lik-=frailX[cluster[i]-1] * hazYcum[i] * elp[i];
+   
+    double lik = LikelihoodHazardLogSum(hazard->nx, regression->status, hazard->Y);
+    lik -= ddotWrapper(regression->n, frailelp, hazYcum);
     int c1=1;
     lik -= pow(F77_CALL(dnrm2)(&(hazard->np), hazard->ParamPar, &c1),2)/(2*hazard->ParamPriorvar[0]);
     return lik;
 }
 
-double LikelihoodParamFrailty(curveP hazard, curveP frailty, regressionP regression)
+inline double LikelihoodParamFrailty(curveP hazard, curveP frailty, regressionP regression)
 {
-    double lik=0;
-    for(int i=0; i<frailty->nx; i++) lik+=log(frailty->Y[i]);
-    //unMOD for(int i=0; i<frailty->nx; i++) lik+=log(frailty->ParamY[i]);
+    double lik = LikelihoodFrailtyLogSum(frailty->nx, frailty->Y);
+
     int c1=1;
     lik -= pow(F77_CALL(dnrm2)(&(frailty->np), frailty->ParamPar, &c1),2)/(2*frailty->ParamPriorvar[0]);
     return lik;
@@ -571,14 +619,11 @@ double LikelihoodParamFrailty(curveP hazard, curveP frailty, regressionP regress
 
 double LikelihoodWeightHazard(curveP hazard, curveP frailty, regressionP regression)
 { 
-    double lik=0;
-    double * elp = regression->elp;
-    int * cluster = regression->cluster;
-    double * frailX = frailty->X;
+    double * frailelp = regression->frailelp;
     double * hazYcum = hazard->Ycum;
-    for(int i=0; i<hazard->nx; i++) lik+=regression->status[i]*log(hazard->Y[i]);
-    for(int i=0; i< regression->n; i++) lik-=frailX[cluster[i]-1] * hazYcum[i] * elp[i];
-    //lik -= pow(hazard->Weight[0],2)/(2*hazard->WeightPriorvar[0]);
+    
+    double lik = LikelihoodHazardLogSum(hazard->nx, regression->status, hazard->Y);
+    lik -= ddotWrapper(regression->n, frailelp, hazYcum);
     lik += (hazard->WeightHyper[0] - 1.0) * log(hazard->Weight[0])
           +(hazard->WeightHyper[1] - 1.0) * log(1.0 - hazard->Weight[0]);
     return lik;
@@ -586,15 +631,14 @@ double LikelihoodWeightHazard(curveP hazard, curveP frailty, regressionP regress
 
 double LikelihoodWeightFrailty(curveP hazard, curveP frailty, regressionP regression)
 {
-    double lik=0;
-    for(int i=0; i<frailty->nx; i++) lik+=log(frailty->Y[i]);
-    //lik -= pow(frailty->Weight[0],2)/(2*frailty->WeightPriorvar[0]);
+    double lik =  LikelihoodFrailtyLogSum(frailty->nx, frailty->Y);
+
     lik += (frailty->WeightHyper[0] - 1.0) * log(frailty->Weight[0])
           +(frailty->WeightHyper[1] - 1.0) * log(1.0 - frailty->Weight[0]);
     return lik;
 }
 
-int AcceptReject(double baselik, double candlik, double ratio)
+inline static int AcceptReject(double baselik, double candlik, double ratio)
 {
     if(isnan(candlik)) candlik = -DBL_MAX;
     double r = exp(candlik - baselik) * ratio; 
@@ -638,6 +682,10 @@ void MH_Frail(curveP hazard, curveP frailty, regressionP regression)
             frailty->Y[i] = y;
         }else{
             UpdateCurveX(frailty, cand, i);
+            for(int j=regression->Jicum[i]; j<regression->Jicum[i+1]; j++){
+                regression->frailrep[j] = frailty->X[i];
+                regression->frailelp[j] = frailty->X[i]*regression->elp[j];
+            }
         }
         acc += (double) thisacc;
     }
@@ -648,22 +696,25 @@ void MH_Frail(curveP hazard, curveP frailty, regressionP regression)
 void MH_Regression(curveP hazard, curveP frailty, regressionP regression)
 {
     double baselik, candlik;
-    baselik = LikelihoodRegression(hazard, frailty, regression); 
+    baselik = LikelihoodRegression(hazard, frailty, regression);
     double * cand = (double *) calloc( regression->p, sizeof(double));
     double * oldlp = (double *) malloc( regression->n * sizeof(double));
     double * oldelp = (double *) malloc( regression->n * sizeof(double));
-double * oldcoef = (double *) malloc( regression->p * sizeof(double));
+    double * oldfrailelp = (double *) malloc( regression->n * sizeof(double));
+    double * oldcoef = (double *) malloc( regression->p * sizeof(double));
     // store the old regression information
     char trans = 'N'; double c0 = 0; int c1 = 1; double c1d = 1;
     dcopyWrapper(regression->p, regression->coefficients, oldcoef);
     dcopyWrapper(regression->n, regression->lp, oldlp);
     dcopyWrapper(regression->n, regression->elp, oldelp);
+    dcopyWrapper(regression->n, regression->frailelp, oldfrailelp);
     //generate candidate parameters
     mvrnorm(regression->p, cand, regression->coefficients, regression->CholCov, regression->tun[0]); 
     // Change the regression object with the new lp and elps
     dcopyWrapper(regression->p, cand, regression->coefficients);
     F77_CALL(dgemv)(&trans, &(regression->n), &(regression->p), &c1d, regression->covariates, &(regression->n), regression->coefficients, &c1, &c0, regression->lp, &c1);
     for(int i=0; i < regression->n; i++) regression->elp[i] = exp(regression->lp[i]);
+    diagmvWrapper(regression->n, regression->frailrep, regression->elp, regression->frailelp);
     candlik = LikelihoodRegression(hazard, frailty, regression);
     int acc = AcceptReject(baselik, candlik, 1);
     if(!acc){
@@ -671,11 +722,13 @@ double * oldcoef = (double *) malloc( regression->p * sizeof(double));
         dcopyWrapper(regression->p, oldcoef, regression->coefficients);
         dcopyWrapper(regression->n, oldlp, regression->lp);
         dcopyWrapper(regression->n, oldelp, regression->elp);
+        dcopyWrapper(regression->n, oldfrailelp, regression->frailelp);
     }
     regression->Accept[0] = (double) acc; 
     free(cand);
     free(oldlp);
     free(oldelp);
+    free(oldfrailelp);
     free(oldcoef);
 }
 
@@ -683,33 +736,80 @@ void MH_SplineHazard(curveP hazard, curveP frailty, regressionP regression)
 {
     if(!hazard->hasSpline) return;
     double baselik, candlik;
+    double sumacc=0;
     baselik = LikelihoodSplineHazard(hazard,frailty,regression); 
     double * cand = (double *) calloc( hazard->nj, sizeof(double));
+    double * thiscand = (double *) calloc( hazard->nj, sizeof(double));
     // allocate storage for parameters of old spline
     double * oldPar = (double *) malloc( hazard->nj * sizeof(double));
+    double * oldEPar = (double *) malloc( hazard->nj * sizeof(double));
+    double * oldY = (double *) malloc( hazard->nx * sizeof(double));
+    double * oldYcum = (double *) malloc( hazard->nx * sizeof(double));
+    double * oldSplineY = (double *) malloc( hazard->nx * sizeof(double));
+    double * oldSplineYcum = (double *) malloc( hazard->nx * sizeof(double));
     dcopyWrapper(hazard->nj, hazard->SplinePar, oldPar);
+    dcopyWrapper(hazard->nj, hazard->SplineEPar, oldEPar);
+    dcopyWrapper(hazard->nj, hazard->SplinePar, thiscand);
+    dcopyWrapper(hazard->nx, hazard->Y, oldY);
+    dcopyWrapper(hazard->nx, hazard->SplineY, oldSplineY);
+    dcopyWrapper(hazard->nx, hazard->Ycum, oldYcum);
+    dcopyWrapper(hazard->nx, hazard->SplineYcum, oldSplineYcum);
     // create candidate parameters
     mvrnorm(hazard->nj, cand, hazard->SplinePar,hazard->SplineCholCov,hazard->SplineTun[0]);
-    UpdateSplinePar(hazard,cand); 
-    candlik = LikelihoodSplineHazard(hazard,frailty,regression);
-    int acc = AcceptReject(baselik, candlik, 1);
-    if(!acc)
-        UpdateSplinePar(hazard,oldPar);
-    hazard->SplineAccept[0] = (double) acc;
+    for(int j=0; j < hazard->nj; j++){
+        thiscand[j] = cand[j];
+        UpdateSplinePar(hazard,thiscand,j); 
+        candlik = LikelihoodSplineHazard(hazard,frailty,regression);
+        int acc = AcceptReject(baselik, candlik, 1);
+        if(acc){
+            baselik = candlik;
+            sumacc++;
+            dcopyWrapper(hazard->nj, hazard->SplineEPar, oldEPar);
+            dcopyWrapper(hazard->nx, hazard->Y, oldY);
+            dcopyWrapper(hazard->nx, hazard->SplineY, oldSplineY);
+            dcopyWrapper(hazard->nx, hazard->Ycum, oldYcum);
+            dcopyWrapper(hazard->nx, hazard->SplineYcum, oldSplineYcum);
+        }else{
+            thiscand[j]=oldPar[j];
+            dcopyWrapper(hazard->nj, thiscand, hazard->SplinePar);
+            dcopyWrapper(hazard->nj, oldEPar, hazard->SplineEPar);
+            dcopyWrapper(hazard->nx, oldY, hazard->Y);
+            dcopyWrapper(hazard->nx, oldSplineY, hazard->SplineY);
+            dcopyWrapper(hazard->nx, oldYcum, hazard->Ycum);
+            dcopyWrapper(hazard->nx, oldSplineYcum, hazard->SplineYcum);
+        }
+    }
+    hazard->SplineAccept[0] =  sumacc / ((double) hazard->nj);
     free(cand);
+    free(thiscand);
     free(oldPar);
+    free(oldEPar);
+    free(oldY);
+    free(oldYcum);
+    free(oldSplineY);
+    free(oldSplineYcum);
 }
 
 void MH_SplineFrailty(curveP hazard, curveP frailty, regressionP regression)
 {
     if(!frailty->hasSpline) return;
     double baselik, candlik;
+    double sumacc=0;
     baselik = LikelihoodSplineFrailty(hazard,frailty,regression); 
     double * cand = (double *) calloc( frailty->nj, sizeof(double));
+    double * thiscand = (double *) calloc( frailty->nj, sizeof(double));
     double * candShort = (double *) calloc( (frailty->nj-1), sizeof(double));
     // allocate storage for parameters of old spline
     double * oldPar = (double *) malloc( (frailty->nj) * sizeof(double));
+    double * oldEPar = (double *) malloc( frailty->nj * sizeof(double));
+    double * oldY = (double *) malloc( frailty->nx * sizeof(double));
+    double * oldSplineY = (double *) malloc( frailty->nx * sizeof(double));
     dcopyWrapper(frailty->nj, frailty->SplinePar, oldPar);
+    dcopyWrapper(frailty->nj, frailty->SplineEPar, oldEPar);
+    dcopyWrapper(frailty->nj, frailty->SplinePar, thiscand);
+    dcopyWrapper(frailty->nx, frailty->Y, oldY);
+    dcopyWrapper(frailty->nx, frailty->SplineY, oldSplineY);
+    double oldSplineEParSum = frailty->SplineEParSum;
     double * candMean = (double *) malloc ((frailty->nj-1) * sizeof(double));
     // The candidate must include every entry except the fixed index
     int ind=0;
@@ -731,16 +831,37 @@ void MH_SplineFrailty(curveP hazard, curveP frailty, regressionP regression)
             cand[i] = 0;
         }
     }
-    UpdateSplinePar(frailty,cand); 
-    candlik = LikelihoodSplineFrailty(hazard,frailty,regression);
-    int acc = AcceptReject(baselik, candlik, 1);
-    if(!acc)
-        UpdateSplinePar(frailty,oldPar);
-    frailty->SplineAccept[0] = (double) acc;
+    for(int j=0; j<frailty->nj; j++){
+        if(j==frailty->SplineFixedInd) continue;
+        thiscand[j] = cand[j];
+        UpdateSplinePar(frailty,thiscand,j); 
+        candlik = LikelihoodSplineFrailty(hazard,frailty,regression);
+        int acc = AcceptReject(baselik, candlik, 1);
+        if(acc){
+            baselik = candlik;
+            sumacc++;
+            dcopyWrapper(frailty->nj, frailty->SplineEPar, oldEPar);
+            dcopyWrapper(frailty->nx, frailty->Y, oldY);
+            dcopyWrapper(frailty->nx, frailty->SplineY, oldSplineY);
+            oldSplineEParSum = frailty->SplineEParSum;
+        }else{
+            thiscand[j] = oldPar[j];
+            dcopyWrapper(frailty->nj, thiscand, frailty->SplinePar);
+            dcopyWrapper(frailty->nj, oldEPar, frailty->SplineEPar);
+            dcopyWrapper(frailty->nx, oldY, frailty->Y);
+            dcopyWrapper(frailty->nx, oldSplineY, frailty->SplineY);
+            frailty->SplineEParSum = oldSplineEParSum ;
+        }
+    }
+    frailty->SplineAccept[0] = sumacc / ((double) frailty->nj);
     free(cand);
+    free(thiscand);
     free(candShort);
     free(candMean);
     free(oldPar);
+    free(oldEPar);
+    free(oldY);
+    free(oldSplineY);
 }
 
 void MH_ParamHazard(curveP hazard, curveP frailty, regressionP regression)
@@ -891,6 +1012,10 @@ SEXP SplineSurvMainLoop( SEXP Rhazard, SEXP Rfrailty, SEXP Rregression,
     PopulateLocalCurve(frailty, Rfrailty);
     PopulateLocalRegression(regression, Rregression);
     PopulateLocalHistory(history,Rhistory);
+    for(int j=0; j<regression->m; j++) 
+        for(int i=regression->Jicum[j]; i<regression->Jicum[j+1]; i++)
+            regression->frailrep[i] = frailty->X[j];
+    diagmvWrapper(regression->n, regression->frailrep, regression->elp, regression->frailelp);
 /*#ifdef DEBUG
     Rprintf("HAZARD:\n");
     if(hazard->hasSpline){

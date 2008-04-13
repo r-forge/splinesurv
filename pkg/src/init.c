@@ -22,11 +22,11 @@ double cnBsmom(const int N, const int ord, const int j, const double *knots, con
     return out;
 }
 
-void cevalEinte(double *einte, double *knots, int *ord, int *K)
+void cevalEinte(double *einte, double *knots, int *ord, int *K, int *N)
 {
     int j;
     for(j=0; j < *K+*ord; j++)
-        einte[j]=1.0-cnBsmom(1,*ord,j,knots,*ord);
+        einte[j]=1.0-cnBsmom(*N,*ord,j,knots,*ord);
 }
 
 void cevalBinte(double *binte, double *knots, int *ord, int *K)

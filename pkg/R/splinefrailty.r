@@ -1081,7 +1081,7 @@ csplinedesign<-function(knots,x,ord)
     return(des)
 }
 
-cevalEinte<-function(knots,ord)
+cevalEinte<-function(knots,ord,N=1)
 {
     K<-length(knots)-2*ord
     einte<-rep(0,K+ord);
@@ -1089,7 +1089,8 @@ cevalEinte<-function(knots,ord)
             einte=as.double(einte),
             knots=as.double(knots),
             ord=as.integer(ord),
-            K=as.integer(K)
+            K=as.integer(K),
+            N=as.integer(N)
            )
     einte<-out$einte
     return(einte)
@@ -1302,6 +1303,8 @@ summary.splinesurv<-function(object,quantiles=c(.025,.975),...)
     out$burnin<-x$control$burnin
     out$hazard<-x$hazard
     out$frailty<-x$frailty
+    out$frailty$spline.fvar<-spline.fvar(x)
+    out$frailty$param.fvar<-if(haspar(x$frailty)) exp(x$posterior.mean$frailty.param.par) else NULL
     out$posterior.mean<-x$posterior.mean
     out$quantiles<-NULL
     if(out$iter<out$burnin) out$burnin<-0
@@ -1315,6 +1318,14 @@ summary.splinesurv<-function(object,quantiles=c(.025,.975),...)
     out$dots<-as.list(substitute(list(...)))[-1]
     class(out)<-"summary.splinesurv"   
     return(out)
+}
+
+spline.fvar<-function(x)
+{
+    if(!hasspline(x$frailty)) return(NULL)
+    theta<-exp(x$posterior.mean$frailty.spline.par)
+    moment2<-(1-cevalEinte(x$frailty$spline.knots,x$frailty$spline.ord,N=2))%*%theta/sum(theta)
+    return(moment2-1)
 }
 
 print.summary.splinesurv<-function(x,...)   
@@ -1344,6 +1355,7 @@ printcurvesummary<-function(curve,w=NULL,param.par=NULL)
         cat("\n\t\tInterior knots:",curve$spline.nknots-2*curve$spline.ord+2)
         cat("\n\t\tKnot distribution:", curve$spline.knotspacing)
         cat("\n\t\tKnot boundaries: ", paste(format(attr(curve$spline.knots,"b"),digits=2),collapse=","))
+        if(curve$name=="frailty") cat("\n\t\tVariance: ", format(curve$spline.fvar,digits=2))
     }
     if(haspar){
         cat("\n\tParametric")
@@ -1369,11 +1381,14 @@ printcurvesummary<-function(curve,w=NULL,param.par=NULL)
 
 
 plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),newdata=NULL,iter=NULL,plotknots=TRUE,npoints=100,legend=NULL,
-    lty=1,col=2,lwd=2,lty.knots=1,col.knots=8,lwd.knots=1,xlab=NULL,ylab=NULL,main=NULL,xlim=NULL,ylim=NULL,...)
+    lty=1,col=2,lwd=2,lty.knots=1,col.knots=8,lwd.knots=1,xlab=NULL,ylab=NULL,main=NULL,xlim=NULL,ylim=NULL,tk=FALSE,...)
 {
+    if(tk) splinesurvtkplot(x,newdata=NULL,plotknots=TRUE,npoints=100,legend=NULL,
+    lty=1,col=2,lwd=2,lty.knots=1,col.knots=8,lwd.knots=1,xlab=NULL,ylab=NULL,main=NULL,xlim=NULL,ylim=NULL,tk=FALSE,...)
     oldask<-par("ask")
     which<-match.arg(which)
     if(which=="all") par(ask=TRUE)
+    if(!is.null(iter) && iter<=0) iter<-NULL
     if(which=="hazard" | which=="all"){
         knots<-x$hazard$spline.knots
         if(is.null(knots)) knots<-range(x$data$time)
@@ -1462,6 +1477,60 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
     }
     par(ask=oldask)
 }
+
+splinesurvtkplot<-function(x,...)
+{
+    library(tkrplot)
+	which <- "h"
+	tt <- tktoplevel()
+	tktitle(tt)<-"SplineSurv"
+	iter <- 0
+	tcliter<-tclVar(iter)
+	tclwhich<-tclVar(which)
+	maxiter=x$control$maxiter
+	res<-round(maxiter/100)
+	img <- tkrplot(tt, function() plot(x=x,which=which,iter=iter,...))	
+	setiter<-function(...){
+		thisiter<-as.numeric(tclvalue(tcliter))
+		if(iter != thisiter){
+			assign("iter",thisiter,inherits=TRUE)
+			tkrreplot(img)
+		}	
+	}
+	setwhich_h<-function(...) {
+		assign("which","h",inherits=TRUE)
+		tkrreplot(img)
+	}
+	setwhich_s<-function(...) {
+		assign("which","s",inherits=TRUE)
+		tkrreplot(img)
+	}
+	setwhich_f<-function(...){
+		assign("which","f",inherits=TRUE)		
+		tkrreplot(img)
+	}
+	setpost<-function(...){
+		assign("iter",0,inherits=TRUE)
+		tclvalue(tcliter)<-0
+		tkrreplot(img)
+	}
+
+	iter_scale <- tkscale(tt, command=setiter, from=0, to=maxiter, resolution=res, showvalue=T,orient="horiz",variable=tcliter, length=400)
+	ff<-tkframe(tt,relief="ridge",borderwidth=2,width=150,height=100)
+	which_b_h <- tkradiobutton(ff, command=setwhich_h,text="hazard",variable=tclwhich, value="h" )
+	which_b_s <- tkradiobutton(ff, command=setwhich_s,text="survival",variable=tclwhich, value="s" )
+	which_b_f <- tkradiobutton(ff, command=setwhich_f,text="frailty",variable=tclwhich, value="f" )
+	post_b <- tkbutton(tt, command=setpost, text="Posterior" )
+	tkgrid(img,columnspan=2)
+	tkgrid(which_b_h,which_b_s,which_b_f)
+	tkgrid(ff,columnspan=2)
+	tkgrid(post_b,iter_scale)
+	tkgrid.configure(iter_scale,sticky="e")
+	tkgrid.configure(post_b,sticky="sw")
+
+}
+
+
 
 ################# predict method
 
