@@ -41,8 +41,8 @@ double csplineeval( double x, int j, int ord, double *knots, int splord, int nj)
     double knotj=knots[j+splord];
     double knotjm1=knots[j-1+splord];
     if(ord==1) {
-        if(x >= knotjm1 & x < knotj) return 1.0;
-        if(x==knotj & j+splord==nj) return 1.0;
+        if((x >= knotjm1) & (x < knotj)) return 1.0;
+        if((x==knotj) & (j+splord==nj)) return 1.0;
         return 0.0;
     }
     double knotjmn=knots[j-ord+splord];
@@ -100,7 +100,7 @@ void cevalCinte(double *cinte, double *x, int *nx, double *knots, int *ord, int 
         for(int j=0; j<nj; j++){
             cinte[i+j* *nx]=0;
             if(x[i]>=knots[j+ *ord]) cinte[i + j* *nx] = binte[j];
-            if(x[i]<knots[j+ *ord] & x[i]>=knots[j])
+            if((x[i]<knots[j+ *ord]) & (x[i]>=knots[j]))
             {
                 for(int k=j+1;k<nj+1;k++) 
                     cinte[i + j* *nx]+=binte[j]*bs2[i + k* *nx];
@@ -115,8 +115,8 @@ void cevalCinte(double *cinte, double *x, int *nx, double *knots, int *ord, int 
 double cSplineConvolution(int k, int n1,int j1, int n2, int j2, double *knots, int splord)
 {
     double out=0;
-    if(j1 -n1>=j2 | j2 -n2>=j1) return out;
-    if(n1==1 & n2==1){
+    if((j1 -n1>=j2) | (j2 -n2>=j1)) return out;
+    if((n1==1) & (n2==1)){
         out= 1.0/(k+1.0)*(pow(knots[j1+splord],k+1.0)-pow(knots[j1-1+splord],k+1.0));
         return out;
     }
@@ -141,8 +141,8 @@ double cSplineConvolution(int k, int n1,int j1, int n2, int j2, double *knots, i
 
 double cSplineDerivInt(int l1, int n1, int j1, int l2, int n2, int j2, double *knots, int splord)
 {
-    if(j1-n1>=j2 | j2-n2>=j1) return 0;
-    if(l1==0 & l2==0) return cSplineConvolution(0,n2,j1,n2,j2,knots,splord);
+    if((j1-n1>=j2) | (j2-n2>=j1)) return 0;
+    if((l1==0) & (l2==0)) return cSplineConvolution(0,n2,j1,n2,j2,knots,splord);
     if(l2>l1){
         int l3=l1; l1=l2; l2=l3;
         int n3=n1; n1=n2; n2=n3;
@@ -236,7 +236,7 @@ void cInitLikHazSpline(double *lik, double *par, double *status, double *lp, dou
     for(int i=0; i< *ny; i++)
         out -= frailrep[i]*hazYcum[i]*exp(lp[i]);
     double pen = 0;
-    double *penpar = (*penaltyType==2 | *penaltyType==3)  ? epar : par;
+    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
     InitSmoothnessPenalty(&pen, penpar, P, penaltyType, sigma2, nj);
     out-=pen;
     *lik = out;
@@ -264,7 +264,7 @@ void cInitGrHazSpline(double *gr, double *par, double *status, double *lp, doubl
     F77_CALL(dgemv)(&trans,ny,nj,&c1d,B,ny,hazY,&c1,&c1d,gr,&c1);
     F77_CALL(dgemv)(&trans,ny,nj,&cm1d,C,ny,temp,&c1,&c1d,gr,&c1);
     for(int i=0; i<*nj; i++) gr[i]=gr[i]*epar[i] * *weight;
-    double *penpar = (*penaltyType==2 | *penaltyType==3)  ? epar : par;
+    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
     addInitSmoothnessPenaltyGr(gr, penpar, P, penaltyType, sigma2, nj);
     free(epar);
     free(hazY);
@@ -286,7 +286,7 @@ void cInitLikFrailSpline(double *lik, double *par, double *frailParY, double *we
     cInitMultAndWeight( frailY, B, eparnorm, weight, ny, nj);
     for(int i=0; i<*ny; i++) out+=log(frailY[i]); 
     double pen = 0;
-    double *penpar = (*penaltyType==2 | *penaltyType==3)  ? epar : par;
+    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
     InitSmoothnessPenalty(&pen, penpar, P, penaltyType, sigma2, nj);
     out-=pen;
     out -= *M * pow((F77_CALL(ddot)(nj, E, &c1, epar, &c1)),2);
