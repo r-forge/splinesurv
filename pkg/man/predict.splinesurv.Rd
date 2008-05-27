@@ -5,15 +5,27 @@
     linear predictor, or risk for objects of type \code{\link{splinesurv}}.
 } 
 \usage{
-\method{predict}{splinesurv}(object,type=c("hazard","lp","risk","frailty"),     x=NULL,newdata=NULL,iter=NULL,...)
+\method{predict}{splinesurv}(object, type = c("hazard","survival","lp","risk","frailty"),
+        x = NULL, newdata = NULL, iter = NULL, alpha = NULL, npost = 100, ...)
 }
 \arguments{
     \item{object}{an object of type \code{\link{splinesurv}}.}
-    \item{type}{a string specifying the type of prediction. Setting \code{"hazard"}
-        predicts the baseline hazard (default), \code{"lp"} predicts the linear predictor, \code{"risk"} produces risk estimates, and \code{"frailty"} predicts the frailty density.}
-    \item{x}{ a vector containing the values at which prediction is desired. If \code{NULL}, a sequence of length 100 over the data range is used.}
-    \item{newdata}{ a data frame in the same format as the original data containing data for prediction.}
-    \item{iter}{integer, indicating which iteration of the MCMC chain to use. If \code{NULL} (default), the posterior means are used}
+    \item{type}{a string specifying the type of prediction. Setting
+    \code{"hazard"} predicts the baseline hazard (default), \code{survival} predicts the survivor function, \code{"lp"} predicts
+    the linear predictor, \code{"risk"} produces risk estimates, and
+    \code{"frailty"} predicts the frailty density.}
+    \item{x}{ a vector containing the values at which prediction is desired. If
+    \code{NULL}, a sequence of length 100 over the data range is used.}
+    \item{newdata}{ a data frame in the same format as the original data
+    containing data for prediction. If cluster membership is not set to
+    \code{NA}, the frailty is included in predictions of the hazard or 
+    survival.}
+    \item{iter}{integer, indicating which iteration of the MCMC chain to use. If
+    \code{NULL} (default), the posterior means are used}
+    \item{npost}{number of samples from the posterior to be used for estimating
+        the curve}
+    \item{alpha}{level of pointwise confidence bands. Setting \code{alpha=NULL}
+    omits bands.}
     \item{...}{additional parameters currently ignored}
 }
 \keyword{survival}

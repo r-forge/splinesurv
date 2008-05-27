@@ -2,6 +2,7 @@
 #include <R_ext/Linpack.h>    
 #include <R_ext/Lapack.h>    
 #include <R_ext/Print.h>  
+#include <R_ext/Utils.h>  
 #include <R.h>
 #include <Rmath.h>
 #include <Rdefines.h>
@@ -11,7 +12,7 @@
 
 #define DEBUG
 #define LIK_MOD 10
-#define MAX_PAR 100
+#define MAX_PAR 20
 
 typedef enum {pnone=0, pdiff=1, pderiv=2, plogderiv=3} penalty;
 typedef enum {Dnone=0, Dexponential=1, Dweibull=2, Dlognormal=3, Dgamma=4} distribution;
@@ -21,16 +22,24 @@ typedef struct curve {
          hasPar, //has a parametric component
          isHazard, //whether the curve represents hazard or frailty
          SplineOrd, // order of the spline
-         SplineNknots, //spline number of knots
+         SplineAdaptive, // whether the knots should birth/death/move
+         SplineNknots, //spline number of interior knots
+         SplineNknotsMax, // max number of knots
+         SplineNCandKnots, // number of candidate knots
          nx, //number of observations
          nj, //number of basis functions (spline)
+         njmax, // max value of nj
          np, // number of parameters (parametric)
          SplineFixedInd; // fixed index for frailty spline
-    double SplineEParSum,
-           SplineFvar;
+    double SplineFvar,
+           SplineEParSum;
     penalty SplinePenaltyType; // (0=none, 1=diff, 2=2deriv, 3=log2der)
     distribution ParDist; // Parametric distribution function
     double *SplineKnots, //Knots of the spline
+           *SplineCandKnots, // Candidate knots for adaptive spline
+           *SplineCandOcc, // occupied indices for the spline candidate knots
+           *SplineNknotsHyper, // parameter for prior on the number of knots
+           *SplineBDMConst, //Tuning parameter for birth-death-move
            *SplineBasis, //Basis of the spline
            *SplineBasisCum, //Cumulative basis
            *SplineBasisInt, //Integral over the basis functions
@@ -44,6 +53,7 @@ typedef struct curve {
            *SplinePriorvar, //prior variance
            *SplineHyper, //Spline Hyperparameters
            *SplineCandCov, // Covariance matrix of candidates
+           *SplineCandSD, // standard deviations of candidates
            *SplineCholCov, //Covariance matrix Cholesky decomposition
            *SplineTun, // Tuning parameter for spline parameters
            *SplineAccept, // Acceptance indicator for spline parameters
@@ -98,7 +108,10 @@ typedef struct hist {
     double *frailty,
            *coefficients,
            *HazardSplinePar,
+           *HazardSplineKnots,
            *FrailtySplinePar,
+           *FrailtySplineKnots,
+           *FrailtySplineFvar,
            *HazardParamPar,
            *FrailtyParamPar,
            *HazardWeight,
@@ -112,6 +125,14 @@ static inline double dmin(double x, double y) {
 }
 
 static inline double dmax(double x, double y) {
+    return x>y ? x : y;
+}
+
+static inline double imin(int x, int y) {
+    return x<y ? x : y;
+}
+
+static inline double imax(int x, int y) {
     return x>y ? x : y;
 }
 
@@ -179,12 +200,12 @@ double FrailtySplineVar(curveP frailty)
     double fvar=0;
     double * Moment2 = (double *) malloc( frailty->nj * sizeof(double));
     int ord = frailty->SplineOrd;
-    int K = frailty->SplineNknots - 2*ord;
+    int K = frailty->SplineNknots;
     int N=2;
     cevalEinte(Moment2,frailty->SplineKnots,&ord,&K,&N);
     for(int i=0;i<frailty->nj;i++) Moment2[i] = 1-Moment2[i];
-    fvar = ddotWrapper(frailty->nj, Moment2, frailty->SplineEPar);
-    fvar = fvar/frailty->SplineEParSum;
+    fvar = ddotWrapper(frailty->nj, Moment2, frailty->SplineEPar)/frailty->SplineEParSum;
+    fvar = fvar - 1.0;
     return fvar;
 }
 
@@ -193,6 +214,7 @@ void PopulateLocalCurve( curveP theCurve, SEXP Rcurve)
 {
     theCurve->hasPar = asInteger(getListElement(Rcurve,"haspar"));
     theCurve->hasSpline = asInteger(getListElement(Rcurve,"hasspline"));
+    theCurve->SplineAdaptive = asInteger(getListElement(Rcurve,"spline.adaptive"));
     theCurve->nx = (int) (length(getListElement(Rcurve,"x")));
     theCurve->SplineMin = REAL(getListElement(Rcurve,"spline.min"));
     theCurve->SplinePriorvar =  REAL(getListElement(Rcurve,"spline.priorvar"));
@@ -215,8 +237,14 @@ void PopulateLocalCurve( curveP theCurve, SEXP Rcurve)
     if(!theCurve->isHazard) theCurve->tun = REAL(getListElement(Rcurve,"tun"));
     if(theCurve->hasSpline){
         theCurve->SplineOrd=asInteger(getListElement(Rcurve,"spline.ord"));
-        theCurve->SplineNknots = (int) (length(getListElement(Rcurve,"spline.knots")));
-        theCurve->nj = theCurve->SplineNknots - theCurve->SplineOrd;
+        theCurve->SplineNknots = asInteger(getListElement(Rcurve,"spline.nknots"));
+        theCurve->SplineNknotsMax = asInteger(getListElement(Rcurve,"spline.maxoccknots"));
+        theCurve->SplineNknotsHyper = REAL(getListElement(Rcurve,"spline.nknots.hyper"));
+        theCurve->SplineNCandKnots = asInteger(getListElement(Rcurve,"spline.ncandknots"));
+        theCurve->SplineCandKnots = REAL(getListElement(Rcurve,"spline.candknots"));
+        theCurve->SplineCandOcc = REAL(getListElement(Rcurve,"spline.candocc"));
+        theCurve->SplineBDMConst = REAL(getListElement(Rcurve,"spline.bdmconst"));
+        theCurve->nj = theCurve->SplineNknots + theCurve->SplineOrd;
         const char * charPenaltyType = CHAR(STRING_ELT(getListElement(Rcurve,"spline.penalty"),0));
         penalty iPenaltyType;
         if (strcmp(charPenaltyType,"2diff") ==0) { iPenaltyType=pdiff; }
@@ -231,9 +259,10 @@ void PopulateLocalCurve( curveP theCurve, SEXP Rcurve)
         theCurve->SplineBasis =  REAL(getListElement(Rcurve,"spline.basis"));
         theCurve->SplineBasisInt =  REAL(getListElement(Rcurve,"spline.basisint"));
         theCurve->SplinePar =  REAL(getListElement(Rcurve,"spline.par"));
-        theCurve->SplineEPar = (double *) malloc( theCurve->nj * sizeof(double));
+        theCurve->SplineEPar = (double *) malloc( (theCurve->SplineNknotsMax + theCurve->SplineOrd) * sizeof(double));
         theCurve->SplineCandCov =  REAL(getListElement(Rcurve,"spline.candcov"));
         theCurve->SplineCholCov =  REAL(getListElement(Rcurve,"spline.cholcandcov"));
+        theCurve->SplineCandSD = REAL(getListElement(Rcurve,"spline.candsd"));
         for(int j=0; j< theCurve->nj; j++) theCurve->SplineEPar[j] = exp(theCurve->SplinePar[j]);
         theCurve->SplineY =  REAL(getListElement(Rcurve,"spline.y"));
         if(theCurve->isHazard){
@@ -244,7 +273,7 @@ void PopulateLocalCurve( curveP theCurve, SEXP Rcurve)
             theCurve->SplineBasisInt =  REAL(getListElement(Rcurve,"spline.basisint"));
             theCurve->SplineBasisExp =  REAL(getListElement(Rcurve,"spline.basisexp"));
             theCurve->SplineEParSum = 0;
-            for(int j=0; j<theCurve->nj; j++) theCurve->SplineEParSum+=theCurve->SplineEPar[j];
+            for(int j=0; j< theCurve->nj; j++) theCurve->SplineEParSum += theCurve->SplineEPar[j];
             theCurve->SplineFvar = FrailtySplineVar(theCurve);
             theCurve->SplineMeanPenalty = REAL(getListElement(Rcurve,"spline.meanpenalty"));
             theCurve->SplineFixedInd = asInteger(getListElement(Rcurve, "spline.fixedind")) - 1;
@@ -321,12 +350,18 @@ void PopulateLocalHistory( historyP theHist, SEXP Rhistory)
     // Only populate history components if there is a spline/parametric component
     elmt = getListElement(Rhistory, "hazard.spline.par");
     if(elmt != R_NilValue ) theHist->HazardSplinePar = REAL(elmt);
+    elmt = getListElement(Rhistory, "hazard.spline.knots");
+    if(elmt != R_NilValue ) theHist->HazardSplineKnots = REAL(elmt);
     elmt = getListElement(Rhistory, "hazard.param.par");
     if(elmt != R_NilValue ) theHist->HazardParamPar = REAL(elmt);
     elmt = getListElement(Rhistory, "hazard.weight");
     if(elmt != R_NilValue ) theHist->HazardWeight = REAL(elmt);
     elmt = getListElement(Rhistory, "frailty.spline.par");
     if(elmt != R_NilValue ) theHist->FrailtySplinePar = REAL(elmt);
+    elmt = getListElement(Rhistory, "frailty.spline.knots");
+    if(elmt != R_NilValue ) theHist->FrailtySplineKnots = REAL(elmt);
+    elmt = getListElement(Rhistory, "frailty.spline.fvar");
+    if(elmt != R_NilValue ) theHist->FrailtySplineFvar = REAL(elmt);
     elmt = getListElement(Rhistory, "frailty.param.par");
     if(elmt != R_NilValue ) theHist->FrailtyParamPar = REAL(elmt);
     elmt = getListElement(Rhistory, "frailty.weight");
@@ -337,20 +372,23 @@ void PopulateLocalHistory( historyP theHist, SEXP Rhistory)
 
 double SmoothnessPenalty(curveP theCurve)
 {
-    if(theCurve->SplinePenaltyType == pnone) return 0;
-    double * temp = (double *) calloc(theCurve->nj, sizeof(double));
-    double * par;
     double pen;
-    if(theCurve->SplinePenaltyType == pdiff) par = theCurve->SplinePar;
-    else par = theCurve->SplineEPar;
     int c1 = 1;
-    double c1d = 1.0;
-    char uplo = 'U';
-    F77_CALL(dsymv)( &uplo, &(theCurve->nj), &c1d, theCurve->SplinePenaltyMatrix, &(theCurve->nj), par, &c1, &c1d, temp, &c1);
-    pen = F77_CALL(ddot)( &(theCurve->nj), temp, &c1, par, &c1);
-    if(theCurve->SplinePenaltyType == plogderiv) pen=log(pen+1);
+    if(theCurve->SplinePenaltyType == pnone){ 
+        pen = pow(F77_CALL(dnrm2)(&(theCurve->nj), theCurve->SplinePar, &c1),2.0);
+    }else{
+        double * temp = (double *) calloc(theCurve->nj, sizeof(double));
+        double * par;
+        if(theCurve->SplinePenaltyType == pdiff) par = theCurve->SplinePar;
+        else par = theCurve->SplineEPar;
+        double c1d = 1.0;
+        char uplo = 'U';
+        F77_CALL(dsymv)( &uplo, &(theCurve->nj), &c1d, theCurve->SplinePenaltyMatrix, &(theCurve->nj), par, &c1, &c1d, temp, &c1);
+        pen = F77_CALL(ddot)( &(theCurve->nj), temp, &c1, par, &c1);
+        if(theCurve->SplinePenaltyType == plogderiv) pen=log(pen+1);
+        free(temp);
+    }
     pen = pen / (2 * theCurve->SplinePriorvar[0]);
-    free(temp);
     return pen;
 }
 
@@ -386,20 +424,86 @@ void ReweightCurve(curveP theCurve, int i){
     }
 }
 
-void UpdateSplineBasis(curveP theCurve, int i)
+void UpdateSplineBasis(curveP theCurve, int i, int startj, int endj)
 {
     if(!theCurve->hasSpline) return;
-    if(theCurve->isHazard) Rprintf("Cannot update the hazard basis");
     if(i<0)
-        for(int ind=0; ind<theCurve->nx; ind++) UpdateSplineBasis(theCurve, ind);
+        for(int ind=0; ind<theCurve->nx; ind++) UpdateSplineBasis(theCurve, ind, startj, endj);
     else{
-        for(int j=0; j<theCurve->nj; j++)
+        for(int j=startj; j<endj; j++){
             theCurve->SplineBasis[i + j * theCurve->nx] = csplineeval(theCurve->X[i], j, theCurve->SplineOrd, theCurve->SplineKnots, theCurve->SplineOrd, theCurve->nj);
-        if(!theCurve->isHazard)
-            for(int j=0; j<theCurve->nj; j++) theCurve->SplineBasis[i+j * theCurve->nx] /= theCurve->SplineBasisInt[j];
+            if(!theCurve->isHazard) theCurve->SplineBasis[i+j * theCurve->nx] /= theCurve->SplineBasisInt[j];
+            //if(theCurve->isHazard) theCurve->SplineBasisCum[i+j * theCurve->nx] = csplinecumeval(theCurve->X[i], j, theCurve->SplineOrd, theCurve->nj, theCurve->SplineKnots, theCurve->SplineBasisInt);
+        }
+        if(theCurve->isHazard) cevalCinte2(theCurve->SplineBasisCum, theCurve->X,  theCurve->nx, theCurve->SplineKnots, theCurve->nj, theCurve->SplineOrd, theCurve->SplineBasisInt, i, startj, endj);
     }
 }
 
+
+void MakeSplineBasis(curveP theCurve)
+{
+    if(!theCurve->hasSpline) return;
+    double * knots = theCurve->SplineKnots;
+    int ord = theCurve->SplineOrd;
+    int nknots = theCurve->SplineNknots;
+    int nj = theCurve->nj;
+    double * x = theCurve->X;
+    int c1 = 1;
+
+    // compute integrals over each basis spline
+    cevalBinte(theCurve->SplineBasisInt, knots, &ord, &nknots);
+
+    // For frailty, compute the expectations
+    if(!theCurve->isHazard) 
+        cevalEinte(theCurve->SplineBasisExp, knots, &ord, &nknots, &c1);
+    
+    // Make basis
+    UpdateSplineBasis(theCurve,-1,0,nj); 
+    
+}
+
+void RemakeSplineBasis(curveP theCurve, char oper, int j)
+{
+    if(!theCurve->hasSpline) return;
+    double * knots = theCurve->SplineKnots;
+    int ord = theCurve->SplineOrd;
+    int nknots = theCurve->SplineNknots;
+    int nj = theCurve->nj;
+    int nx = theCurve->nx;
+    double * x = theCurve->X;
+    int c1 = 1;
+
+    // compute integrals over each basis spline
+    cevalBinte(theCurve->SplineBasisInt, knots, &ord, &nknots);
+
+    // For frailty, compute the expectations
+    if(!theCurve->isHazard) 
+        cevalEinte(theCurve->SplineBasisExp, knots, &ord, &nknots, &c1);
+        
+    if(oper=='m'){
+        // Update basis from j to j+ord (j here is the moveind, in internal knot numbering)
+        UpdateSplineBasis(theCurve,-1,j,imin(nj,j+ord+1)); 
+    }
+    if(oper=='d'){
+        //MakeSplineBasis(theCurve);
+         //move basis j+1 through nj into j through nj-1
+        int nmv = ((nj) - (j+1))*nx;
+        nmv = nmv>0 ? nmv : 0;
+        if(nmv>0){
+            F77_CALL(dcopy)(&nmv, theCurve->SplineBasis + (j+1)*nx, &c1, theCurve->SplineBasis + j*nx, &c1);
+            if(theCurve->isHazard) F77_CALL(dcopy)(&nmv, theCurve->SplineBasisCum + (j+1)*nx, &c1, theCurve->SplineBasisCum + j*nx, &c1);
+        }
+        UpdateSplineBasis(theCurve,-1,imax(0,j-ord),j);
+    }
+    if(oper=='b'){
+        //MakeSplineBasis(theCurve);
+        // //move basis j+1 : nj to j+2 : nj+1
+        for(int k=nj-2;k>j;k--) F77_CALL(dcopy)(&nx, theCurve->SplineBasis + k*nx, &c1, theCurve->SplineBasis + (k+1)*nx, &c1);
+        if(theCurve->isHazard) for(int k=nj-2;k>j;k--) F77_CALL(dcopy)(&nx, theCurve->SplineBasisCum + k*nx, &c1, theCurve->SplineBasisCum + (k+1)*nx, &c1);
+        UpdateSplineBasis(theCurve,-1,imax(0,j-ord),imin(nj,j+2));
+        ////UpdateSplineBasis(theCurve,-1,0,nj);
+    }
+}
 
 void EvalSpline(curveP theCurve, int i)
 {
@@ -414,7 +518,7 @@ void EvalSpline(curveP theCurve, int i)
         int c1 = 1;
         double c0 = 0;
         char trans = 'N';
-        double scaler = theCurve->isHazard ? 1.0  : 1.0/ theCurve->SplineEParSum;
+        double scaler = theCurve->isHazard ? 1.0 : 1.0/theCurve->SplineEParSum;
         // set splineY = basis * splinepar + 0*splineY
         F77_CALL(dgemv)(&trans, &(theCurve->nx), &(theCurve->nj), &scaler, theCurve->SplineBasis, &(theCurve->nx), theCurve->SplineEPar, &c1, &c0, theCurve->SplineY, &c1);
         if(theCurve->isHazard)
@@ -432,7 +536,7 @@ double EvalSplineAtOnePoint(curveP theCurve, double x)
         for(int j=0; j<theCurve->nj; j++) tempBasis[j]=csplineeval(x, j, theCurve->SplineOrd,
                 theCurve->SplineKnots, theCurve->SplineOrd, theCurve->nj);
         if(!theCurve->isHazard)
-            for(int j=0; j<theCurve->nj; j++) tempBasis[j]/= (theCurve->SplineBasisInt[j] * theCurve->SplineEParSum);
+            for(int j=0; j<theCurve->nj; j++) tempBasis[j] /= (theCurve->SplineBasisInt[j] * theCurve->SplineEParSum); 
         splY = F77_CALL(ddot)( &(theCurve->nj), tempBasis, &c1, theCurve->SplineEPar, &c1);
         free(tempBasis);
     }
@@ -443,24 +547,22 @@ void UpdateSplinePar(curveP theCurve, double * newpar, int j)
 {
     if(!theCurve->hasSpline) return;
     if(j>=0){
+        if(!theCurve->isHazard) Rprintf("Bad call to UpdateSplinePar\n");
         double oldeparj = theCurve->SplineEPar[j];
         double neweparj = exp(newpar[j]);
+        double epardiff = neweparj - oldeparj;
         theCurve->SplinePar[j] = newpar[j];
         theCurve->SplineEPar[j] = neweparj;
-        double epardiff = neweparj - oldeparj;
-        if(!theCurve->isHazard){
-            double newEParSum = theCurve->SplineEParSum+epardiff;
-            epardiff = epardiff*theCurve->SplineEParSum/newEParSum;
-            theCurve->SplineEParSum = newEParSum;
-        }
+        theCurve->SplineEParSum += epardiff;
         int c1 = 1;
         F77_CALL(daxpy)(&(theCurve->nx), &epardiff, theCurve->SplineBasis+j*theCurve->nx, &c1, theCurve->SplineY, &c1); 
         if(theCurve->isHazard) F77_CALL(daxpy)(&(theCurve->nx), &epardiff, theCurve->SplineBasisCum+j*theCurve->nx, &c1, theCurve->SplineYcum, &c1); 
         ReweightCurve(theCurve, -1);
     }else{
         dcopyWrapper(theCurve->nj, newpar, theCurve->SplinePar);
+        if(!theCurve->isHazard) for(int i=0;i<theCurve->nj; i++) theCurve->SplinePar[i] -= newpar[theCurve->SplineFixedInd];
         for(int i=0; i<theCurve->nj; i++) theCurve->SplineEPar[i] = exp(theCurve->SplinePar[i]);
-        if(!theCurve->isHazard) {
+        if(!theCurve->isHazard){
             theCurve->SplineEParSum = 0;
             for(int j=0; j<theCurve->nj; j++) theCurve->SplineEParSum+=theCurve->SplineEPar[j];
             theCurve->SplineFvar = FrailtySplineVar(theCurve);
@@ -538,7 +640,7 @@ void UpdateCurveX(curveP theCurve, double x, int i)
 {
     if(theCurve->isHazard) Rprintf("Error: using UpdateCurveX on hazard.");
     theCurve->X[i] = x;
-    UpdateSplineBasis(theCurve, i);
+    UpdateSplineBasis(theCurve, i, 0, theCurve->nj);
     EvalSpline(theCurve,i);
     EvalParametric(theCurve,i);
 }
@@ -554,7 +656,7 @@ static inline double LikelihoodFrailty(int i, curveP hazard, curveP frailty, reg
    int n = regression->Jicum[i+1] - start;
    lik += lUi * F77_CALL(dasum)(&n, regression->status+start, &c1);
    lik -= Ui * ddotWrapper(n, hazard->Ycum+start, regression->elp+start);
-   lik -= (0.5/frailty->SplineFvar) * pow(Ui - 1.0, 2.0); // shrinkage penalty
+   //lik -= (0.5/frailty->SplineFvar) * pow(Ui - 1.0, 2.0); // shrinkage penalty
    return(lik);
 }
 
@@ -702,8 +804,9 @@ void MH_Frail(curveP hazard, curveP frailty, regressionP regression)
         double uj,yj,candj;
         double cand = rgamma( pow(u,2)/v, v/u);
         double pcu = 1; double puc = 1;
+        // if the candidate is invalid (e.g. beyond boundary knots), fail
         if(isnan(cand) || ( frailty->hasSpline &&
-            (cand > frailty->SplineKnots[frailty->SplineNknots-1]
+            (cand > frailty->SplineKnots[frailty->nj + frailty->SplineOrd -1]
              | cand < frailty->SplineKnots[0]) ) ){
             continue;
         }else{
@@ -711,14 +814,14 @@ void MH_Frail(curveP hazard, curveP frailty, regressionP regression)
             j = i;
             while(j == i){
                 j = (int) floor(runif(0,(double) frailty->nx));
-                //signj = frailty->X[j] < 1 ? -1 : 1;
             }
             //Rprintf("i: %d,  j: %d\n",i,j);
             uj = frailty->X[j];
             yj = frailty->Y[j];
             candj = u + uj - cand;
+            // if the moved element is invalid, fail
             if( frailty->hasSpline &&
-                (candj > frailty->SplineKnots[frailty->SplineNknots-1]
+                (candj > frailty->SplineKnots[frailty->nj + frailty->SplineOrd -1]
                  | candj < frailty->SplineKnots[0]) ) continue;
             baselik = LikelihoodFrailty(i, hazard, frailty, regression)
                 + LikelihoodFrailty(j, hazard, frailty, regression);
@@ -728,7 +831,8 @@ void MH_Frail(curveP hazard, curveP frailty, regressionP regression)
             frailty->Y[j] = EvalCurveAtOnePoint(frailty, candj);
             candlik = LikelihoodFrailty(i, hazard, frailty, regression)
                 + LikelihoodFrailty(j, hazard, frailty, regression);
-            //Rprintf("%f %f %f %f\n",baselik,cand,candj,candlik);
+            //for(int k=0;k<regression->m; k++) Rprintf("%f ", frailty->Y[k]); Rprintf("\n");
+            //Rprintf("%f %f %f %f %f %f\n",baselik,cand, frailty->Y[i] ,candj, frailty->Y[j] ,candlik);
             puc = dgamma(cand, pow(u,2)/v, v/u, 0);
             pcu = dgamma(u, pow(cand,2)/v, v/cand, 0);
         }
@@ -818,13 +922,15 @@ void MH_SplineHazard(curveP hazard, curveP frailty, regressionP regression)
     dcopyWrapper(hazard->nx, hazard->Ycum, oldYcum);
     dcopyWrapper(hazard->nx, hazard->SplineYcum, oldSplineYcum);
     // create candidate parameters
-    mvrnorm(hazard->nj, cand, hazard->SplinePar,hazard->SplineCholCov,hazard->SplineTun[0]);
+    for(int j=0;j<hazard->nj;j++)
+        cand[j] = hazard->SplinePar[j]+hazard->SplineTun[0]*
+            rnorm(0,hazard->SplineCandSD[j]);
     for(int j=0; j < hazard->nj; j++){
         thiscand[j] = cand[j];
         UpdateSplinePar(hazard,thiscand,j); 
         candlik = LikelihoodSplineHazard(hazard,frailty,regression);
         int acc = AcceptReject(baselik, candlik, 1);
-        //Rprintf("%f %f %f\n",baselik, cand[j], candlik);
+        //Rprintf("%f %f %f %d\n",baselik, cand[j], candlik, acc);
         if(acc){
             baselik = candlik;
             sumacc++;
@@ -872,22 +978,18 @@ void MH_SplineFrailty(curveP hazard, curveP frailty, regressionP regression)
     dcopyWrapper(frailty->nx, frailty->SplineY, oldSplineY);
     double oldSplineEParSum = frailty->SplineEParSum;
     double oldSplineFvar = frailty->SplineFvar;
-
+    int ord2 = frailty->SplineOrd / 2;
 
     for(int j=0; j<frailty->nj; j++){
         dcopyWrapper(frailty->nj, oldPar, cand);
-        if(j==frailty->SplineFixedInd) continue;
         // choose which parameter will compensate for j
         int k = j;
-        while((j == k) | (k==frailty->SplineFixedInd))
+        while(j == k | k<ord2-1 | k>frailty->nj-ord2-1) 
             k = (int) floor(runif(0,(double) frailty->nj));
         
         // Generate candidate parameter at j
-        int index = 0;
-        if(j<frailty->SplineFixedInd) index = j*(frailty->nj-1)+j;
-        else index = (j-1)*(frailty->nj-1)+(j-1);
         cand[j] = frailty->SplinePar[j]+frailty->SplineTun[0]*
-            rnorm(0,sqrt(frailty->SplineCandCov[index]));
+            rnorm(0,frailty->SplineCandSD[j]);
         // Try to compute value at k to compensate for change at j
         double newmean = frailty->SplineBasisExp[j] * (exp(cand[j])-exp(oldPar[j]));
         double candk = log(oldEPar[k] - newmean/frailty->SplineBasisExp[k]);
@@ -895,10 +997,12 @@ void MH_SplineFrailty(curveP hazard, curveP frailty, regressionP regression)
         if(isnan(candk)) continue;
         cand[k] = candk;
         // Compute candidate likelihood
+        //for(int i=0; i<frailty->nj;i++) Rprintf("%f ", frailty->SplinePar[i]); Rprintf("\n");
         UpdateSplinePar(frailty,cand,-1); 
+        //for(int i=0; i<frailty->nj;i++) Rprintf("%f ", frailty->SplinePar[i]); Rprintf("\n");
         candlik = LikelihoodSplineFrailty(hazard,frailty,regression);
-        //Rprintf("%f %d %d %f %f %f\n",baselik, j,k,cand[j],cand[k],candlik);
         int acc = AcceptReject(baselik, candlik, 1);
+        //Rprintf("%f %d %d %f %f %f %d\n",baselik, j,k,cand[j],cand[k],candlik,acc);
         if(acc){
             //Rprintf("Indices: %d %d; %f %f\n",j,k,Ej,Ek);
             baselik = candlik;
@@ -997,6 +1101,262 @@ void MH_Weight(curveP theCurve, curveP hazard, curveP frailty, regressionP regre
     theCurve->WeightAccept[0] = (double) acc;
 }
 
+void MH_BDM(char which, curveP hazard, curveP frailty, regressionP regression)
+{
+    curveP theCurve;
+    if(which == 'h') theCurve = hazard;
+    if(which == 'f') theCurve = frailty;
+    if(!theCurve->hasSpline) return;
+    int ord = theCurve->SplineOrd;
+    int nknots = theCurve->SplineNknots;
+    double * candknots = theCurve->SplineCandKnots;
+    int ncandknots = theCurve->SplineNCandKnots;
+    double * occ = theCurve->SplineCandOcc;
+    int * occind = malloc(nknots * sizeof(int));
+    double * oldKnots = calloc(nknots+2*ord, sizeof(double));
+    double * oldPar = calloc(nknots+ord, sizeof(double));
+    double * knots2 = calloc(nknots+2*ord+1, sizeof(double));
+    double * params2 = calloc(nknots+ord+1, sizeof(double));
+    double * knots = theCurve->SplineKnots;
+    double * params = theCurve->SplinePar;
+    dcopyWrapper(nknots+2*ord,theCurve->SplineKnots,oldKnots);
+    dcopyWrapper(nknots+ord,theCurve->SplinePar,oldPar);
+    dcopyWrapper(nknots+2*ord,theCurve->SplineKnots,knots2);
+    dcopyWrapper(nknots+ord,theCurve->SplinePar,params2);
+
+    int i=0;
+    for(int j=ord;j<ncandknots+2*ord; j++) if(occ[j]==1) occind[i++]=j;
+    //for(int j=0;j<ncandknots+2*ord; j++) Rprintf("%d ",(int) occ[j]);
+    //Rprintf("\n");
+    //for(int i=0; i<nknots; i++) Rprintf("%d ",occind[i]);
+    //Rprintf("\n");
+    double mu = (double) theCurve->SplineNknotsHyper[0];
+    double pk = dpois(nknots, mu ,0);
+    double pkp1 = (nknots < theCurve->SplineNknotsMax) ? dpois((double) (nknots+1),mu,0) : 0;
+    double pkm1 = (nknots > 1) ? dpois((double) (nknots-1),mu,0) : 0;
+    double pb = theCurve->SplineBDMConst[0] * dmin(1.0,pkp1/pk);
+    double pd = theCurve->SplineBDMConst[0] * dmin(1.0,pkm1/pk);
+    double pm = dmax(0.0,1.0-pb-pd);
+    double u = runif(0,1);
+    //pd = 0.0;pm=1.0; pb =0.0;
+    //Rprintf("pd, pb, pm, u: %f %f %f %f\n",pd,pb,pm,u);
+    double baselik,candlik;
+    if(theCurve->isHazard) baselik = LikelihoodSplineHazard(theCurve,frailty,regression);
+    if(!theCurve->isHazard) baselik = LikelihoodSplineFrailty(hazard,theCurve,regression);
+    if(u<pd){
+        //Rprintf("Death ");
+        //if(theCurve->isHazard) Rprintf("Hazard"); else Rprintf("Frailty"); Rprintf("\n");
+        //Rprintf("Knots: ");for(int i=0; i<nknots+2*ord; i++) Rprintf("%f ", knots[i]);Rprintf("\n");
+        //Rprintf("Params: ");for(int i=0; i<nknots+ord; i++) Rprintf("%f ", oldPar[i]);Rprintf("\n");
+        int j  = (int) floor(runif(0,(double) nknots))+ord; // index of dying knot
+        double x = knots[j];  // value of dying knot
+        //Rprintf("Remove knot %d at %f (occ: %d)\n",j,knots[j],(int) occ[occind[j-ord]]);
+        for(int i=0;i<nknots+ord;i++) if(i>=j-1) params2[i] = params2[i+1]; //remove params2[j];
+        for(int i=0;i<nknots+ord;i++) if(i>=j) knots2[i] = knots2[i+1]; //remove knots2[j2];
+        if(ord>2) for(int j2=j-ord+1; j2<j-1; j2++){
+            double r2 = (x-knots2[j2])/(knots2[j2+ord-1]-knots2[j2]);
+            double inner = 1/r2 * exp(params2[j2])-(1-r2)/r2*exp(params2[j2-1]);
+            if(inner>0) params2[j2]=log(inner); else params2[j2] = theCurve->SplineMin[0];
+            //Rprintf("%f ",params2[j2]);
+        }
+        theCurve->SplineNknots--; theCurve->nj--;
+        double J = exp(params2[j-1]) / (exp(params[j-1]) - exp(params[j-2]));
+        if(ord>2) for(int j2 = j-ord+2; j2<j-1; j2++){
+            double r2 = (x-knots2[j2])/(knots2[j2+ord-1]-knots2[j2]);
+            J = J * exp(params2[j2])/(r2*exp(params[j2]));
+        }
+        dcopyWrapper(nknots+2*ord, knots2,theCurve->SplineKnots);
+        //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]); Rprintf("\n");
+        //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]); Rprintf("\n\n");
+        RemakeSplineBasis(theCurve,'d',j);
+        //MakeSplineBasis(theCurve);
+        //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]); Rprintf("\n");
+        //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]); Rprintf("\n");
+        if(theCurve->isHazard) {
+            UpdateSplinePar(theCurve,params2,-1);
+            candlik = LikelihoodSplineHazard(theCurve,frailty,regression);
+        }
+        if(!theCurve->isHazard){
+            double newmean = -exp(params2[j-2])*theCurve->SplineBasisExp[j-2];
+            for(int i=0;i<nknots+ord-1;i++) newmean += exp(params2[i])*theCurve->SplineBasisExp[i];
+            double newinner = -newmean/theCurve->SplineBasisExp[j-2];
+            if(newinner<0) candlik = -INFINITY;
+            else{
+                params2[j-2] = log(newinner);
+                UpdateSplinePar(theCurve,params2,-1);
+                candlik = LikelihoodSplineFrailty(hazard,theCurve,regression);
+            }
+        }
+        //Rprintf("Knots2: ");for(int i=0; i<nknots+2*ord-1; i++) Rprintf("%f ", knots2[i]);Rprintf("\n");
+        //Rprintf("Params2: ");for(int i=0; i<nknots+ord-1; i++) Rprintf("%f ", params2[i]);Rprintf("\n");
+        double ratio = sqrt(2*M_PI*theCurve->SplinePriorvar[0])*fabs(J);
+        //ratio *= (double) ncandknots / (ncandknots - nknots);
+        int acc = AcceptReject(baselik, candlik, ratio);
+        //Rprintf("Lik: %f %f %f %f %d\n",baselik,candlik,J,ratio,acc);
+        if(acc){
+            // Update occupied index and candsd
+            occ[occind[j-ord]] = 0;
+            //for(int i=j2;i<nknots+ord;i++) theCurve->SplineCandSD[i]=theCurve->SplineCandSD[i+1];
+        }else{ //undo damage
+            theCurve->SplineNknots++; theCurve->nj++;
+            dcopyWrapper(nknots+2*ord, oldKnots, theCurve->SplineKnots);
+            //MakeSplineBasis(theCurve);
+            RemakeSplineBasis(theCurve,'b',j);
+            //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]); Rprintf("\n");
+            //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]); Rprintf("\n");
+            UpdateSplinePar(theCurve,oldPar,-1);
+        }
+    }
+    if(u>pd & u<pd+pb){
+        // Birth
+        //Rprintf("Birth ");
+        //if(theCurve->isHazard) Rprintf("Hazard"); else Rprintf("Frailty"); Rprintf("\n");
+        int birthind = occind[0];
+        while(occ[birthind]) birthind = (int) floor(runif(0,(double) ncandknots))+ord;
+        double x = candknots[birthind]; // value of the new knot
+        int j = 0; while(knots[j]<x) j++; j--; // find the interval in which x lies
+        //Rprintf("Birth at %f after knot %d\n",x,j);
+        for(int i=nknots+2*ord;i>j;i--) knots2[i]=knots2[i-1];
+        knots2[j+1]=x;
+        for(int i=nknots+ord;i>j-ord+1;i--) params2[i]=params2[i-1];
+        for(int j2 = j-ord+2; j2<j+1; j2++){
+            double r2 = (x-knots[j2])/(knots[j2+ord-1]-knots[j2]);
+            if(j2==j) r2 = runif(0,1);
+            params2[j2] = log(r2*exp(params[j2])+(1-r2)*exp(params[j2-1]));
+        }
+        //int j2 = j-ord+2;
+        //Rprintf("Birthind,x,j: %d %f %d\n",birthind,x,j);
+        theCurve->SplineNknots++; theCurve->nj++;
+        double J = (exp(params[j])-exp(params[j-1]))/exp(params2[j]);
+        if(ord>2) for(int j2 = j-ord+2; j2<j; j2++){
+            double r2 = (x-knots[j2])/(knots[j2+ord-1]-knots[j2]);
+            J = J * r2 * exp(params[j2])/exp(params2[j2]);
+        }
+        dcopyWrapper(nknots+2*ord+1, knots2,theCurve->SplineKnots);
+        //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]); Rprintf("\n");
+        //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]); Rprintf("\n\n");
+        RemakeSplineBasis(theCurve,'b',j);
+        //MakeSplineBasis(theCurve);
+        //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]); Rprintf("\n");
+        //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]); Rprintf("\n");
+        if(theCurve->isHazard){
+            UpdateSplinePar(theCurve,params2,-1);
+            candlik = LikelihoodSplineHazard(theCurve,frailty,regression);
+        }
+        if(!theCurve->isHazard){
+            double newmean = -exp(params2[j])*theCurve->SplineBasisExp[j];
+            for(int i=0;i<nknots+ord+1;i++) newmean += exp(params2[i])*theCurve->SplineBasisExp[i];
+            double newinner = -newmean/theCurve->SplineBasisExp[j];
+            if(newinner<0) candlik = -INFINITY;
+            else{
+                params2[j] = log(newinner);
+                UpdateSplinePar(theCurve,params2,-1);
+                candlik = LikelihoodSplineFrailty(hazard,theCurve,regression);
+            }
+        }
+        //Rprintf("Kdots: ");for(int i=0; i<nknots+2*ord; i++) Rprintf("%f ", knots[i]);Rprintf("\n");
+        //Rprintf("Knots2: ");for(int i=0; i<nknots+2*ord+1; i++) Rprintf("%f ", knots2[i]);Rprintf("\n");
+        //Rprintf("Params: ");for(int i=0; i<nknots+ord; i++) Rprintf("%f ", params[i]);Rprintf("\n");
+        //Rprintf("Params2: ");for(int i=0; i<nknots+ord+1; i++) Rprintf("%f ", params2[i]);Rprintf("\n");
+        double ratio = 1/sqrt(2*M_PI*theCurve->SplinePriorvar[0]) * fabs(J);
+        //ratio *= (double) (ncandknots - nknots)/ (double) ncandknots ;
+        int acc = AcceptReject(baselik, candlik, ratio);
+        //Rprintf("Lik: %f %f %f %f %d\n",baselik,candlik, J, ratio,acc);
+        if(acc){
+            // Update occupied index and candsd
+            occ[birthind] = 1;
+            //double thissd = .5*theCurve->SplineCandSD[j2]+.5*theCurve->SplineCandSD[j2+1];
+            //for(int i=nknots+ord;i>j2;i--) theCurve->SplineCandSD[i] = theCurve->SplineCandSD[i-1];
+            //theCurve->SplineCandSD[j2] = thissd;
+        }else{ //undo damage
+            theCurve->SplineNknots--; theCurve->nj--;
+            dcopyWrapper(nknots+2*ord, oldKnots, theCurve->SplineKnots);
+            //MakeSplineBasis(theCurve);
+            RemakeSplineBasis(theCurve,'d',j+1);
+            //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]); Rprintf("\n");
+            //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]); Rprintf("\n");
+            UpdateSplinePar(theCurve,oldPar,-1);
+        }
+    }
+    if(u>pb+pd) {
+        // Move a knot
+        //Rprintf("Move ");
+        //if(theCurve->isHazard) Rprintf("Hazard"); else Rprintf("Frailty"); Rprintf("\n");
+        //Rprintf("Knots: ");for(int i=0; i<nknots+2*ord; i++) Rprintf("%f ", knots[i]);Rprintf("\n");
+        //Rprintf("Occind: ");for(int i=0; i<nknots; i++) Rprintf("%d ",occind[i]);Rprintf("\n");
+        //int * movable = calloc(nknots , sizeof(int));
+        //for(int i=0;i<nknots;i++) if(occ[occind[i]-1] == 0 | occ[occind[i]+1] == 0) movable[i] = 1;
+        //Rprintf("Movable: ");for(int i=0; i<nknots; i++) Rprintf("%d ",movable[i]);Rprintf("\n");
+        // choose a random knot to move
+        //int thismovable = 0;
+        int moveind=0;
+        //while(!thismovable){
+            moveind  = (int) floor(runif(0,(double) nknots));
+            //if(movable[moveind]) thismovable = 1;
+        //}
+        // find range of movement
+        int leftknotind = (moveind == 0) ? ord : occind[moveind-1]+1;
+        int rightknotind = (moveind == nknots-1) ? ncandknots + ord - 1 : occind[moveind+1]-1;
+        // choose a candidate knot to place the new knot in
+        int newknotind = (int) floor(runif((double) leftknotind,(double) rightknotind+1));
+        //Rprintf("\n%d %d %d %d %d\n",moveind,occind[moveind],leftknotind,rightknotind,newknotind);
+        //Rprintf("Old/New: %f %f\n", oldKnots[moveind+ord],candknots[newknotind]);
+        if(candknots[newknotind] != oldKnots[moveind+ord]){
+        theCurve->SplineKnots[moveind+ord] = candknots[newknotind];
+        //Rprintf("Old/Range/New: %f %f %f %f\n",candknots[occind[moveind]],candknots[leftknotind],candknots[rightknotind],candknots[newknotind]);
+        //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]);
+        //Rprintf("\n");
+        //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]);
+        //Rprintf("\n\n");
+        RemakeSplineBasis(theCurve,'m',moveind);
+        //MakeSplineBasis(theCurve);
+        //for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasis[1+i * theCurve->nx]);
+        //Rprintf("\n");
+        //if(theCurve->isHazard) for(int i=0;i<theCurve->nj;i++) Rprintf("%f ",theCurve->SplineBasisCum[1+i * theCurve->nx]);
+        //Rprintf("\n");
+        if(theCurve->isHazard){ //hazard
+            EvalSpline(theCurve,-1);
+            candlik = LikelihoodSplineHazard(theCurve,frailty,regression);
+        }
+        if(!theCurve->isHazard){ //frailty
+            double newmean = -exp(params2[moveind+ord])*theCurve->SplineBasisExp[moveind+ord];
+            for(int i=0;i<nknots+ord;i++) newmean += exp(params2[i])*theCurve->SplineBasisExp[i];
+            double newinner = -newmean/theCurve->SplineBasisExp[moveind+ord];
+            if(newinner<0) candlik = -INFINITY;
+            else{
+                params2[moveind+ord] = log(newinner);
+                UpdateSplinePar(theCurve,params2,-1);
+                candlik = LikelihoodSplineFrailty(hazard,theCurve,regression);
+            }
+        }
+        int acc = AcceptReject(baselik,candlik,1.0);
+        //Rprintf("Lik: %f %f %d\n",baselik,candlik,acc);
+        if(!acc){
+            // not accepted, undo the damage
+            theCurve->SplineKnots[moveind+ord] = oldKnots[moveind+ord];
+            RemakeSplineBasis(theCurve,'m',moveind);
+            //MakeSplineBasis(theCurve);
+            if(theCurve->isHazard){ // hazard
+                EvalSpline(theCurve,-1);
+            }else{      // frailty
+                UpdateSplinePar(theCurve,oldPar,-1);
+            }
+        }else{ // update occupied index
+            occ[occind[moveind]]=0;
+            occ[newknotind] = 1;
+        }
+        }
+        //free(movable);
+    }
+
+    free(oldKnots);
+    free(oldPar);
+    free(knots2);
+    free(params2);
+    free(occind);
+}
+
+
 void UpdatePostvarCurve(curveP theCurve)
 {
     int c1 = 1;
@@ -1027,10 +1387,17 @@ void UpdateHistory(curveP hazard, curveP frailty, regressionP regression, histor
     int ny = history->ny;
     F77_CALL(dcopy)(&(frailty->nx), frailty->X, &c1, history->frailty + iter-1, &(history->ny));
     F77_CALL(dcopy)(&(regression->p), regression->coefficients, &c1, history->coefficients + iter-1, &(history->ny));
-    if(frailty->hasSpline)
+    if(frailty->hasSpline){
+        int lknots = frailty->SplineNknots + 2*frailty->SplineOrd;
         F77_CALL(dcopy)(&(frailty->nj), frailty->SplinePar, &c1, history->FrailtySplinePar + iter-1, &(history->ny));
-    if(hazard->hasSpline)
+        F77_CALL(dcopy)(&(lknots), frailty->SplineKnots, &c1, history->FrailtySplineKnots + iter-1, &(history->ny));
+        history->FrailtySplineFvar[iter-1] = frailty->SplineFvar;
+    }
+    if(hazard->hasSpline){
+        int lknots = hazard->SplineNknots + 2*hazard->SplineOrd;
         F77_CALL(dcopy)(&(hazard->nj), hazard->SplinePar, &c1, history->HazardSplinePar + iter-1, &(history->ny));
+        F77_CALL(dcopy)(&(lknots), hazard->SplineKnots, &c1, history->HazardSplineKnots + iter-1, &(history->ny));
+    }
     if(frailty->hasPar)
         F77_CALL(dcopy)(&(frailty->np), frailty->ParamPar, &c1, history->FrailtyParamPar + iter-1, &(history->ny));
     if(hazard->hasPar)
@@ -1103,6 +1470,7 @@ SEXP SplineSurvMainLoop( SEXP Rhazard, SEXP Rfrailty, SEXP Rregression,
     int verbose = asInteger(Rverbose);
     while(iter < enditer)
     {
+        R_CheckUserInterrupt();
         iter++;
         if(verbose >= 3) Rprintf("%d ", iter);
         MH_Frail(hazard,frailty,regression);
@@ -1124,13 +1492,18 @@ SEXP SplineSurvMainLoop( SEXP Rhazard, SEXP Rfrailty, SEXP Rregression,
         UpdatePostvarCurve(frailty);
         UpdatePostvarRegression(regression);
 
+        if(hazard->SplineAdaptive) MH_BDM('h',hazard,frailty,regression);
+        if(frailty->SplineAdaptive) MH_BDM('f',hazard,frailty,regression);
+
         UpdateHistory(hazard, frailty, regression, history, iter);
         
     }
+    REAL(getListElement(Rhazard,"spline.nknots"))[0] = (double) hazard->SplineNknots;
+    REAL(getListElement(Rfrailty,"spline.nknots"))[0] = (double) frailty->SplineNknots;
     SEXP returnval = R_NilValue;
-    FreeCurveMem(hazard);
-    FreeCurveMem(frailty);
-    FreeRegMem(regression);
+    //FreeCurveMem(hazard);
+    //FreeCurveMem(frailty);
+    //FreeRegMem(regression);
     PutRNGstate();
     return returnval;
 }

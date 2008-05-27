@@ -45,18 +45,18 @@ double csplineeval( double x, int j, int ord, double *knots, int splord, int nj)
         if((x==knotj) & (j+splord==nj)) return 1.0;
         return 0.0;
     }
-    double knotjmn=knots[j-ord+splord];
-    double knotjmn1=knots[j-ord+1+splord];
-    double numer1 = (x-knotjmn);
-    double denom1 = (knotjm1 - knotjmn);
-    double numer2 = (knotj-x);
-    double denom2 = (knotj - knotjmn1);
     double out = 0;
+    double knotjmn=knots[j-ord+splord];
+    double denom1 = (knotjm1 - knotjmn);
     if(denom1>0){
+        double numer1 = (x-knotjmn);
         double rec1 = csplineeval(x,j-1,ord-1,knots,splord,nj);
         out += numer1/denom1*rec1;
     }
+    double knotjmn1=knots[j-ord+1+splord];
+    double denom2 = (knotj - knotjmn1);
     if(denom2>0){
+        double numer2 = (knotj-x);
         double rec2 = csplineeval(x,j,ord-1,knots,splord,nj);
         out += numer2/denom2*rec2;
     }
@@ -72,7 +72,7 @@ void csplinedesign(double *des, double *x, int *nx, double *knots, int *ord, int
     }
 }
 
-void cevalCinte(double *cinte, double *x, int *nx, double *knots, int *ord, int *K, double *binte)
+void cevalCinteOld(double *cinte, double *x, int *nx, double *knots, int *ord, int *K, double *binte)
 {
     int nj = *K + *ord;
     int nk = nj + *ord;
@@ -111,6 +111,63 @@ void cevalCinte(double *cinte, double *x, int *nx, double *knots, int *ord, int 
     free(knots2);
 }
 
+/*
+double csplinecumeval(double x, int j, int ord, int nj, double *knots, double * binte)
+{
+    double cinte = 0;
+    if(x>=knots[j+ord]) cinte = binte[j];
+    if((x<knots[j+ord]) & (x>=knots[j]))
+    {
+        int nk = nj+ord;
+        double * knots2 = (double *) malloc((nk+2) * sizeof(double));
+        knots2[0]=knots[0];
+        int ord2 = ord+1;
+        for(int i=0; i<nk; i++) knots2[i+1]=knots[i];
+        knots2[nk+1]=knots[nk-1];
+        for(int k=j+1;k<nj+1;k++)
+            cinte += binte[j] * csplineeval(x, k, ord2, knots2, ord2, nj);
+        free(knots2);
+    }
+    return cinte;
+}
+
+void cevalCinteOld2(double *cinte, double *x, int *nx, double *knots, int *ord, int *K, double *binte){
+    int nj= *K + *ord;
+    for(int i=0;i<*nx;i++){
+        for(int j=0; j< nj; j++)
+            cinte[i + j* *nx] = csplinecumeval( x[i], j, *ord, nj, knots, binte);
+    }
+}
+*/
+
+void cevalCinte2(double *cinte, double *x, int nx, double *knots, int nj, int ord, double *binte, int i, int jstart, int jstop)
+{
+    int nk = nj + ord;
+    double * knots2 = (double *) malloc((nk +2) * sizeof(double));
+    knots2[0]=knots[0];
+    for(int j=0; j<nk; j++) knots2[j+1]=knots[j];
+    knots2[nk+1]=knots[nk-1];
+    int ord2 = ord+1;
+    double * bs2 = (double *) malloc((nj+1)*  sizeof(double));
+    for(int j=jstart;j<nj+1;j++) bs2[j] = csplineeval(x[i],j,ord2,knots2,ord2,nj);
+    for(int j=jstart; j<jstop; j++){
+        cinte[i+j* nx]=0;
+        if(x[i]>=knots[j+ord]) cinte[i + j*nx] = binte[j];
+        if((x[i]<knots[j+ord]) & (x[i]>=knots[j]))
+        {
+            for(int k=j+1;k<nj+1;k++) 
+                cinte[i + j*nx]+=binte[j]*bs2[k];
+        }
+    }
+    free(bs2);
+    free(knots2);
+
+}
+
+void cevalCinte(double *cinte, double *x, int *nx, double *knots, int *ord, int *K, double *binte){
+    int nj = *K + *ord;
+    for(int i=0; i<*nx; i++) cevalCinte2(cinte, x, *nx, knots, nj, *ord, binte, i, 0, nj);
+}
 
 double cSplineConvolution(int k, int n1,int j1, int n2, int j2, double *knots, int splord)
 {
@@ -182,7 +239,11 @@ void cInitMultAndWeight( double *y,  double *B,  double *par,  double *weight,  
 
 void InitSmoothnessPenalty(double *pen, double *par, double *P, int *penaltyType, double *sigma2, int *nj)
 {
-    if(*penaltyType==0) *pen=0; //No penalty
+    if(*penaltyType==0){ 
+        int c1 = 1;
+        *pen = pow(F77_CALL(dnrm2)(nj, par, &c1),2.0);
+        *pen = *pen / (2 * *sigma2);
+    }
     if(*penaltyType==1 || *penaltyType==2 || *penaltyType==3){   // second differences or second derivative
         double * temp = (double *) calloc((*nj) , sizeof(double));
         int c1 = 1;
@@ -198,9 +259,13 @@ void InitSmoothnessPenalty(double *pen, double *par, double *P, int *penaltyType
 
 void addInitSmoothnessPenaltyGr(double *gr, double * penpar, double *P, int *penaltyType, double * sigma2, int *nj)
 {
+    int c1 = 1;
+    if(*penaltyType==0){
+        double scalefactor = -1 / *sigma2;
+        F77_CALL(daxpy)(nj, &scalefactor, penpar, &c1, gr, &c1);
+    }
     if(*penaltyType==1 || *penaltyType==2 || *penaltyType==3){   // second differences or second derivative
         double * temp = (double *) calloc((*nj) , sizeof(double));
-        int c1 = 1;
         double c1d = 1.0;
         char uplo = 'u';
         F77_CALL(dsymv)( &uplo, nj, &c1d, P, nj, penpar, &c1, &c1d, temp, &c1);
