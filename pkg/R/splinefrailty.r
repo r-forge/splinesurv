@@ -1,4 +1,5 @@
 # Birth-death-move branch
+# Todo: (high) allow not plotting a legend with newdata
 # Todo: (med) rug plot of frailties and event times
 # Todo: (med) precompute posterior curves
 # Todo: (med) allow exporting and importing initial values
@@ -1668,9 +1669,11 @@ summary.splinesurv<-function(object,quantiles=c(.025,.975),...)
     out$hazard<-x$hazard
     out$frailty<-x$frailty
     fvar<-post.fvar(x,quantiles)
+    fvar2<-apply(x$history$frailty[(out$burnin+1):out$iter,],1,var)
     out$frailty$spline.fvar<-fvar$mean["spline.fvar",]
     out$frailty$param.fvar<-fvar$mean["param.fvar",]
     out$frailty$fvar<-fvar$mean["fvar",]
+    out$frailty$fvar2<-mean(fvar2)
     out$posterior.mean<-x$posterior.mean
     out$quantiles.coef<-NULL
     if(out$iter<out$burnin) out$burnin<-0
@@ -1683,6 +1686,7 @@ summary.splinesurv<-function(object,quantiles=c(.025,.975),...)
         colnames(out$quantiles.coef)<-paste(quantiles*100,"%",sep="")
         rownames(out$quantiles.coef)<-rownames(out$coef)
         out$quantiles.fvar<-fvar$quantiles
+        out$quantiles.fvar2<-quantile(fvar2,quantiles)
     }
     out$dots<-as.list(substitute(list(...)))[-1]
     class(out)<-"summary.splinesurv"   
@@ -1714,9 +1718,11 @@ print.summary.splinesurv<-function(x,...)
     printpars<-paste(names(x$dots),unlist(x$dots),sep="=",collapse=",")
     if(nchar(printpars)) printpars<-paste(",",printpars)
     cat("\nRegression parameter posterior:\n")
-    eval(parse(text=paste("print(cbind(x$coef,x$quantiles.coef,...)",printpars,")")))
+    eval(parse(text=paste("print(cbind(x$coef,x$quantiles.coef)",printpars,")")))
     cat("\nFrailty variance:\n")
-    eval(parse(text=paste("print(cbind(x$frailty$fvar,x$quantiles.fvar[1,,drop=F],...)",printpars,")")))
+    fvarout<-rbind(cbind(x$frailty$fvar,x$quantiles.fvar[1,,drop=F]),c(x$frailty$fvar2,x$quantiles.fvar2))
+    rownames(fvarout)<-c("fvar","fvar2"); colnames(fvarout)[1]<-"mean"
+    eval(parse(text=paste("print(fvarout",printpars,")")))
     cat("\nBaseline hazard:")
     printcurvesummary(x$hazard,x$posterior.mean$hazard.weight,x$posterior.mean$hazard.param.par)
     cat("\nFrailty density:")
@@ -1821,7 +1827,7 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
             matplot(haz[,1],haz[,-1],type="l",col=col,lwd=lwd,lty=lty,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
             if(is.null(legend)) legend<-rownames(newdata)
             if(plotknots) abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
-            legend("topright",legend=legend,col=col,lty=lty,lwd=lwd)
+            if(!is.na(legend)) legend("topright",legend=legend,col=col,lty=lty,lwd=lwd)
         }
         if(which=="all") plot(x,which="survival",newdata=newdata,iter=iter,plotknots=plotknots,npoints=npoints,npost=npost,alpha=alpha,legend=legend,lty=lty,col=col,lwd=lwd,lty.knots=lty.knots,col.knots=col.knots,xlab=xlab,ylab=ylab,main=main,xlim=xlim,ylim=ylim,tk=tk,...)
     }
@@ -1936,7 +1942,12 @@ predict.splinesurv<-function(object,type=c("hazard","survival","lp","risk","frai
     if((type=="hazard" | type=="survival") & !is.null(newdata)) if(dim(newdata)[1]>1) stop("newdata may only have one row")
     if((type=="hazard" | type=="frailty" | type=="survival") & is.null(iter)){
         if(type=="hazard" | type=="survival") {if(is.null(x) | is.character(x))   x<-seq(from=min(fit$data$time),to=max(fit$data$time),length=ntimes) }
-        if(type=="frailty") { if(is.null(x)) x<-seq(from=min(fit$frailty$spline.knots),to=max(fit$frailty$spline.knots),length=ntimes) }
+        if(type=="frailty" & is.null(x)) {
+            knots<-fit$history$frailty.spline.knots[1,]
+            knots<-knots[knots>-Inf]
+            bounds<-range(knots)
+            x<-seq(from=bounds[1],to=bounds[2],length=ntimes) 
+        }
         ngooditer<-min(fit$control$maxiter-fit$control$burnin,npost)
         iters<-round(seq(from=fit$control$burnin+1,to=fit$control$maxiter,length=ngooditer))
         preds<-matrix(0,length(x),ngooditer)
@@ -2092,6 +2103,7 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
     control.default<-list(
         burnin=500, # Length of the burn-in period
         maxiter=1000, # Max number of iterations
+        thin=1, # Degree of thinning
         tun.auto=TRUE, # Auto-calibrate tuning parameters
         tun.int=100 # Interval for calibration of the acceptance rate
     )
@@ -2101,9 +2113,7 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
     if(!is.null(control.in)){
         for(n in innames) eval(parse(text=paste("control$",match.arg(n,controlnames),"<-control.in$",n,sep="")))
     }
-    if(control$burnin>control$maxiter) {
-        stop("Burnin cannot be greater than maxiter")
-    }
+    if(control$burnin>control$maxiter) stop("Burnin cannot be greater than maxiter")
      
      # Parse input (frailty)   
     frailty.in<-frailty
@@ -2230,8 +2240,8 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
     if(!is.null(reg.in)) for(n in names(reg.in)) eval(parse(text=paste("regression$",match.arg(n,regnames),"<-reg.in$",n,sep="")))
 
      # Automatic number of knots
-    if(is.null(hazard$spline.nknots)) hazard$spline.nknots<-max(min(round(sum(Ji)/4),35),1)
-    if(is.null(frailty$spline.nknots)) frailty$spline.nknots<-max(1,min(round(m/4),35),1)
+    if(is.null(hazard$spline.nknots)) hazard$spline.nknots<-if(hazard$spline.adaptive) min(hazard$spline.nknots.hyper,hazard$spline.maxoccknots) else max(min(round(sum(Ji)/4),35),1)
+    if(is.null(frailty$spline.nknots)) frailty$spline.nknots<-if(frailty$spline.adaptive) min(frailty$spline.nknots.hyper,frailty$spline.maxoccknots) else max(1,min(round(m/4),35),1)
     
     
     if(verbose>=2) cat("\tFitting Cox survival models...\n")
@@ -2512,7 +2522,8 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
     #browser()
     if(verbose>=1) cat("Starting MCMC...\n")
     
-    iter<-1
+    iter<-1 # Counts the recorded iterations
+    iter.el<-0 # Counts elapsed iterations in each thinning cycle
     
     if(verbose>=3) cat(iter," ")
 
@@ -2524,15 +2535,15 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
             gcout<-gc()
             nexttunint<-iter-iter%%control$tun.int+control$tun.int
             enditer <- min(nexttunint, control$maxiter)
-            out<-.Call("SplineSurvMainLoop",hazard,frailty,regression,history,iter,enditer,verbose) 
+            out<-.Call("SplineSurvMainLoop",hazard,frailty,regression,history,iter,enditer,control$thin,verbose) 
             iter<-enditer
         }else{
 
             # R version of the main loop
 
-            iter<-iter+1
+            iter.el<-iter.el+1
 
-            if(verbose>=3) cat(iter," ")
+            if(verbose>=4) cat(iter.el)
                 
             # MH update of frailties
             frailty<-mh.frail(hazard,frailty,regression)
@@ -2567,8 +2578,12 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
             if(frailty$spline.adaptive)
                 frailty<-mh.bdm("frailty",hazard,frailty,regression)
 
-                    
-            history<-updatehistory(history,iter,hazard,frailty,regression)
+            if(iter.el == control$thin){        
+                iter<-iter+1
+                history<-updatehistory(history,iter,hazard,frailty,regression)
+                iter.el<-0
+                if(verbose>=3) cat(" ",iter," ",sep="")
+            }
         }
 
         {{{  # Periodic calibration check

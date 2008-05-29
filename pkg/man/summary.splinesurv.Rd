@@ -21,6 +21,8 @@
     as documented in \code{\link{splinesurv}}, as well as:
     \item{quantiles}{matrix with the posterior mean and desired quantiles of
         the regression parameters.}
+    \item{quantiles.fvar}{quantiles of the variance of the frailty density}
+    \item{quantiles.fvar2}{quantiles of the variance of the estimated frailties}
 }
 \seealso{
 \code{\link{splinesurv}}

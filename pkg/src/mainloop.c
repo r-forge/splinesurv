@@ -1427,7 +1427,8 @@ void UpdateHistory(curveP hazard, curveP frailty, regressionP regression, histor
 
 
 SEXP SplineSurvMainLoop( SEXP Rhazard, SEXP Rfrailty, SEXP Rregression, 
-        SEXP Rhistory, SEXP Rstartiter, SEXP Renditer, SEXP Rverbose)
+        SEXP Rhistory, SEXP Rstartiter, SEXP Renditer, SEXP Rthin, 
+        SEXP Rverbose)
 {
     //Create locally stored curve structures
     
@@ -1467,12 +1468,15 @@ SEXP SplineSurvMainLoop( SEXP Rhazard, SEXP Rfrailty, SEXP Rregression,
     // Begin main loop
     int iter = asInteger(Rstartiter);
     int enditer = asInteger(Renditer);
+    int thin = asInteger(Rthin);
     int verbose = asInteger(Rverbose);
+    int iterEl = 0;
     while(iter < enditer)
     {
         R_CheckUserInterrupt();
-        iter++;
-        if(verbose >= 3) Rprintf("%d ", iter);
+        iterEl++;
+        if(verbose >= 4) Rprintf("%d", iterEl);
+        
         MH_Frail(hazard,frailty,regression);
 
         MH_Regression(hazard,frailty,regression);
@@ -1494,8 +1498,13 @@ SEXP SplineSurvMainLoop( SEXP Rhazard, SEXP Rfrailty, SEXP Rregression,
 
         if(hazard->SplineAdaptive) MH_BDM('h',hazard,frailty,regression);
         if(frailty->SplineAdaptive) MH_BDM('f',hazard,frailty,regression);
-
-        UpdateHistory(hazard, frailty, regression, history, iter);
+        
+        if(iterEl == thin){
+            iter++;
+            UpdateHistory(hazard, frailty, regression, history, iter);
+            iterEl = 0;
+            if(verbose>=3) Rprintf(" %d ",iter);
+        }
         
     }
     REAL(getListElement(Rhazard,"spline.nknots"))[0] = (double) hazard->SplineNknots;

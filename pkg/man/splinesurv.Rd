@@ -106,6 +106,10 @@
         \item{\code{maxiter}}{an integer giving the total number of MCMC
             iterations, must be greater than \code{burnin}. Default is
             \code{maxiter=1000}.}
+        \item{\code{thin}}{an integer giving the number of iterations to be
+            discarded between every recorded iteration. That is, if \code{iter=10},
+            a total of \code{maxiter*thin} iterations will be run, but only
+            \code{maxiter} will be recorded.}
         \item{\code{tun.auto}}{logical, determines whether to adaptively
             calibrate the tuning parameters during the burn-in period to achieve
             an acceptance rate of 0.25.  Defaults to \code{TRUE}.}
