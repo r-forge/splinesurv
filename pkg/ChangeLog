@@ -1,6 +1,7 @@
 ============ 0.6 ============
 
-0.6-6: Thinning option, second fvar estimator
+0.6-6: Thinning option, second fvar estimator, predict and plot function
+choice
 0.6-5: Bugfixes to ensure that several unlikely combinations of inputs work,
 and new predict and plot features
 0.6-4: Added "mixed" option for candidate knot distribution

@@ -6,7 +6,7 @@
 } 
 \usage{
 \method{predict}{splinesurv}(object, type = c("hazard","survival","lp","risk","frailty"),
-        x = NULL, newdata = NULL, iter = NULL, alpha = NULL, npost = 100, ...)
+        x = NULL, newdata = NULL, iter = NULL, fn = mean, alpha = NULL, npost = 100, ...)
 }
 \arguments{
     \item{object}{an object of type \code{\link{splinesurv}}.}
@@ -24,6 +24,8 @@
     \code{NULL} (default), the posterior means are used}
     \item{npost}{number of samples from the posterior to be used for estimating
         the curve}
+    \item{fn}{function to be applied to the posterior samples. Defaults to 
+    \code{mean}, but can be set to \code{median} or any other summary function.}
     \item{alpha}{level of pointwise confidence bands. Setting \code{alpha=NULL}
     omits bands.}
     \item{...}{additional parameters currently ignored}

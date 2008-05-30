@@ -7,10 +7,10 @@
 } 
 \usage{
 \method{plot}{splinesurv}(x, which = c("hazard", "survival", "frailty", "coef", "all"), 
-    newdata = NULL, iter=NULL, plotknots = TRUE, npoints = 100, npost = 100,
-    alpha = .05, legend = NULL, lty = 1, col = 2, lwd = 2, lty.knots = 1,
-    col.knots = 8, lwd.knots = 1, xlab = NULL, ylab = NULL, main = NULL, 
-    xlim = NULL, ylim = NULL, tk = FALSE, ...)
+    newdata = NULL, iter=NULL, fn = mean, plotknots = TRUE, npoints = 100,
+    npost = 100, alpha = .05, legend = NULL, lty = 1, col = 2, lwd = 2,
+    lty.knots = 1, col.knots = 8, lwd.knots = 1, xlab = NULL, ylab = NULL, 
+    main = NULL, xlim = NULL, ylim = NULL, tk = FALSE, ...)
 }
 \arguments{
     \item{x}{an object of type \code{\link{splinesurv}}.}
@@ -21,6 +21,8 @@
     \item{newdata}{ a data frame in the same format as the original data containing data for prediction of the hazard or survival function. If it has more than one row, multiple functions will be plotted, but credible bands will not.}
     \item{iter}{integer, indicating which iteration of the MCMC chain to plot. If \code{NULL} (default), the posterior means are used}
     \item{plotknots}{boolean indicating whether frailty spline knots should be plotted as vertical lines}
+    \item{fn}{function to be applied to the posterior samples. Defaults to 
+        \code{mean}, but can be set to \code{median} or any other summary function.}
     \item{npoints}{number of points to be used for drawing}
     \item{npost}{number of samples from the posterior to be used for estimating
         the curve}

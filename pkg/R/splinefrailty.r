@@ -1766,7 +1766,7 @@ printcurvesummary<-function(curve,w=NULL,param.par=NULL)
 ################# Methods for plotting
 
 
-plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),newdata=NULL,iter=NULL,plotknots=TRUE,npoints=100,npost=100,alpha=.05,legend=NULL,
+plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),newdata=NULL,iter=NULL,fn=mean,plotknots=TRUE,npoints=100,npost=100,alpha=.05,legend=NULL,
     lty=1,col=2,lwd=2,lty.knots=1,col.knots=8,lwd.knots=1,xlab=NULL,ylab=NULL,main=NULL,xlim=NULL,ylim=NULL,tk=FALSE,...)
 {
     if(tk) {
@@ -1810,7 +1810,7 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
             }else{ main1<-main }
         }
         if(is.null(newdata) | (!is.null(newdata) && dim(newdata)[1]<2)){
-            haz<-predict(x,type=type,x=times,newdata=newdata,iter=iter,npost=npost,alpha=alpha)
+            haz<-predict(x,type=type,x=times,newdata=newdata,iter=iter,fn=fn,npost=npost,alpha=alpha)
             plot(haz[,1:2],type="l",lty=lty,col=col,lwd=lwd,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
             if(plotknots) {
                 abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
@@ -1822,7 +1822,7 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
             }
         }else{
             haz<-times
-            for(i in 1:dim(newdata)[1]) haz<-cbind(haz,predict(x,type=type,x=times,newdata=newdata[i,,drop=FALSE],iter=iter,npost=npost)[,2])
+            for(i in 1:dim(newdata)[1]) haz<-cbind(haz,predict(x,type=type,x=times,newdata=newdata[i,,drop=FALSE],iter=iter,fn=fn,npost=npost)[,2])
             if(length(col)==1 & length(lty)==1 & length(lwd)==1) col=1:dim(newdata)[1]
             matplot(haz[,1],haz[,-1],type="l",col=col,lwd=lwd,lty=lty,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
             if(is.null(legend)) legend<-rownames(newdata)
@@ -1849,7 +1849,7 @@ plot.splinesurv<-function(x,which=c("hazard","survival","frailty","coef","all"),
         if(is.null(xlab)) xlab1<-"x" else xlab1<-xlab
         if(is.null(ylab)) ylab1<-"Density" else ylab1<-ylab
         if(is.null(main)) main1<-"Frailty density" else main1<-main
-        dens<-predict(x,type="frailty",x=Ui,iter=iter,npost=npost,alpha=alpha)
+        dens<-predict(x,type="frailty",x=Ui,iter=iter,fn=fn,npost=npost,alpha=alpha)
         plot(dens[,1:2],type="l",lty=lty,col=col,lwd=lwd,main=main1,xlab=xlab1,ylab=ylab1,xlim=xlim1,ylim=ylim,...)
         if(plotknots){
             abline(v=knots,col=col.knots,lty=lty.knots,lwd=lwd.knots,...)
@@ -1934,7 +1934,7 @@ splinesurvtkplot<-function(x,...)
 
 ################# predict method
 
-predict.splinesurv<-function(object,type=c("hazard","survival","lp","risk","frailty"),x=NULL,newdata=NULL,iter=NULL,alpha=NULL,npost=100,...)
+predict.splinesurv<-function(object,type=c("hazard","survival","lp","risk","frailty"),x=NULL,newdata=NULL,iter=NULL,fn=mean,alpha=NULL,npost=100,...)
 {
     type<-match.arg(type)
     fit<-object; haz<-1
@@ -1957,7 +1957,7 @@ predict.splinesurv<-function(object,type=c("hazard","survival","lp","risk","frai
             preds[,i]<-thispred[,2]
             i<-i+1
         }
-        pred<-apply(preds,1,mean,na.rm=TRUE)
+        pred<-apply(preds,1,fn,na.rm=TRUE)
         if(!is.null(alpha)) quantiles<-t(apply(preds,1,quantile,probs=c(alpha/2,1-alpha/2),na.rm=TRUE)) else quantiles<-NULL
         out<-cbind(x,pred,quantiles)
         colnames(out)<-c(colnames(thispred),colnames(quantiles))
@@ -1977,7 +1977,7 @@ predict.splinesurv<-function(object,type=c("hazard","survival","lp","risk","frai
                 preds[,i]<-thispred[,2]
                 i<-i+1
             }
-            pred<-apply(preds,1,mean,na.rm=TRUE)
+            pred<-apply(preds,1,fn,na.rm=TRUE)
             if(!is.null(alpha)) quantiles<-apply(preds,1,quantile,probs=c(alpha/2,1-alpha/2),na.rm=TRUE) else quantiles<-NULL
             out<-cbind(times,pred,t(quantiles))
             colnames(out)<-c(colnames(thispred),rownames(quantiles))
