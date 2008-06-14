@@ -16,6 +16,7 @@
 
 typedef enum {pnone=0, pdiff=1, pderiv=2, plogderiv=3} penalty;
 typedef enum {Dnone=0, Dexponential=1, Dweibull=2, Dlognormal=3, Dgamma=4} distribution;
+typedef enum {PrPoisson=0, PrGeometric=1, PrPoissonMix=2, PrNegBin=3, PrPower=4} nknotsprior;
 
 typedef struct curve {
     int hasSpline, //has a spline component
@@ -35,6 +36,7 @@ typedef struct curve {
            SplineEParSum;
     penalty SplinePenaltyType; // (0=none, 1=diff, 2=2deriv, 3=log2der)
     distribution ParDist; // Parametric distribution function
+    nknotsprior SplineNknotsPrior;
     double *SplineKnots, //Knots of the spline
            *SplineCandKnots, // Candidate knots for adaptive spline
            *SplineCandOcc, // occupied indices for the spline candidate knots
@@ -189,9 +191,20 @@ static inline void mvrnorm(int n, double *out, double *mu, double *CholSigma, do
     free(temp);
 }
 
+double dfactorial(double x)
+{
+    return x>1 ? x*dfactorial(x-1) : x;
+}
+
 static inline double rinvgamma(double shape, double scale)
 {
     double out = 1.0 / rgamma(shape, 1.0/scale);
+    return out;
+}
+
+static inline double dnegbin(double x, double r, double p)
+{
+    double out = gammafn(x+r)/( dfactorial(x))/gammafn(r)*pow(p,r)*pow(1-p,x);
     return out;
 }
 
@@ -245,6 +258,15 @@ void PopulateLocalCurve( curveP theCurve, SEXP Rcurve)
         theCurve->SplineCandOcc = REAL(getListElement(Rcurve,"spline.candocc"));
         theCurve->SplineBDMConst = REAL(getListElement(Rcurve,"spline.bdmconst"));
         theCurve->nj = theCurve->SplineNknots + theCurve->SplineOrd;
+        const char * charNknotsPrior = CHAR(STRING_ELT(getListElement(Rcurve,"spline.nknots.prior"),0));
+        nknotsprior iNknotsPrior;
+        if(strcmp(charNknotsPrior,"poisson")==0) iNknotsPrior=PrPoisson;
+        if(strcmp(charNknotsPrior,"geometric")==0) iNknotsPrior=PrGeometric;
+        if(strcmp(charNknotsPrior,"poissonmix")==0) iNknotsPrior=PrPoissonMix;
+        if(strcmp(charNknotsPrior,"negbin")==0) iNknotsPrior=PrNegBin;
+        if(strcmp(charNknotsPrior,"power")==0) iNknotsPrior=PrPower;
+        theCurve->SplineNknotsPrior = iNknotsPrior;
+
         const char * charPenaltyType = CHAR(STRING_ELT(getListElement(Rcurve,"spline.penalty"),0));
         penalty iPenaltyType;
         if (strcmp(charPenaltyType,"2diff") ==0) { iPenaltyType=pdiff; }
@@ -643,6 +665,22 @@ void UpdateCurveX(curveP theCurve, double x, int i)
     UpdateSplineBasis(theCurve, i, 0, theCurve->nj);
     EvalSpline(theCurve,i);
     EvalParametric(theCurve,i);
+}
+
+static inline double EvalNknotsPrior( int nknots, curveP theCurve)
+{
+    double dnknots = (double) nknots;
+    nknotsprior prior = theCurve->SplineNknotsPrior;
+    if(prior==PrPoisson) 
+        return dpois( dnknots, theCurve->SplineNknotsHyper[0], 0);
+    if(prior==PrGeometric) 
+        return dgeom( dnknots, theCurve->SplineNknotsHyper[0], 0);
+    if(prior==PrPoissonMix) 
+        return 0.5*( dpois( dnknots, theCurve->SplineNknotsHyper[0], 0) + dpois( dnknots, theCurve->SplineNknotsHyper[0], 0));
+    if(prior==PrNegBin) 
+        return dnegbin( dnknots, theCurve->SplineNknotsHyper[0], theCurve->SplineNknotsHyper[1]);
+    if(prior==PrPower) 
+        return pow( dnknots, theCurve->SplineNknotsHyper[0]);
 }
 
 static inline double LikelihoodFrailty(int i, curveP hazard, curveP frailty, regressionP regression)
@@ -1130,10 +1168,12 @@ void MH_BDM(char which, curveP hazard, curveP frailty, regressionP regression)
     //Rprintf("\n");
     //for(int i=0; i<nknots; i++) Rprintf("%d ",occind[i]);
     //Rprintf("\n");
-    double mu = (double) theCurve->SplineNknotsHyper[0];
-    double pk = dpois(nknots, mu ,0);
-    double pkp1 = (nknots < theCurve->SplineNknotsMax) ? dpois((double) (nknots+1),mu,0) : 0;
-    double pkm1 = (nknots > 1) ? dpois((double) (nknots-1),mu,0) : 0;
+    double pk = EvalNknotsPrior( nknots, theCurve );
+    double pkp1 = (nknots < theCurve->SplineNknotsMax) ? EvalNknotsPrior(nknots+1, theCurve) : 0;
+    double pkm1 = (nknots > 1) ? EvalNknotsPrior(nknots-1, theCurve) : 0;
+    //double pk = dpois((double) nknots, mu ,0);
+    //double pkp1 = (nknots < theCurve->SplineNknotsMax) ? dpois((double) (nknots+1),mu,0) : 0;
+    //double pkm1 = (nknots > 1) ? dpois((double) (nknots-1),mu,0) : 0;
     double pb = theCurve->SplineBDMConst[0] * dmin(1.0,pkp1/pk);
     double pd = theCurve->SplineBDMConst[0] * dmin(1.0,pkm1/pk);
     double pm = dmax(0.0,1.0-pb-pd);

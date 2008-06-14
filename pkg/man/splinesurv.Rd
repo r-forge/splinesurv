@@ -54,9 +54,14 @@
             of knots is chosen automatically, which is the default. If
             \code{spline.adaptive=TRUE}, this only serves as the initial number
             of knots.}
-        \item{\code{spline.nknots.hyper}}{a number giving the prior on the
-            number of knots (parameter of the Poisson prior). This controls the
-            smoothness of the spline when \code{spline.adaptive=TRUE}.}
+        \item{\code{spline.nknots.prior}}{a string specifying the type of prior
+            on the number of knots to use. Options are \code{"poisson"},
+            \code{"geometric"}, \code{"poissonmix"}, \code{"negbin"} and 
+            \code{"power"}. }  
+        \item{\code{spline.nknots.hyper}}{the parameter(s) for the prior on
+            the number of knots. For the Poisson prior, the mean, for the
+            Geometric, the probability, for the Poisson-mixture, two means,
+            and for the Power prior, the exponent.}
         \item{\code{spline.knotspacing}}{string that determines the way that
             knots are automatically chosen, if applicable. Possible values are
             \code{"quantile"} to place knots at quantiles of observed event

@@ -1,5 +1,8 @@
 ============ 0.6 ============
 
+0-6-8: Minor update, added negbin prior
+0.6-7: Prior for nknots selectable, including poisson, geometric, power,
+poissonmix
 0.6-6: Thinning option, second fvar estimator, predict and plot function
 choice
 0.6-5: Bugfixes to ensure that several unlikely combinations of inputs work,

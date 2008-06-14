@@ -1,9 +1,7 @@
-# Birth-death-move branch
-# Todo: (high) allow not plotting a legend with newdata
-# Todo: (med) rug plot of frailties and event times
-# Todo: (med) precompute posterior curves
-# Todo: (med) allow exporting and importing initial values
-# Todo: (med) allow plotting spline and parametric component separately
+# Todo: (low) rug plot of frailties and event times
+# Todo: (low) precompute posterior curves
+# Todo: (low) allow exporting and importing initial values
+# Todo: (low) allow plotting spline and parametric component separately
 # Todo: (low) better comments (using Doxygen maybe)
 # Todo: (low) Needs input checking
 
@@ -367,6 +365,11 @@ rinvgamma<-function(n,shape,scale=1)
     return(1/rgamma(n,shape,rate=scale))
 } 
 
+dnegbin<-function(x,r,p) {
+    out<-gamma(x+r)/factorial(x)/gamma(r)*p^r*(1-p)^x
+    out
+}
+
 logit<-function(p) log(p/(1-p))
 invlogit<-function(x) 1/(1+exp(-x))
 
@@ -391,6 +394,35 @@ makeoutputcurve<-function(curve)
                 )
     return(outcurve)   
 }
+
+nknotsPriorMean<-function(curve)
+{
+    if(curve$spline.nknots.prior=="poisson")
+        return(curve$spline.nknots.hyper)
+    if(curve$spline.nknots.prior=="geometric")
+        return(round(1/curve$spline.nknots.hyper))
+    if(curve$spline.nknots.prior=="poissonmix")
+        return(round(mean(curve$spline.nknots.hyper)))
+    if(curve$spline.nknots.prior=="negbin")
+        return(round(weighted.mean(1:curve$spline.maxoccknots,dnegbin(1:curve$spline.maxoccknots,curve$spline.nknots.hyper[1],curve$spline.nknots.hyper[2]))))
+    if(curve$spline.nknots.prior=="power")
+        return(round(weighted.mean(1:curve$spline.maxoccknots,(1:curve$spline.maxoccknots)^curve$spline.nknots.hyper)))
+}
+
+nknotsPrior<-function(x,curve)
+{
+    if(curve$spline.nknots.prior=="poisson")
+        return(dpois(x,curve$spline.nknots.hyper))
+    if(curve$spline.nknots.prior=="geometric")
+        return(dgeom(x,curve$spline.nknots.hyper))
+    if(curve$spline.nknots.prior=="poissonmix")
+        return(mean(dpois(x,curve$spline.nknots.hyper)))
+    if(curve$spline.nknots.prior=="negbin")
+        return(dnegbin(x,curve$spline.nknots.hyper[1],curve$spline.nknots.hyper[2]))
+    if(curve$spline.nknots.prior=="power")
+        return(x^curve$spline.nknots.hyper)
+}
+
 }}}
 
 {{{ #Initialize
@@ -1205,9 +1237,12 @@ mh.bdm<-function(which,hazard,frailty,regression)
     ncandknots<-curve$spline.ncandknots
     occ<-attr(candknots,"occupied")
     occind<-which(occ==1)
-    pk<-dpois(nknots,curve$spline.nknots.hyper)
-    pkp1<-if(nknots<curve$spline.maxoccknots) dpois(nknots+1,curve$spline.nknots.hyper) else 0
-    pkm1<-if(nknots>1) dpois(nknots-1,curve$spline.nknots.hyper) else 0
+    pk<-nknotsPrior(nknots,curve)
+    pkp1<-if(nknots<curve$spline.maxoccknots) nknotsPrior(nknots+1,curve) else 0
+    pkm1<-if(nknots>1) nknotsPrior(nknots-1,curve) else 0
+    #pk<-dpois(nknots,curve$spline.nknots.hyper)
+    #pkp1<-if(nknots<curve$spline.maxoccknots) dpois(nknots+1,curve$spline.nknots.hyper) else 0
+    #pkm1<-if(nknots>1) dpois(nknots-1,curve$spline.nknots.hyper) else 0
     pb<-curve$spline.bdmconst*min(1,pkp1/pk)
     pd<-curve$spline.bdmconst*min(1,pkm1/pk)
     pm<-max(0,1-pb-pd)
@@ -2124,7 +2159,8 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
         spline.knots=NULL,
         spline.knotspacing="equal",
         spline.nknots=NULL,
-        spline.nknots.hyper=10,
+        spline.nknots.prior=NULL,
+        spline.nknots.hyper=NULL,
         spline.ncandknots=100,
         spline.bdmconst=.4,
         spline.maxoccknots=35,
@@ -2167,6 +2203,13 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
         warning("no distribution specified for frailty parametric component -- setting to gamma")
         frailty$param.dist<-"gamma"
     }
+    frailty$spline.nknots.prior<-match.arg(frailty$spline.nknots.prior,c("poisson","geometric","poissonmix","negbin","power"))
+    if(frailty$spline.nknots.prior=="poisson" & is.null(frailty$spline.nknots.hyper)) frailty$spline.nknots.hyper<-10
+    if(frailty$spline.nknots.prior=="geometric" & is.null(frailty$spline.nknots.hyper)) frailty$spline.nknots.hyper<-0.1
+    if(frailty$spline.nknots.prior=="poissonmix" & is.null(frailty$spline.nknots.hyper)) frailty$spline.nknots.hyper<-c(10,30)
+    if(frailty$spline.nknots.prior=="negbin" & is.null(frailty$spline.nknots.hyper)) frailty$spline.nknots.hyper<-c(2,.1)
+    if(frailty$spline.nknots.prior=="power" & is.null(frailty$spline.nknots.hyper)) frailty$spline.nknots.hyper<--1/2
+
     frailty$spline.norm<-TRUE
     frailty$name<-"frailty"
     
@@ -2178,7 +2221,8 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
         spline.adaptive=TRUE,
         spline.knotspacing="mixed",
         spline.nknots=NULL,
-        spline.nknots.hyper=10,
+        spline.nknots.prior=NULL,
+        spline.nknots.hyper=NULL,
         spline.ncandknots=100,
         spline.maxoccknots=35,
         spline.bdmconst=.4,
@@ -2218,6 +2262,13 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
         warning("no distribution specified for hazard parametric component -- setting to weibull")
         hazard$param.dist<-"weibull"
     }
+    hazard$spline.nknots.prior<-match.arg(hazard$spline.nknots.prior,c("poisson","geometric","poissonmix","negbin","power"))
+    if(hazard$spline.nknots.prior=="poisson" & is.null(hazard$spline.nknots.hyper)) hazard$spline.nknots.hyper<-10
+    if(hazard$spline.nknots.prior=="geometric" & is.null(hazard$spline.nknots.hyper)) hazard$spline.nknots.hyper<-0.1
+    if(hazard$spline.nknots.prior=="poissonmix" & is.null(hazard$spline.nknots.hyper)) hazard$spline.nknots.hyper<-c(10,30)
+    if(hazard$spline.nknots.prior=="negbin" & is.null(hazard$spline.nknots.hyper)) hazard$spline.nknots.hyper<-c(2,.1)
+    if(hazard$spline.nknots.prior=="power" & is.null(hazard$spline.nknots.hyper)) hazard$spline.nknots.hyper<--1/2
+
     if(!hazard$haspar) hazard$weight<-1
     if(!hazard$hasspline) hazard$weight<-0
     if(!frailty$haspar) frailty$weight<-1
@@ -2240,8 +2291,8 @@ splinesurv.agdata<-function(x,hazard=NULL,frailty=NULL,regression=NULL,control=N
     if(!is.null(reg.in)) for(n in names(reg.in)) eval(parse(text=paste("regression$",match.arg(n,regnames),"<-reg.in$",n,sep="")))
 
      # Automatic number of knots
-    if(is.null(hazard$spline.nknots)) hazard$spline.nknots<-if(hazard$spline.adaptive) min(hazard$spline.nknots.hyper,hazard$spline.maxoccknots) else max(min(round(sum(Ji)/4),35),1)
-    if(is.null(frailty$spline.nknots)) frailty$spline.nknots<-if(frailty$spline.adaptive) min(frailty$spline.nknots.hyper,frailty$spline.maxoccknots) else max(1,min(round(m/4),35),1)
+    if(is.null(hazard$spline.nknots)) hazard$spline.nknots<-if(hazard$spline.adaptive) min(nknotsPriorMean(hazard),hazard$spline.maxoccknots) else max(min(round(sum(Ji)/4),35),1)
+    if(is.null(frailty$spline.nknots)) frailty$spline.nknots<-if(frailty$spline.adaptive) min(nknotsPriorMean(frailty),frailty$spline.maxoccknots) else max(1,min(round(m/4),35),1)
     
     
     if(verbose>=2) cat("\tFitting Cox survival models...\n")
