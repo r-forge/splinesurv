@@ -1,5 +1,6 @@
 ============ 0.6 ============
 
+0.6-9: Documentation and code comments
 0-6-8: Minor update, added negbin prior
 0.6-7: Prior for nknots selectable, including poisson, geometric, power,
 poissonmix

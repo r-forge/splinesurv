@@ -1,0 +1,830 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="../toc_index.html#top">Table of Contents</a>
+<a class="menuitem" href="../robo_sourcefiles.html#top">Sourcefiles</a>
+<a class="menuitem" href="../masterindex.html#top">Index</a>
+<a class="menuitem" href="../robo_definitions.html#top">Definitions</a>
+<a class="menuitem" href="../robo_functions.html#top">Functions</a>
+<a class="menuitem" href="../robo_modules.html#top">Modules</a>
+</div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo13">initRoutine/CinitRoutine</a></li>
+<ul>
+<li>1.1. <a href="#robo51">CinitRoutine/addInitSmoothnessPenaltyGr</a></li>
+<li>1.2. <a href="#robo52">CinitRoutine/cInitGrHazSpline</a></li>
+<li>1.3. <a href="#robo53">CinitRoutine/cInitLikFrailSpline</a></li>
+<li>1.4. <a href="#robo54">CinitRoutine/cInitLikHazSpline</a></li>
+<li>1.5. <a href="#robo55">CinitRoutine/cInitMultAndWeight</a></li>
+<li>1.6. <a href="#robo56">CinitRoutine/cMakePenalty2diff</a></li>
+<li>1.7. <a href="#robo57">CinitRoutine/InitSmoothnessPenalty</a></li>
+</ul>
+<li>2. <a href="#robo94">CsplineUtils/cevalBinte</a></li>
+<li>3. <a href="#robo95">CsplineUtils/cevalCinte</a></li>
+<li>4. <a href="#robo96">CsplineUtils/cevalCinte2</a></li>
+<li>5. <a href="#robo97">CsplineUtils/cevalCinteOld</a></li>
+<li>6. <a href="#robo98">CsplineUtils/cevalEinte</a></li>
+<li>7. <a href="#robo99">CsplineUtils/cnBsmom</a></li>
+<li>8. <a href="#robo100">CsplineUtils/cSplineConvolution</a></li>
+<li>9. <a href="#robo101">CsplineUtils/cSplineDerivInt</a></li>
+<li>10. <a href="#robo102">CsplineUtils/csplinedesign</a></li>
+<li>11. <a href="#robo103">CsplineUtils/csplineeval</a></li>
+</ul>
+<hr />
+<a name="initRoutine2fCinitRoutine"></a>
+<a name="robo13"></a><h2>initRoutine/CinitRoutine [ Modules ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="../R/splinefrailty_r.html#robo3">initRoutine</a> ] [ <a href="../robo_modules.html#robo_top_of_doc">Modules</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>CinitRoutine</strong> --- additional C functions used for initialization only
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Set of functions, mainly likelihood and gradient functions called during 
+    initialization of the <a href="../R/splinefrailty_r.html#robo21">splinesurv.agdata</a> function.
+</p>
+
+<hr />
+<a name="CinitRoutine2faddInitSmoothnessPenaltyGr"></a>
+<a name="robo51"></a><h2>CinitRoutine/addInitSmoothnessPenaltyGr [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="#robo13">CinitRoutine</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>addInitSmoothnessPenaltyGr</strong> --- adds gradient of smoothness penalty to an input vector
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Computes the gradient of the smoothness penaly over the spline parameters and adds it to
+    an input vector.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">532 </span><span class="keyword">void</span> <strong>addInitSmoothnessPenaltyGr</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>gr<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span> penpar<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>penaltyType<span class="sign">,</span>
+<span class="line_number">533 </span>        <span class="keyword">double</span> <span class="sign">*</span> sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    gr        gradient vector
+    penpar    parameters of the spline
+    P         penalty matrix
+    penaltyType   integer indexing the type of penalty (0=gaussian, 1=2diff, 2=2deriv, 3=log2deriv)
+    sigma2    prior variance
+    nj        number of B-spline basis functions
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">537 </span><span class="sign">{</span>
+<span class="line_number">538 </span>    <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">539 </span>    <span class="keyword">if</span><span class="comment">(*penaltyType==0){
+<span class="line_number">540 </span>        double scalefactor = -1 / *sigma2;
+<span class="line_number">541 </span>        F77_CALL(daxpy)(nj, &amp;scalefactor, penpar, &amp;c1, gr, &amp;c1);
+<span class="line_number">542 </span>    }
+<span class="line_number">543 </span>    // second differences or second derivative
+<span class="line_number">544 </span>    if(*penaltyType==1 || *penaltyType==2 || *penaltyType==3){   
+<span class="line_number">545 </span>        double * temp = (double *)</span> <span class="keyword">calloc</span><span class="sign">(</span><span class="comment">(*nj) , sizeof(double));
+<span class="line_number">546 </span>        double c1d = 1.0;
+<span class="line_number">547 </span>        char uplo = 'u';
+<span class="line_number">548 </span>        // compute smoothness penaly gradient.
+<span class="line_number">549 </span>        F77_CALL(dsymv)( &amp;uplo, nj, &amp;c1d, P, nj, penpar, &amp;c1, &amp;c1d, temp, &amp;c1);
+<span class="line_number">550 </span>        for(int i=0; i&lt;*nj; i++) temp[i]=temp[i]*penpar[i] / *sigma2;
+<span class="line_number">551 </span>        double scalefactor=-1;
+<span class="line_number">552 </span>        if(*penaltyType==3) {
+<span class="line_number">553 </span>            double pen=0;
+<span class="line_number">554 </span>            int c2 = 2;
+<span class="line_number">555 </span>            <a href="#robo57">InitSmoothnessPenalty</a>( &amp;pen, penpar, P, &amp;c2, sigma2, nj);
+<span class="line_number">556 </span>            scalefactor= -1/((2* *sigma2) * pen + 1);
+<span class="line_number">557 </span>        }
+<span class="line_number">558 </span>        // add to gradient
+<span class="line_number">559 </span>        F77_CALL(daxpy)(nj, &amp;scalefactor, temp, &amp;c1, gr, &amp;c1);
+<span class="line_number">560 </span>        free( temp );
+<span class="line_number">561 </span>    }
+<span class="line_number">562 </span>}
+</pre>
+
+<hr />
+<a name="CinitRoutine2fcInitGrHazSpline"></a>
+<a name="robo52"></a><h2>CinitRoutine/cInitGrHazSpline [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="#robo13">CinitRoutine</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cInitGrHazSpline</strong> --- gradient of likelihood of spline parameters for hazard
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute the gradient of the loglikelihood of parameters of the hazard spline component,
+    called by <a href="../R/splinefrailty_r.html#robo116">cmkgr.spline.haz</a> during initialization only.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">617 </span><span class="keyword">void</span> <strong>cInitGrHazSpline</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>gr<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>status<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>lp<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>frailrep<span class="sign">,</span>
+<span class="line_number">618 </span>    <span class="keyword">double</span> <span class="sign">*</span>hazParY<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>hazParYcum<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>weight<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>B<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>C<span class="sign">,</span>
+<span class="line_number">619 </span>    <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>penaltyType<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ny<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>   see <a href="../R/splinefrailty_r.html#robo116">cmkgr.spline.haz</a> for inputs and outputs.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">623 </span><span class="sign">{</span>
+<span class="line_number">624 </span>    <span class="keyword">double</span> <span class="sign">*</span> epar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*nj) * sizeof(double));
+<span class="line_number">625 </span>    double * hazY = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">626 </span>    double * temp = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">627 </span>    const int c1 = 1;
+<span class="line_number">628 </span>    F77_CALL(dcopy)(ny, hazParY, &amp;c1, hazY, &amp;c1);
+<span class="line_number">629 </span>    for(int i=0; i&lt; *nj; i++) epar[i]=exp(par[i]);
+<span class="line_number">630 </span>    const double c1d=1;
+<span class="line_number">631 </span>    const double cm1d=-1;
+<span class="line_number">632 </span>    <a href="#robo55">cInitMultAndWeight</a>( hazY, B, epar, weight, ny, nj);
+<span class="line_number">633 </span>    const char trans = 'T';
+<span class="line_number">634 </span>    for(int i=0; i&lt;*ny; i++) hazY[i]=status[i]/hazY[i]; 
+<span class="line_number">635 </span>    for(int i=0; i&lt;*ny; i++) temp[i]=exp(lp[i])*frailrep[i]; 
+<span class="line_number">636 </span>    F77_CALL(dgemv)(&amp;trans,ny,nj,&amp;c1d,B,ny,hazY,&amp;c1,&amp;c1d,gr,&amp;c1);
+<span class="line_number">637 </span>    F77_CALL(dgemv)(&amp;trans,ny,nj,&amp;cm1d,C,ny,temp,&amp;c1,&amp;c1d,gr,&amp;c1);
+<span class="line_number">638 </span>    for(int i=0; i&lt;*nj; i++) gr[i]=gr[i]*epar[i] * *weight;
+<span class="line_number">639 </span>    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
+<span class="line_number">640 </span>    <a href="#robo51">addInitSmoothnessPenaltyGr</a>(gr, penpar, P, penaltyType, sigma2, nj);
+<span class="line_number">641 </span>    free(epar);
+<span class="line_number">642 </span>    free(hazY);
+<span class="line_number">643 </span>    free(temp);
+<span class="line_number">644 </span>}
+</pre>
+
+<hr />
+<a name="CinitRoutine2fcInitLikFrailSpline"></a>
+<a name="robo53"></a><h2>CinitRoutine/cInitLikFrailSpline [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="#robo13">CinitRoutine</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cInitLikFrailSpline</strong> --- loglikelihood of parameters for spline component of frailty curve
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute the loglikelihood of parameters of the frailty spline component,
+    called by <a href="../R/splinefrailty_r.html#robo117">cmklik.spline.frail</a> during initialization only.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">657 </span><span class="keyword">void</span> <strong>cInitLikFrailSpline</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>lik<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>frailParY<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>weight<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>B<span class="sign">,</span>
+<span class="line_number">658 </span>        <span class="keyword">double</span> <span class="sign">*</span>E<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>M<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span> penaltyType<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ny<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    see <a href="../R/splinefrailty_r.html#robo117">cmklik.spline.frail</a>
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">662 </span><span class="sign">{</span>
+<span class="line_number">663 </span>    <span class="keyword">double</span> out<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">664 </span>    <span class="keyword">int</span> c1<span class="sign">=</span>1<span class="sign">;</span>
+<span class="line_number">665 </span>    <span class="keyword">double</span> <span class="sign">*</span> epar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*nj) * sizeof(double));
+<span class="line_number">666 </span>    double * eparnorm = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*nj) * sizeof(double));
+<span class="line_number">667 </span>    double * frailY = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">668 </span>    F77_CALL(dcopy)(ny, frailParY, &amp;c1, frailY, &amp;c1);
+<span class="line_number">669 </span>    for(int i=0; i&lt; *nj; i++) epar[i]=exp(par[i]);
+<span class="line_number">670 </span>    double  eparsum = 0;
+<span class="line_number">671 </span>    for(int i=0; i&lt; *nj; i++) eparsum+=epar[i];
+<span class="line_number">672 </span>    for(int i=0; i&lt; *nj; i++) eparnorm[i]=epar[i]/eparsum;
+<span class="line_number">673 </span>    <a href="#robo55">cInitMultAndWeight</a>( frailY, B, eparnorm, weight, ny, nj);
+<span class="line_number">674 </span>    for(int i=0; i&lt;*ny; i++) out+=log(frailY[i]); 
+<span class="line_number">675 </span>    double pen = 0;
+<span class="line_number">676 </span>    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
+<span class="line_number">677 </span>    <a href="#robo57">InitSmoothnessPenalty</a>(&amp;pen, penpar, P, penaltyType, sigma2, nj);
+<span class="line_number">678 </span>    out-=pen;
+<span class="line_number">679 </span>    out -= *M * pow((F77_CALL(ddot)(nj, E, &amp;c1, epar, &amp;c1)),2);
+<span class="line_number">680 </span>    *lik = out;
+<span class="line_number">681 </span>    free(epar);
+<span class="line_number">682 </span>    free(eparnorm);
+<span class="line_number">683 </span>    free(frailY);
+<span class="line_number">684 </span>}
+</pre>
+
+<hr />
+<a name="CinitRoutine2fcInitLikHazSpline"></a>
+<a name="robo54"></a><h2>CinitRoutine/cInitLikHazSpline [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="#robo13">CinitRoutine</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cInitLikHazSpline</strong> --- spline hazard likelihood for initialization
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute the loglikelihood of parameters of the hazard spline components. Called by
+    <a href="../R/splinefrailty_r.html#robo118">cmklik.spline.haz</a> during initialization.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">575 </span><span class="keyword">void</span> <strong>cInitLikHazSpline</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>lik<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>status<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>lp<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>frailrep<span class="sign">,</span>
+<span class="line_number">576 </span>    <span class="keyword">double</span> <span class="sign">*</span>hazParY<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>hazParYcum<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>weight<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>B<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>C<span class="sign">,</span>
+<span class="line_number">577 </span>    <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>penaltyType<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ny<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    see <a href="../R/splinefrailty_r.html#robo118">cmklik.spline.haz</a> for inputs and outputs
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">581 </span><span class="sign">{</span>
+<span class="line_number">582 </span>    <span class="keyword">double</span> <span class="sign">*</span> epar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*nj) * sizeof(double));
+<span class="line_number">583 </span>    double * hazY = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">584 </span>    double * hazYcum = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">585 </span>    const int c1 = 1;
+<span class="line_number">586 </span>    F77_CALL(dcopy)(ny, hazParY, &amp;c1, hazY, &amp;c1);
+<span class="line_number">587 </span>    F77_CALL(dcopy)(ny, hazParYcum, &amp;c1, hazYcum, &amp;c1);
+<span class="line_number">588 </span>    for(int i=0; i&lt; *nj; i++) epar[i]=exp(par[i]);
+<span class="line_number">589 </span>    <a href="#robo55">cInitMultAndWeight</a>( hazY, B, epar, weight, ny, nj);
+<span class="line_number">590 </span>    <a href="#robo55">cInitMultAndWeight</a>( hazYcum, C, epar, weight, ny, nj);
+<span class="line_number">591 </span>    double out=0;
+<span class="line_number">592 </span>    for(int i=0; i&lt; *ny; i++) hazY[i]=log(hazY[i]);
+<span class="line_number">593 </span>    out += F77_CALL(ddot)(ny,status,&amp;c1,hazY,&amp;c1);
+<span class="line_number">594 </span>    for(int i=0; i&lt; *ny; i++)
+<span class="line_number">595 </span>        out -= frailrep[i]*hazYcum[i]*exp(lp[i]);
+<span class="line_number">596 </span>    double pen = 0;
+<span class="line_number">597 </span>    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
+<span class="line_number">598 </span>    <a href="#robo57">InitSmoothnessPenalty</a>(&amp;pen, penpar, P, penaltyType, sigma2, nj);
+<span class="line_number">599 </span>    out-=pen;
+<span class="line_number">600 </span>    *lik = out;
+<span class="line_number">601 </span>    free(epar);
+<span class="line_number">602 </span>    free(hazY);
+<span class="line_number">603 </span>    free(hazYcum);
+<span class="line_number">604 </span>}
+</pre>
+
+<hr />
+<a name="CinitRoutine2fcInitMultAndWeight"></a>
+<a name="robo55"></a><h2>CinitRoutine/cInitMultAndWeight [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="#robo13">CinitRoutine</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cInitMultAndWeight</strong> --- multiply a spline component and add it to a weighted parametric component
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Given a B-spline basis and a set of parameters, this curve multiplies the basis by the parameters
+    to produce an estimate of the spline component, then weights it and adds it to an existing
+    parametric component. It's inelegant, but fast for initialization.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">461 </span><span class="keyword">void</span> <strong>cInitMultAndWeight</strong><span class="sign">(</span> <span class="keyword">double</span> <span class="sign">*</span>y<span class="sign">,</span>  <span class="keyword">double</span> <span class="sign">*</span>B<span class="sign">,</span>  <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span>  <span class="keyword">double</span> <span class="sign">*</span>weight<span class="sign">,</span>  <span class="keyword">int</span>  <span class="sign">*</span>ny<span class="sign">,</span>  <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    y         parametric curve component, on output holds the total curve
+    B         B-spline basis
+    par       weights of each basis element
+    weight    weight of the spline component
+    ny        length of y
+    nj        number of basis functions
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">465 </span><span class="sign">{</span>
+<span class="line_number">466 </span>    <span class="comment">// compute w*B%*%exp(par) + (1-w)y</span>
+<span class="line_number">467 </span>    const <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">468 </span>    const char trans <span class="sign">=</span> <span class="squote">'N'</span><span class="sign">;</span>
+<span class="line_number">469 </span>    const <span class="keyword">double</span> onemw<span class="sign">=</span>1<span class="sign">-</span><span class="sign">*</span>weight<span class="sign">;</span>
+<span class="line_number">470 </span>    F77_CALL<span class="sign">(</span>dgemv<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>trans<span class="sign">,</span>ny<span class="sign">,</span>nj<span class="sign">,</span>weight<span class="sign">,</span>B<span class="sign">,</span>ny<span class="sign">,</span>par<span class="sign">,</span><span class="sign">&amp;</span>c1<span class="sign">,</span><span class="sign">&amp;</span>onemw<span class="sign">,</span>y<span class="sign">,</span><span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">471 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CinitRoutine2fcMakePenalty2diff"></a>
+<a name="robo56"></a><h2>CinitRoutine/cMakePenalty2diff [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="#robo13">CinitRoutine</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cMakePenalty2diff</strong> --- compute a penalty matrix on second derivatives
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Generates a penalty matrix that penalizes the integral of the squared second derivative
+    of a curve. See also <a href="../R/splinefrailty_r.html#robo125">makePenalty.2deriv</a>.
+</p>
+    
+<p>    This function should be called cMakePenalty2deriv, but I'm scared of changing its name.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">428 </span><span class="keyword">void</span> <strong>cMakePenalty2diff</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    P     a matrix of dimension (K+ord) x (K+ord)
+    knots set of knots on which the spline is defined
+    ord   order of the spline
+    K     number of interior knots
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">432 </span><span class="sign">{</span>
+<span class="line_number">433 </span>    <span class="comment">// P should be (K+ord)^2</span>
+<span class="line_number">434 </span>    <span class="keyword">int</span> nj <span class="sign">=</span> <span class="sign">*</span>K <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">435 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j1<span class="sign">=</span>0<span class="sign">;</span> j1<span class="sign">&lt;</span>nj<span class="sign">;</span> j1<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">436 </span>    <span class="sign">{</span>
+<span class="line_number">437 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j2<span class="sign">=</span>j1<span class="sign">;</span> j2<span class="sign">&lt;</span>nj<span class="sign">;</span> j2<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">438 </span>            P<span class="sign">[</span>j1 <span class="sign">+</span> j2<span class="sign">*</span>nj<span class="sign">]</span><span class="sign">=</span><a href="#robo101">cSplineDerivInt</a><span class="sign">(</span>2<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> j1<span class="sign">,</span> 2<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> j2<span class="sign">,</span> knots<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">439 </span>            P<span class="sign">[</span>j2 <span class="sign">+</span> j1<span class="sign">*</span>nj<span class="sign">]</span><span class="sign">=</span>P<span class="sign">[</span>j1 <span class="sign">+</span> j2<span class="sign">*</span>nj<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">440 </span>        <span class="sign">}</span>
+<span class="line_number">441 </span>    <span class="sign">}</span>
+<span class="line_number">442 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CinitRoutine2fInitSmoothnessPenalty"></a>
+<a name="robo57"></a><h2>CinitRoutine/InitSmoothnessPenalty [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="#robo13">CinitRoutine</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>InitSmoothnessPenalty</strong> --- compute the smoothness penalty during initialization
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Special function to compute the smoothness penalty during initialization. This differs from
+    <a href="./mainloop_c.html#robo68">SmoothnessPenalty</a> in that this routine does not take a <a href="./mainloop_c.html#robo23">CCurve</a> as input, rather only the
+    relevant components, and can thus be called directly from R.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">490 </span><span class="keyword">void</span> <strong>InitSmoothnessPenalty</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>pen<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>penaltyType<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    pen       output storage
+    par       parameters of the spline
+    P         penalty matrix
+    penaltyType   integer indexing the type of penalty (0=gaussian, 1=2diff, 2=2deriv, 3=log2deriv)
+    sigma2    prior variance
+    nj        number of B-spline basis functions
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">494 </span><span class="sign">{</span>
+<span class="line_number">495 </span>    <span class="keyword">if</span><span class="comment">(*penaltyType==0){  // Gaussian
+<span class="line_number">496 </span>        int c1 = 1;
+<span class="line_number">497 </span>        *pen = pow(F77_CALL(dnrm2)(nj, par, &amp;c1),2.0);
+<span class="line_number">498 </span>        *pen = *pen / (2 * *sigma2);
+<span class="line_number">499 </span>    }
+<span class="line_number">500 </span>    // second differences or second derivative
+<span class="line_number">501 </span>    if(*penaltyType==1 || *penaltyType==2 || *penaltyType==3){   
+<span class="line_number">502 </span>        double * temp = (double *)</span> <span class="keyword">calloc</span><span class="sign">(</span><span class="comment">(*nj) , sizeof(double));
+<span class="line_number">503 </span>        int c1 = 1;
+<span class="line_number">504 </span>        double c1d = 1.0;
+<span class="line_number">505 </span>        char uplo = 'u';
+<span class="line_number">506 </span>        // compute par %*% P %*% par
+<span class="line_number">507 </span>        F77_CALL(dsymv)( &amp;uplo, nj, &amp;c1d, P, nj, par, &amp;c1, &amp;c1d, temp, &amp;c1);
+<span class="line_number">508 </span>        *pen = F77_CALL(ddot)( nj, temp, &amp;c1, par, &amp;c1);
+<span class="line_number">509 </span>        if(*penaltyType==3) *pen=log(*pen+1);
+<span class="line_number">510 </span>        *pen = *pen / (2 * *sigma2);
+<span class="line_number">511 </span>        free( temp );
+<span class="line_number">512 </span>    }
+<span class="line_number">513 </span>}
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcevalBinte"></a>
+<a name="robo94"></a><h2>CsplineUtils/cevalBinte [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cevalBinte</strong> --- compute the integrals of each spline basis function
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    C re-implmentation of <a href="../R/splinefrailty_r.html#robo179">evalBinte</a> function. See its description for detail.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">86 </span><span class="keyword">void</span> <strong>cevalBinte</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>binte<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    binte     vector of length K+ord to store output
+    knots     vector of knots of length K+2*ord
+    ord       order of the spline
+    K         number of interior knots
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">90 </span><span class="sign">{</span>
+<span class="line_number">91 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span><span class="sign">*</span>K<span class="sign">+</span><span class="sign">*</span>ord<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">92 </span>        binte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">=</span><span class="sign">(</span>knots<span class="sign">[</span>j<span class="sign">+</span><span class="sign">*</span>ord<span class="sign">]</span><span class="sign">-</span>knots<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span> <span class="sign">/</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">93 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcevalCinte"></a>
+<a name="robo95"></a><h2>CsplineUtils/cevalCinte [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cevalCinte</strong> --- construct matrix of partial integrals of a B-spline basis
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This is needed to compute the cumulative baseline hazard. This function updates the input matrix 
+    cinte, so that cinte[i,j] contains the
+    integral of the j-th B-spline basis function of order ord, defined on the given knots,
+    from 0 to x[i]. It's just a wrapper for <a href="#robo96">cevalCinte2</a> that evaluates the entire matrix.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">303 </span><span class="keyword">void</span> <strong>cevalCinte</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>cinte<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>x<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nx<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>binte<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    cinte     output matrix of dimension nx x nj
+    x         vector of observations at which to evaluate
+    nx        length of x
+    knots     vector of knot positions, length nj+ord
+    ord       order of the spline
+    binte     vector of integrals of each B-spline basis function, see <a href="../R/splinefrailty_r.html#robo112">cevalBinte</a>
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">307 </span><span class="sign">{</span>
+<span class="line_number">308 </span>    <span class="keyword">int</span> nj <span class="sign">=</span> <span class="sign">*</span>K <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">309 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span><span class="sign">*</span>nx<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> <a href="#robo96">cevalCinte2</a><span class="sign">(</span>cinte<span class="sign">,</span> x<span class="sign">,</span> <span class="sign">*</span>nx<span class="sign">,</span> knots<span class="sign">,</span> nj<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> binte<span class="sign">,</span> i<span class="sign">,</span> 0<span class="sign">,</span> nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">310 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcevalCinte2"></a>
+<a name="robo96"></a><h2>CsplineUtils/cevalCinte2 [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cevalCinte2</strong> --- compute partial integrals of B-spline basis functions
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This is needed to compute the cumulative baseline hazard. This function updates the i-th
+    row of the input matrix cinte, from jstart to jstop, so that cinte[i,j] contains the
+    integral of the j-th B-spline basis function of order ord, defined on the given knots,
+    from 0 to x[i].
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">255 </span><span class="keyword">void</span> <strong>cevalCinte2</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>cinte<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>x<span class="sign">,</span> <span class="keyword">int</span> nx<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> nj<span class="sign">,</span> <span class="keyword">int</span> ord<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>binte<span class="sign">,</span>
+<span class="line_number">256 </span>        <span class="keyword">int</span> i<span class="sign">,</span> <span class="keyword">int</span> jstart<span class="sign">,</span> <span class="keyword">int</span> jstop<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    cinte     output matrix of dimension nx x nj
+    x         vector of observations at which to evaluate
+    nx        length of x
+    knots     vector of knot positions, length nj+ord
+    ord       order of the spline
+    binte     vector of integrals of each B-spline basis function, see <a href="../R/splinefrailty_r.html#robo112">cevalBinte</a>
+    i         row of cinte to update
+    jstart    starting column of cinte to update
+    jstop     ending column of cinte to update
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">260 </span><span class="sign">{</span>
+<span class="line_number">261 </span>    <span class="keyword">int</span> nk <span class="sign">=</span> nj <span class="sign">+</span> ord<span class="sign">;</span>
+<span class="line_number">262 </span>    <span class="keyword">double</span> <span class="sign">*</span> knots2 <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="sign">(</span>nk <span class="sign">+</span>2<span class="sign">)</span> <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">263 </span>    knots2<span class="sign">[</span>0<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>0<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">264 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nk<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> knots2<span class="sign">[</span>j<span class="sign">+</span>1<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">265 </span>    knots2<span class="sign">[</span>nk<span class="sign">+</span>1<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>nk<span class="sign">-</span>1<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">266 </span>    <span class="keyword">int</span> ord2 <span class="sign">=</span> ord<span class="sign">+</span>1<span class="sign">;</span>
+<span class="line_number">267 </span>    <span class="keyword">double</span> <span class="sign">*</span> bs2 <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="sign">(</span>nj<span class="sign">+</span>1<span class="sign">)</span><span class="sign">*</span>  sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">268 </span>    <span class="comment">// compute a basis of order ord+1</span>
+<span class="line_number">269 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>jstart<span class="sign">;</span>j<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span>j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> bs2<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> <a href="#robo103">csplineeval</a><span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">,</span>j<span class="sign">,</span>ord2<span class="sign">,</span>knots2<span class="sign">,</span>ord2<span class="sign">,</span>nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">270 </span>    <span class="comment">// compute as in <a href="../R/splinefrailty_r.html#robo180">evalCinte</a> for the row and set of columns given</span>
+<span class="line_number">271 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>jstart<span class="sign">;</span> j<span class="sign">&lt;</span>jstop<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">272 </span>        cinte<span class="sign">[</span>i<span class="sign">+</span>j<span class="sign">*</span> nx<span class="sign">]</span><span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">273 </span>        <span class="keyword">if</span><span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&gt;</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">+</span>ord<span class="sign">]</span><span class="sign">)</span> cinte<span class="sign">[</span>i <span class="sign">+</span> j<span class="sign">*</span>nx<span class="sign">]</span> <span class="sign">=</span> binte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">274 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&lt;</span>knots<span class="sign">[</span>j<span class="sign">+</span>ord<span class="sign">]</span><span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&gt;</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">275 </span>        <span class="sign">{</span>
+<span class="line_number">276 </span>            <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">=</span>j<span class="sign">+</span>1<span class="sign">;</span>k<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span>k<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> 
+<span class="line_number">277 </span>                cinte<span class="sign">[</span>i <span class="sign">+</span> j<span class="sign">*</span>nx<span class="sign">]</span><span class="sign">+</span><span class="sign">=</span>binte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">*</span>bs2<span class="sign">[</span>k<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">278 </span>        <span class="sign">}</span>
+<span class="line_number">279 </span>    <span class="sign">}</span>
+<span class="line_number">280 </span>    <span class="keyword">free</span><span class="sign">(</span>bs2<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">281 </span>    <span class="keyword">free</span><span class="sign">(</span>knots2<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">282 </span>
+<span class="line_number">283 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcevalCinteOld"></a>
+<a name="robo97"></a><h2>CsplineUtils/cevalCinteOld [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cevalCinteOld</strong> --- old method for computing <a href="#robo95">cevalCinte</a>
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    See <a href="../R/splinefrailty_r.html#robo180">evalCinte</a>. This function works analogously to the R implementation, but
+    was too slow, so it was replaced by <a href="#robo96">cevalCinte2</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">191 </span><span class="keyword">void</span> <strong>cevalCinteOld</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>cinte<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>x<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nx<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>binte<span class="sign">)</span>
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">195 </span><span class="sign">{</span>
+<span class="line_number">196 </span>    <span class="keyword">int</span> nj <span class="sign">=</span> <span class="sign">*</span>K <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">197 </span>    <span class="keyword">int</span> nk <span class="sign">=</span> nj <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">198 </span>    <span class="keyword">double</span> <span class="sign">*</span> knots2 <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="sign">(</span>nk <span class="sign">+</span>2<span class="sign">)</span> <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">199 </span>    knots2<span class="sign">[</span>0<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>0<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">200 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nk<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">201 </span>        knots2<span class="sign">[</span>j<span class="sign">+</span>1<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">202 </span>    knots2<span class="sign">[</span>nk<span class="sign">+</span>1<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>nk<span class="sign">-</span>1<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">203 </span><span class="comment">#ifdef DEBUGCINTE</span>
+<span class="line_number">204 </span>    Rprintf<span class="sign">(</span><span class="quote">"knots2:\n "</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">205 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nk<span class="sign">+</span>2<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"%f "</span><span class="sign">,</span>knots2<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">206 </span>    Rprintf<span class="sign">(</span><span class="quote">"\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">207 </span><span class="comment">#endif</span>
+<span class="line_number">208 </span>    <span class="keyword">int</span> ord2 <span class="sign">=</span> <span class="sign">*</span>ord<span class="sign">+</span>1<span class="sign">;</span>
+<span class="line_number">209 </span>    <span class="keyword">double</span> <span class="sign">*</span> bs2 <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="sign">(</span>nj<span class="sign">+</span>1<span class="sign">)</span><span class="sign">*</span> <span class="sign">*</span>nx <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">210 </span>    <a href="#robo102">csplinedesign</a><span class="sign">(</span>bs2<span class="sign">,</span>x<span class="sign">,</span>nx<span class="sign">,</span>knots2<span class="sign">,</span><span class="sign">&amp;</span>ord2<span class="sign">,</span>K<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">211 </span><span class="comment">#ifdef  DEBUGCINTE</span>
+<span class="line_number">212 </span>    Rprintf<span class="sign">(</span><span class="quote">"bs2:\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">213 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"%f "</span><span class="sign">,</span>bs2<span class="sign">[</span>j <span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">214 </span>    Rprintf<span class="sign">(</span><span class="quote">"\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">215 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"%f "</span><span class="sign">,</span>bs2<span class="sign">[</span>1<span class="sign">+</span> j <span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">216 </span>    Rprintf<span class="sign">(</span><span class="quote">"\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">217 </span><span class="comment">#endif</span>
+<span class="line_number">218 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span> <span class="sign">*</span>nx<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">219 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nj<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">220 </span>            cinte<span class="sign">[</span>i<span class="sign">+</span>j<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">221 </span>            <span class="keyword">if</span><span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&gt;</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">]</span><span class="sign">)</span> cinte<span class="sign">[</span>i <span class="sign">+</span> j<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span> <span class="sign">=</span> binte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">222 </span>            <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&lt;</span>knots<span class="sign">[</span>j<span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">]</span><span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&gt;</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">223 </span>            <span class="sign">{</span>
+<span class="line_number">224 </span>                <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">=</span>j<span class="sign">+</span>1<span class="sign">;</span>k<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span>k<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> 
+<span class="line_number">225 </span>                    cinte<span class="sign">[</span>i <span class="sign">+</span> j<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">+</span><span class="sign">=</span>binte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">*</span>bs2<span class="sign">[</span>i <span class="sign">+</span> k<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">226 </span>            <span class="sign">}</span>
+<span class="line_number">227 </span>        <span class="sign">}</span>
+<span class="line_number">228 </span>    <span class="sign">}</span>
+<span class="line_number">229 </span>    <span class="keyword">free</span><span class="sign">(</span>bs2<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">230 </span>    <span class="keyword">free</span><span class="sign">(</span>knots2<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">231 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcevalEinte"></a>
+<a name="robo98"></a><h2>CsplineUtils/cevalEinte [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cevalEinte</strong> --- compute the N-th moment of the distance from 1 of a B-spline
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    C implementation of <a href="../R/splinefrailty_r.html#robo181">evalEinte</a>, see its description for details. The difference is
+    that this function can compute general moments, not just the first moment. The second
+    moment is needed for computing the frailty variance.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">63 </span><span class="keyword">void</span> <strong>cevalEinte</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>einte<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>N<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    einte     vector of length K+ord to store the output
+    knots     vector of knots, of length K+2*ord
+    ord       order of the spline
+    K         number of interior knots
+    N         moment to compute
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">67 </span><span class="sign">{</span>
+<span class="line_number">68 </span>    <span class="keyword">int</span> j<span class="sign">;</span>
+<span class="line_number">69 </span>    <span class="keyword">for</span><span class="sign">(</span>j<span class="sign">=</span>0<span class="sign">;</span> j <span class="sign">&lt;</span> <span class="sign">*</span>K<span class="sign">+</span><span class="sign">*</span>ord<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">70 </span>        einte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">=</span>1<span class="sign">.</span>0<span class="sign">-</span><a href="#robo99">cnBsmom</a><span class="comment">(*N,*ord,j,knots,*ord);
+<span class="line_number">71 </span>}
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcnBsmom"></a>
+<a name="robo99"></a><h2>CsplineUtils/cnBsmom [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cnBsmom</strong> --- compute the N-h moment of a B-spline basis function
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>   Computes the N-th moment of the j-th B-spline basis function of order ord defined
+   on the given set of knots. See also <a href="../R/splinefrailty_r.html#robo186">nBsmom</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">30 </span><span class="keyword">double</span> <strong>cnBsmom</strong><span class="sign">(</span>const <span class="keyword">int</span> N<span class="sign">,</span> const <span class="keyword">int</span> ord<span class="sign">,</span> const <span class="keyword">int</span> j<span class="sign">,</span> const <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> const <span class="keyword">int</span> knotord<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    N       moment to compute
+    ord     order of the spline
+    j       which basis function to compute the moment for
+    knots   set of knots to use
+    knotord order for which the knots were constructed
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">34 </span><span class="sign">{</span>
+<span class="line_number">35 </span>    <span class="keyword">double</span> lknot<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">-</span>ord<span class="sign">+</span>knotord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">36 </span>    <span class="keyword">double</span> rknot<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">+</span>knotord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">37 </span>    <span class="keyword">if</span><span class="sign">(</span>lknot<span class="sign">=</span><span class="sign">=</span>rknot<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">38 </span>        <span class="keyword">return</span> <span class="keyword">pow</span><span class="sign">(</span>rknot<span class="sign">,</span>N<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">39 </span>    <span class="sign">}</span>
+<span class="line_number">40 </span>    <span class="keyword">double</span> out<span class="sign">;</span>
+<span class="line_number">41 </span>    <span class="comment">// magic recursive formula</span>
+<span class="line_number">42 </span>    out <span class="sign">=</span> ord<span class="sign">/</span><span class="sign">(</span>rknot<span class="sign">-</span>lknot<span class="sign">)</span><span class="sign">/</span><span class="sign">(</span>N<span class="sign">+</span>1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">43 </span>    out <span class="sign">=</span> out<span class="sign">*</span><span class="sign">(</span><span class="sign">-</span><strong>cnBsmom</strong><span class="sign">(</span>N<span class="sign">+</span>1<span class="sign">,</span>ord<span class="sign">-</span>1<span class="sign">,</span>j<span class="sign">-</span>1<span class="sign">,</span>knots<span class="sign">,</span>knotord<span class="sign">)</span><span class="sign">+</span><strong>cnBsmom</strong><span class="sign">(</span>N<span class="sign">+</span>1<span class="sign">,</span>ord<span class="sign">-</span>1<span class="sign">,</span>j<span class="sign">,</span>knots<span class="sign">,</span>knotord<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">44 </span>    <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">45 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcSplineConvolution"></a>
+<a name="robo100"></a><h2>CsplineUtils/cSplineConvolution [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cSplineConvolution</strong> --- compute the convolution of two basis functions
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This function computes the convolution of two spline basis functions, that is,
+</p>
+<pre>       int_0^infty ( x^k B_1(x) * B_2(x) ) dx
+</pre>
+<p>    where the splines may be of different orders, but are defined on the same set of knots.
+    See also <a href="../R/splinefrailty_r.html#robo189">splineconv</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">333 </span><span class="keyword">double</span> <strong>cSplineConvolution</strong><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">,</span> <span class="keyword">int</span> n1<span class="sign">,</span><span class="keyword">int</span> j1<span class="sign">,</span> <span class="keyword">int</span> n2<span class="sign">,</span> <span class="keyword">int</span> j2<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> splord<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    k      the power of x used in the convolution
+    n1     order of the first spline
+    j1     largest knot of the first spline
+    n2     order of the second spline
+    j2     largest knot of the second spline
+    knots  set of knots on which the splines are defined
+    splord order of the splines
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    The k-th order convolution of the splines defined by the input parameters
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">337 </span><span class="sign">{</span>
+<span class="line_number">338 </span>    <span class="keyword">double</span> out<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">339 </span>    <span class="comment">// if the splines don't overlap, the convolution is 0</span>
+<span class="line_number">340 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>j1 <span class="sign">-</span>n1<span class="sign">&gt;</span><span class="sign">=</span>j2<span class="sign">)</span> <span class="sign">|</span> <span class="sign">(</span>j2 <span class="sign">-</span>n2<span class="sign">&gt;</span><span class="sign">=</span>j1<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">341 </span>    <span class="comment">// if both splines are first-order, the convolution is trivial</span>
+<span class="line_number">342 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>n1<span class="sign">=</span><span class="sign">=</span>1<span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>n2<span class="sign">=</span><span class="sign">=</span>1<span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">343 </span>        out<span class="sign">=</span> 1<span class="sign">.</span>0<span class="sign">/</span><span class="sign">(</span>k<span class="sign">+</span>1<span class="sign">.</span>0<span class="sign">)</span><span class="sign">*</span><span class="sign">(</span><span class="keyword">pow</span><span class="sign">(</span>knots<span class="sign">[</span>j1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">,</span>k<span class="sign">+</span>1<span class="sign">.</span>0<span class="sign">)</span><span class="sign">-</span><span class="keyword">pow</span><span class="sign">(</span>knots<span class="sign">[</span>j1<span class="sign">-</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">,</span>k<span class="sign">+</span>1<span class="sign">.</span>0<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">344 </span>        <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">345 </span>    <span class="sign">}</span>
+<span class="line_number">346 </span>    <span class="comment">// assume that n1&gt;n2 wlog, if this is not true, switch the indices</span>
+<span class="line_number">347 </span>    <span class="keyword">if</span><span class="sign">(</span>n2<span class="sign">&gt;</span>n1<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">348 </span>        <span class="keyword">int</span> n3<span class="sign">=</span>n1<span class="sign">;</span> n1<span class="sign">=</span>n2<span class="sign">;</span> n2<span class="sign">=</span>n3<span class="sign">;</span>
+<span class="line_number">349 </span>        <span class="keyword">int</span> j3<span class="sign">=</span>j1<span class="sign">;</span> j1<span class="sign">=</span>j2<span class="sign">;</span> j2<span class="sign">=</span>j3<span class="sign">;</span>
+<span class="line_number">350 </span>    <span class="sign">}</span>
+<span class="line_number">351 </span>    <span class="comment">// use a magic recursive formula!</span>
+<span class="line_number">352 </span>    out<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">353 </span>    <span class="keyword">double</span> denom1 <span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">-</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">-</span>knots<span class="sign">[</span>j1<span class="sign">-</span>n1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">354 </span>    <span class="keyword">double</span> denom2 <span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">+</span>splord<span class="sign">]</span> <span class="sign">-</span> knots<span class="sign">[</span>j1<span class="sign">-</span>n1<span class="sign">+</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">355 </span>    <span class="keyword">if</span><span class="sign">(</span>denom1<span class="sign">&gt;</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">356 </span>        out <span class="sign">+</span><span class="sign">=</span> 1<span class="sign">.</span>0<span class="sign">/</span>denom1 <span class="sign">*</span> <strong>cSplineConvolution</strong><span class="sign">(</span>k<span class="sign">+</span>1<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">-</span>1<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">357 </span>        out <span class="sign">-</span><span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">-</span>n1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">/</span>denom1 <span class="sign">*</span> <strong>cSplineConvolution</strong><span class="sign">(</span>k<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">-</span>1<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">358 </span>    <span class="sign">}</span>
+<span class="line_number">359 </span>    <span class="keyword">if</span><span class="sign">(</span>denom2<span class="sign">&gt;</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">360 </span>        out <span class="sign">+</span><span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">/</span>denom2<span class="sign">*</span> <strong>cSplineConvolution</strong><span class="sign">(</span>k<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">361 </span>        out <span class="sign">-</span><span class="sign">=</span> 1<span class="sign">.</span>0<span class="sign">/</span>denom2 <span class="sign">*</span> <strong>cSplineConvolution</strong><span class="sign">(</span>k<span class="sign">+</span>1<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span> splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">362 </span>    <span class="sign">}</span>
+<span class="line_number">363 </span>    <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">364 </span>
+<span class="line_number">365 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcSplineDerivInt"></a>
+<a name="robo101"></a><h2>CsplineUtils/cSplineDerivInt [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>cSplineDerivInt</strong> --- compute the convolution of the derivatives of two spline basis functions
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Used to compute the penalty matrix for the integrated squared second derivative. This
+    routine computes the integral from 0 to infinity of the l1 derivative and the l2
+    derivative of the j1 and j2-th splines of order n1 and n2 defined on a set of knots.
+</p>
+
+<p>    See also <a href="../R/splinefrailty_r.html#robo190">splinederivint</a> for the R implementation.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">389 </span><span class="keyword">double</span> <strong>cSplineDerivInt</strong><span class="sign">(</span><span class="keyword">int</span> l1<span class="sign">,</span> <span class="keyword">int</span> n1<span class="sign">,</span> <span class="keyword">int</span> j1<span class="sign">,</span> <span class="keyword">int</span> l2<span class="sign">,</span> <span class="keyword">int</span> n2<span class="sign">,</span> <span class="keyword">int</span> j2<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> splord<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    l1     derivative of the first spline
+    n1     order of the first spline
+    j1     index of the first spline
+    l2     derivative of the second spline
+    n2     order of the second spline
+    j2     index of the second spline
+    knots  set of knots on which the splines are defined
+    splord order of the splines
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">393 </span><span class="sign">{</span>
+<span class="line_number">394 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>j1<span class="sign">-</span>n1<span class="sign">&gt;</span><span class="sign">=</span>j2<span class="sign">)</span> <span class="sign">|</span> <span class="sign">(</span>j2<span class="sign">-</span>n2<span class="sign">&gt;</span><span class="sign">=</span>j1<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> 0<span class="sign">;</span>
+<span class="line_number">395 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>l1<span class="sign">=</span><span class="sign">=</span>0<span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>l2<span class="sign">=</span><span class="sign">=</span>0<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> <a href="#robo100">cSplineConvolution</a><span class="sign">(</span>0<span class="sign">,</span>n2<span class="sign">,</span>j1<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">396 </span>    <span class="keyword">if</span><span class="sign">(</span>l2<span class="sign">&gt;</span>l1<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">397 </span>        <span class="keyword">int</span> l3<span class="sign">=</span>l1<span class="sign">;</span> l1<span class="sign">=</span>l2<span class="sign">;</span> l2<span class="sign">=</span>l3<span class="sign">;</span>
+<span class="line_number">398 </span>        <span class="keyword">int</span> n3<span class="sign">=</span>n1<span class="sign">;</span> n1<span class="sign">=</span>n2<span class="sign">;</span> n2<span class="sign">=</span>n3<span class="sign">;</span>
+<span class="line_number">399 </span>        <span class="keyword">int</span> j3<span class="sign">=</span>j1<span class="sign">;</span> j1<span class="sign">=</span>j2<span class="sign">;</span> j2<span class="sign">=</span>j3<span class="sign">;</span>
+<span class="line_number">400 </span>    <span class="sign">}</span>
+<span class="line_number">401 </span>    <span class="keyword">double</span> out<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">402 </span>    <span class="keyword">double</span> denom1 <span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">-</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">-</span>knots<span class="sign">[</span>j1<span class="sign">-</span>n1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">403 </span>    <span class="keyword">double</span> denom2 <span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">+</span>splord<span class="sign">]</span> <span class="sign">-</span> knots<span class="sign">[</span>j1<span class="sign">-</span>n1<span class="sign">+</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">404 </span>    <span class="keyword">if</span><span class="sign">(</span>denom1<span class="sign">&gt;</span>0<span class="sign">)</span>
+<span class="line_number">405 </span>        out <span class="sign">+</span><span class="sign">=</span> <span class="sign">(</span>n1<span class="sign">-</span>1<span class="sign">.</span>0<span class="sign">)</span><span class="sign">/</span>denom1 <span class="sign">*</span> <strong>cSplineDerivInt</strong><span class="sign">(</span>l1<span class="sign">-</span>1<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">-</span>1<span class="sign">,</span>l2<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">406 </span>    <span class="keyword">if</span><span class="sign">(</span>denom2<span class="sign">&gt;</span>0<span class="sign">)</span>
+<span class="line_number">407 </span>        out <span class="sign">-</span><span class="sign">=</span> <span class="sign">(</span>n1<span class="sign">-</span>1<span class="sign">.</span>0<span class="sign">)</span><span class="sign">/</span>denom2 <span class="sign">*</span> <strong>cSplineDerivInt</strong><span class="sign">(</span>l1<span class="sign">-</span>1<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">,</span>l2<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">408 </span>    <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">409 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcsplinedesign"></a>
+<a name="robo102"></a><h2>CsplineUtils/csplinedesign [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>csplinedesign</strong> --- create a B-spline basis
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute a full B-spline basis given a set of knots and a set of points at which to 
+    evaluate the basis functions.
+    Plays the role of spline_basis in the splines package.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">170 </span><span class="keyword">void</span> <strong>csplinedesign</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>des<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>x<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nx<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    des       matrix of size nx x (K+ord) to hold the output
+    x         set of points at which to evaluate the basis functions
+    nx        length of x
+    knots     vector of knot points, with appropriate boundary knots
+    ord       order of the spline
+    K         number of interior knots
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    des[i,j] contains the j-th B-spline basis function evaluated at x[i]
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">174 </span><span class="sign">{</span>
+<span class="line_number">175 </span>    <span class="keyword">int</span> nj<span class="sign">=</span> <span class="sign">*</span>K <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">176 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span>i<span class="sign">&lt;</span><span class="sign">*</span>nx<span class="sign">;</span>i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">177 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span> nj<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">178 </span>            des<span class="sign">[</span>i <span class="sign">+</span> j<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span> <span class="sign">=</span> <a href="#robo103">csplineeval</a><span class="sign">(</span> x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">,</span> j<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> knots<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">179 </span>    <span class="sign">}</span>
+<span class="line_number">180 </span><span class="sign">}</span>
+</pre>
+
+<hr />
+<a name="CsplineUtils2fcsplineeval"></a>
+<a name="robo103"></a><h2>CsplineUtils/csplineeval [ Functions ]</h2>
+
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ <a href="./mainloop_c.html#robo12">CsplineUtils</a> ] [ <a href="../robo_functions.html#robo_top_of_doc">Functions</a> ]</p>
+<p class="item_name">NAME</p>
+<pre>    <strong>csplineeval</strong> --- evaluate a B-spline function
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Evaluates a B-spline function at a given value. This is the lowest-level
+    B-spline evaluator in this code. It uses the simple recursive formulation of
+    a B-spline basis function.
+</p>
+
+<p>    Given a set of knots, this routine evaluates at x the basis function of order ord
+    that has support on knots [j-ord,j]. Note that because negative array indices are not
+    allowed, knot -ord is stored in knots[0] here.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">119 </span><span class="keyword">double</span> <strong>csplineeval</strong><span class="sign">(</span> <span class="keyword">double</span> x<span class="sign">,</span> <span class="keyword">int</span> j<span class="sign">,</span> <span class="keyword">int</span> ord<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> splord<span class="sign">,</span> <span class="keyword">int</span> nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    x     the value at which it should be evaluated
+    j     which of the basis functions should be evaluated
+    ord   order of the spline
+    knots knots on which the spline is defined
+    splord order of the spline, but remains unchanged throughout evaluation
+    nj    number of basis functions defined on the knots (length(knots)-splord)
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    The j-th basis function evaluated at x: B_j(x)
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">123 </span><span class="sign">{</span>
+<span class="line_number">124 </span>    <span class="keyword">double</span> knotj<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">125 </span>    <span class="keyword">double</span> knotjm1<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">-</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">126 </span>    <span class="comment">// base case for ord=1</span>
+<span class="line_number">127 </span>    <span class="keyword">if</span><span class="sign">(</span>ord<span class="sign">=</span><span class="sign">=</span>1<span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">128 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>x <span class="sign">&gt;</span><span class="sign">=</span> knotjm1<span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>x <span class="sign">&lt;</span> knotj<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> 1<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">129 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>x<span class="sign">=</span><span class="sign">=</span>knotj<span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>j<span class="sign">+</span>splord<span class="sign">=</span><span class="sign">=</span>nj<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> 1<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">130 </span>        <span class="keyword">return</span> 0<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">131 </span>    <span class="sign">}</span>
+<span class="line_number">132 </span>    <span class="comment">// recursive formula otherwise</span>
+<span class="line_number">133 </span>    <span class="keyword">double</span> out <span class="sign">=</span> 0<span class="sign">;</span>
+<span class="line_number">134 </span>    <span class="keyword">double</span> knotjmn<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">-</span>ord<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">135 </span>    <span class="keyword">double</span> denom1 <span class="sign">=</span> <span class="sign">(</span>knotjm1 <span class="sign">-</span> knotjmn<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">136 </span>    <span class="keyword">if</span><span class="sign">(</span>denom1<span class="sign">&gt;</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">137 </span>        <span class="keyword">double</span> numer1 <span class="sign">=</span> <span class="sign">(</span>x<span class="sign">-</span>knotjmn<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">138 </span>        <span class="keyword">double</span> rec1 <span class="sign">=</span> <strong>csplineeval</strong><span class="sign">(</span>x<span class="sign">,</span>j<span class="sign">-</span>1<span class="sign">,</span>ord<span class="sign">-</span>1<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">,</span>nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">139 </span>        out <span class="sign">+</span><span class="sign">=</span> numer1<span class="sign">/</span>denom1<span class="sign">*</span>rec1<span class="sign">;</span>
+<span class="line_number">140 </span>    <span class="sign">}</span>
+<span class="line_number">141 </span>    <span class="keyword">double</span> knotjmn1<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">-</span>ord<span class="sign">+</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">142 </span>    <span class="keyword">double</span> denom2 <span class="sign">=</span> <span class="sign">(</span>knotj <span class="sign">-</span> knotjmn1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">143 </span>    <span class="keyword">if</span><span class="sign">(</span>denom2<span class="sign">&gt;</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">144 </span>        <span class="keyword">double</span> numer2 <span class="sign">=</span> <span class="sign">(</span>knotj<span class="sign">-</span>x<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">145 </span>        <span class="keyword">double</span> rec2 <span class="sign">=</span> <strong>csplineeval</strong><span class="sign">(</span>x<span class="sign">,</span>j<span class="sign">,</span>ord<span class="sign">-</span>1<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">,</span>nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">146 </span>        out <span class="sign">+</span><span class="sign">=</span> numer2<span class="sign">/</span>denom2<span class="sign">*</span>rec2<span class="sign">;</span>
+<span class="line_number">147 </span>    <span class="sign">}</span>
+<span class="line_number">148 </span>    <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">149 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Fri Jun 27 2008 18:25:39
+</p>
+</div> <!-- footer -->
+</body>
+</html>
