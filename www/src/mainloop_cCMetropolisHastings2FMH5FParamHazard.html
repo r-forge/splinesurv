@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCMetropolisHastings.html#robo10">CMetropolisHastings</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo73">CMetropolisHastings/MH_ParamHazard</a></li>
+</ul>
+<hr />
+<a name="CMetropolisHastings2fMH5fParamHazard"></a>
+<a name="robo73"></a><h2>CMetropolisHastings/MH_ParamHazard [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>MH_ParamHazard</strong> --- MH for hazard parametric component parameters
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Update the parameters indexing the parametric component by Metropolis-Hastings,
+    see also <a href="../R/splinefrailty_rMetropolisHastings2Fmh2Ehazard2Eparam.html#robo148">mh.hazard.param</a>
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">2237 </span><span class="keyword">void</span> <strong>MH_ParamHazard</strong><span class="sign">(</span>curveP hazard<span class="sign">,</span> curveP frailty<span class="sign">,</span> regressionP regression<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    hazard        <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the hazard
+    frailty       <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the frailty
+    regression    <a href="./mainloop_c01structures2FCRegression.html#robo25">CRegression</a> structure
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">2241 </span><span class="sign">{</span>
+<span class="line_number">2242 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>hasPar<span class="sign">)</span> <span class="keyword">return</span><span class="sign">;</span>
+<span class="line_number">2243 </span>    <span class="keyword">double</span> baselik<span class="sign">,</span> candlik<span class="sign">;</span>
+<span class="line_number">2244 </span>    <span class="comment">// base likelihoood</span>
+<span class="line_number">2245 </span>    baselik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodParamHazard.html#robo62">LikelihoodParamHazard</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2246 </span>    <span class="comment">// storage for old settings</span>
+<span class="line_number">2247 </span>    <span class="keyword">double</span> <span class="sign">*</span> cand <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">calloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>np<span class="sign">,</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2248 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldPar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>np <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2249 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>np<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>ParamPar<span class="sign">,</span> oldPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2250 </span>    <a href="./mainloop_cCmiscUtils2Fmvrnorm.html#robo91">mvrnorm</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>np<span class="sign">,</span> cand<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>ParamPar<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>ParamCholCov<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>ParamTun<span class="sign">[</span>0<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2251 </span>    <span class="comment">// update curve at candidate</span>
+<span class="line_number">2252 </span>    <a href="./mainloop_cCcurveUpdate2FUpdateParamPar.html#robo42">UpdateParamPar</a><span class="sign">(</span>hazard<span class="sign">,</span>cand<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2253 </span>    <span class="comment">// candidate likelihodo</span>
+<span class="line_number">2254 </span>    candlik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodParamHazard.html#robo62">LikelihoodParamHazard</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2255 </span>    <span class="keyword">int</span> acc <span class="sign">=</span> <a href="./mainloop_cCMetropolisHastings2FAcceptReject.html#robo69">AcceptReject</a><span class="sign">(</span>baselik<span class="sign">,</span> candlik<span class="sign">,</span> 1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2256 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>acc<span class="sign">)</span> <span class="comment">// rejected, undo damage</span>
+<span class="line_number">2257 </span>        <a href="./mainloop_cCcurveUpdate2FUpdateParamPar.html#robo42">UpdateParamPar</a><span class="sign">(</span>hazard<span class="sign">,</span>oldPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2258 </span>    hazard<span class="sign">-</span><span class="sign">&gt;</span>ParamAccept<span class="sign">[</span>0<span class="sign">]</span> <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span> acc<span class="sign">;</span>
+<span class="line_number">2259 </span>    <span class="keyword">free</span><span class="sign">(</span>cand<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2260 </span>    <span class="keyword">free</span><span class="sign">(</span>oldPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2261 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

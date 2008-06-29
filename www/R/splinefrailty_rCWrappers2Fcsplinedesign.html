@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_rRFitting2FCWrappers.html#robo15">CWrappers</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo119">CWrappers/csplinedesign</a></li>
+</ul>
+<hr />
+<a name="CWrappers2fcsplinedesign"></a>
+<a name="robo119"></a><h2>CWrappers/csplinedesign [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>csplinedesign</strong> --- wrapper for <strong>csplinedesign</strong>
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Computes a design matrix for the spline basis, by evaluating the set
+    of order ord B-splines on the set of knots knots, at values x.
+    Wraps the C implenentation of <strong>csplinedesign</strong>, which works identically to 
+    splineDesign from the splines package,  but faster.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">3162 </span><strong>csplinedesign</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>knots<span class="sign">,</span> x<span class="sign">,</span> ord<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    knots      vector of knots
+    x          points at which the basis should be evaluated.
+    ord        order of the spline
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    des        matrix, whose (i,j) entry is spline j evaluated at x[i]
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">3165 </span><span class="sign">{</span>
+<span class="line_number">3166 </span>    K <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">length</span><span class="sign">(</span>knots<span class="sign">)</span> <span class="sign">-</span> 2 <span class="sign">*</span> ord
+<span class="line_number">3167 </span>    design <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>x<span class="sign">)</span><span class="sign">,</span> K <span class="sign">+</span> ord<span class="sign">)</span>
+<span class="line_number">3168 </span>    out <span class="sign">&lt;</span><span class="sign">-</span> <span class="sign">.</span>C<span class="sign">(</span><span class="quote">"<strong>csplinedesign</strong>"</span><span class="sign">,</span>
+<span class="line_number">3169 </span>            des <span class="sign">=</span> as<span class="sign">.</span><span class="keyword">double</span><span class="sign">(</span>design<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">3170 </span>            x <span class="sign">=</span> as<span class="sign">.</span><span class="keyword">double</span><span class="sign">(</span>x<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">3171 </span>            nx <span class="sign">=</span> as<span class="sign">.</span>integer<span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>x<span class="sign">)</span><span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">3172 </span>            knots <span class="sign">=</span> as<span class="sign">.</span><span class="keyword">double</span><span class="sign">(</span>knots<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">3173 </span>            ord <span class="sign">=</span> as<span class="sign">.</span>integer<span class="sign">(</span>ord<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">3174 </span>            K <span class="sign">=</span> as<span class="sign">.</span>integer<span class="sign">(</span>K<span class="sign">)</span>
+<span class="line_number">3175 </span>        <span class="sign">)</span>
+<span class="line_number">3176 </span>    des <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>out<span class="sign">$</span>des<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>x<span class="sign">)</span><span class="sign">,</span> K <span class="sign">+</span> ord<span class="sign">)</span>
+<span class="line_number">3177 </span>    <span class="keyword">return</span><span class="sign">(</span>des<span class="sign">)</span>
+<span class="line_number">3178 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

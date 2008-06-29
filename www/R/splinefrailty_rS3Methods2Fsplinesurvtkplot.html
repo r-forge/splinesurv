@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FS3Methods.html#robo5">S3Methods</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo169">S3Methods/splinesurvtkplot</a></li>
+</ul>
+<hr />
+<a name="S3Methods2fsplinesurvtkplot"></a>
+<a name="robo169"></a><h2>S3Methods/splinesurvtkplot [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>splinesurvtkplot</strong> --- plot the curve using tcltk
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Uses tcltk and the tkrplot package to plot the curve, with a slider to select
+    the iteration.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">3941 </span><strong>splinesurvtkplot</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>x<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    x      a <a href="./splinefrailty_rS3Methods2Fsplinesurv.html#robo166">splinesurv</a> object
+    ...    plotting parameters
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">3944 </span><span class="sign">{</span>
+<span class="line_number">3945 </span>    library<span class="sign">(</span>tkrplot<span class="sign">)</span>
+<span class="line_number">3946 </span>        <span class="keyword">which</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="quote">"h"</span>
+<span class="line_number">3947 </span>    <span class="comment"># tk canvas</span>
+<span class="line_number">3948 </span>        tt <span class="sign">&lt;</span><span class="sign">-</span> tktoplevel<span class="sign">(</span><span class="sign">)</span>
+<span class="line_number">3949 </span>        tktitle<span class="sign">(</span>tt<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="quote">"SplineSurv"</span>
+<span class="line_number">3950 </span>        iter <span class="sign">&lt;</span><span class="sign">-</span> 0
+<span class="line_number">3951 </span>    <span class="comment"># tcl variables, to hold the selected iteration and plot type</span>
+<span class="line_number">3952 </span>        tcliter <span class="sign">&lt;</span><span class="sign">-</span> tclVar<span class="sign">(</span>iter<span class="sign">)</span>
+<span class="line_number">3953 </span>        tclwhich <span class="sign">&lt;</span><span class="sign">-</span> tclVar<span class="sign">(</span><span class="keyword">which</span><span class="sign">)</span>
+<span class="line_number">3954 </span>        maxiter <span class="sign">=</span> x<span class="sign">$</span>control<span class="sign">$</span>maxiter
+<span class="line_number">3955 </span>        res <span class="sign">&lt;</span><span class="sign">-</span> max<span class="sign">(</span>1<span class="sign">,</span> round<span class="sign">(</span>maxiter <span class="sign">/</span> 100<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3956 </span>    <span class="comment"># plotting canvas</span>
+<span class="line_number">3957 </span>        img <span class="sign">&lt;</span><span class="sign">-</span> tkrplot<span class="sign">(</span>tt<span class="sign">,</span> <span class="keyword">function</span><span class="sign">(</span><span class="sign">)</span> plot<span class="sign">(</span>x <span class="sign">=</span> x<span class="sign">,</span> <span class="keyword">which</span> <span class="sign">=</span> <span class="keyword">which</span><span class="sign">,</span> iter <span class="sign">=</span> iter<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span><span class="sign">)</span>     
+<span class="line_number">3958 </span>    
+<span class="line_number">3959 </span>    <span class="comment"># an inner function to set the iteration</span>
+<span class="line_number">3960 </span>        setiter <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span><span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3961 </span>        <span class="comment"># get the iteration from the tcliter variable</span>
+<span class="line_number">3962 </span>                thisiter <span class="sign">&lt;</span><span class="sign">-</span> round<span class="sign">(</span>as<span class="sign">.</span>numeric<span class="sign">(</span>tclvalue<span class="sign">(</span>tcliter<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3963 </span>                <span class="keyword">if</span><span class="sign">(</span>iter <span class="sign">!</span><span class="sign">=</span> thisiter<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3964 </span>                        assign<span class="sign">(</span><span class="quote">"iter"</span><span class="sign">,</span> thisiter<span class="sign">,</span> inherits <span class="sign">=</span> TRUE<span class="sign">)</span>
+<span class="line_number">3965 </span>            <span class="comment">#replot if the iteration has changed</span>
+<span class="line_number">3966 </span>                        tkrreplot<span class="sign">(</span>img<span class="sign">)</span>
+<span class="line_number">3967 </span>                <span class="sign">}</span>       
+<span class="line_number">3968 </span>        <span class="sign">}</span>
+<span class="line_number">3969 </span>    
+<span class="line_number">3970 </span>    <span class="comment"># an inner function to set the type of plot to "hazard"</span>
+<span class="line_number">3971 </span>        setwhich_h <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span><span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">3972 </span>                assign<span class="sign">(</span><span class="quote">"which"</span><span class="sign">,</span> <span class="quote">"h"</span><span class="sign">,</span> inherits <span class="sign">=</span> TRUE<span class="sign">)</span>
+<span class="line_number">3973 </span>                tkrreplot<span class="sign">(</span>img<span class="sign">)</span>
+<span class="line_number">3974 </span>        <span class="sign">}</span>
+<span class="line_number">3975 </span>    <span class="comment"># an inner function to set the type of plot to "survival"</span>
+<span class="line_number">3976 </span>        setwhich_s <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span><span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">3977 </span>                assign<span class="sign">(</span><span class="quote">"which"</span><span class="sign">,</span> <span class="quote">"s"</span><span class="sign">,</span> inherits <span class="sign">=</span> TRUE<span class="sign">)</span>
+<span class="line_number">3978 </span>                tkrreplot<span class="sign">(</span>img<span class="sign">)</span>
+<span class="line_number">3979 </span>        <span class="sign">}</span>
+<span class="line_number">3980 </span>    <span class="comment"># an inner function to set the type of plot to "frailty"</span>
+<span class="line_number">3981 </span>        setwhich_f <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span><span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3982 </span>                assign<span class="sign">(</span><span class="quote">"which"</span><span class="sign">,</span> <span class="quote">"f"</span><span class="sign">,</span> inherits <span class="sign">=</span> TRUE<span class="sign">)</span>           
+<span class="line_number">3983 </span>                tkrreplot<span class="sign">(</span>img<span class="sign">)</span>
+<span class="line_number">3984 </span>        <span class="sign">}</span>
+<span class="line_number">3985 </span>    <span class="comment"># an inner function to set the current iteration to 0, corresponding to</span>
+<span class="line_number">3986 </span>    <span class="comment"># plotting the posterior mean.</span>
+<span class="line_number">3987 </span>        setpost <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span><span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3988 </span>                assign<span class="sign">(</span><span class="quote">"iter"</span><span class="sign">,</span> 0<span class="sign">,</span> inherits <span class="sign">=</span> TRUE<span class="sign">)</span>
+<span class="line_number">3989 </span>                tclvalue<span class="sign">(</span>tcliter<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> 0
+<span class="line_number">3990 </span>                tkrreplot<span class="sign">(</span>img<span class="sign">)</span>
+<span class="line_number">3991 </span>        <span class="sign">}</span>
+<span class="line_number">3992 </span>
+<span class="line_number">3993 </span>    <span class="comment"># a TK scale control, used to select the iteration to plot</span>
+<span class="line_number">3994 </span>        iter_scale <span class="sign">&lt;</span><span class="sign">-</span> tkscale<span class="sign">(</span>tt<span class="sign">,</span> command <span class="sign">=</span> setiter<span class="sign">,</span> from <span class="sign">=</span> 0<span class="sign">,</span> to <span class="sign">=</span> maxiter<span class="sign">,</span> resolution <span class="sign">=</span> res<span class="sign">,</span>
+<span class="line_number">3995 </span>        showvalue <span class="sign">=</span> T<span class="sign">,</span> orient <span class="sign">=</span> <span class="quote">"horiz"</span><span class="sign">,</span> variable <span class="sign">=</span> tcliter<span class="sign">,</span> <span class="keyword">length</span> <span class="sign">=</span> 400<span class="sign">)</span>
+<span class="line_number">3996 </span>    <span class="comment"># a frame containing the plot type buttons</span>
+<span class="line_number">3997 </span>        ff <span class="sign">&lt;</span><span class="sign">-</span> tkframe<span class="sign">(</span>tt<span class="sign">,</span> relief <span class="sign">=</span> <span class="quote">"ridge"</span><span class="sign">,</span> borderwidth <span class="sign">=</span> 2<span class="sign">,</span> width <span class="sign">=</span> 150<span class="sign">,</span> height <span class="sign">=</span> 100<span class="sign">)</span>
+<span class="line_number">3998 </span>    <span class="comment"># buttons to select the type of plot desired</span>
+<span class="line_number">3999 </span>        which_b_h <span class="sign">&lt;</span><span class="sign">-</span> tkradiobutton<span class="sign">(</span>ff<span class="sign">,</span> command <span class="sign">=</span> setwhich_h<span class="sign">,</span> text <span class="sign">=</span> <span class="quote">"hazard"</span><span class="sign">,</span>
+<span class="line_number">4000 </span>        variable <span class="sign">=</span> tclwhich<span class="sign">,</span> value <span class="sign">=</span> <span class="quote">"h"</span> <span class="sign">)</span>
+<span class="line_number">4001 </span>        which_b_s <span class="sign">&lt;</span><span class="sign">-</span> tkradiobutton<span class="sign">(</span>ff<span class="sign">,</span> command <span class="sign">=</span> setwhich_s<span class="sign">,</span> text <span class="sign">=</span> <span class="quote">"survival"</span><span class="sign">,</span>
+<span class="line_number">4002 </span>        variable <span class="sign">=</span> tclwhich<span class="sign">,</span> value <span class="sign">=</span> <span class="quote">"s"</span> <span class="sign">)</span>
+<span class="line_number">4003 </span>        which_b_f <span class="sign">&lt;</span><span class="sign">-</span> tkradiobutton<span class="sign">(</span>ff<span class="sign">,</span> command <span class="sign">=</span> setwhich_f<span class="sign">,</span> text <span class="sign">=</span> <span class="quote">"frailty"</span><span class="sign">,</span>
+<span class="line_number">4004 </span>        variable <span class="sign">=</span> tclwhich<span class="sign">,</span> value <span class="sign">=</span> <span class="quote">"f"</span> <span class="sign">)</span>
+<span class="line_number">4005 </span>    <span class="comment"># button to plot the posterior mean of the curve</span>
+<span class="line_number">4006 </span>        post_b <span class="sign">&lt;</span><span class="sign">-</span> tkbutton<span class="sign">(</span>tt<span class="sign">,</span> command <span class="sign">=</span> setpost<span class="sign">,</span> text <span class="sign">=</span> <span class="quote">"Posterior"</span> <span class="sign">)</span>
+<span class="line_number">4007 </span>    <span class="comment"># layout on the grid</span>
+<span class="line_number">4008 </span>        tkgrid<span class="sign">(</span>img<span class="sign">,</span> columnspan <span class="sign">=</span> 2<span class="sign">)</span>
+<span class="line_number">4009 </span>        tkgrid<span class="sign">(</span>which_b_h<span class="sign">,</span> which_b_s<span class="sign">,</span> which_b_f<span class="sign">)</span>
+<span class="line_number">4010 </span>        tkgrid<span class="sign">(</span>ff<span class="sign">,</span> columnspan <span class="sign">=</span> 2<span class="sign">)</span>
+<span class="line_number">4011 </span>        tkgrid<span class="sign">(</span>post_b<span class="sign">,</span> iter_scale<span class="sign">)</span>
+<span class="line_number">4012 </span>        tkgrid<span class="sign">.</span>configure<span class="sign">(</span>iter_scale<span class="sign">,</span> sticky <span class="sign">=</span> <span class="quote">"e"</span><span class="sign">)</span>
+<span class="line_number">4013 </span>        tkgrid<span class="sign">.</span>configure<span class="sign">(</span>post_b<span class="sign">,</span> sticky <span class="sign">=</span> <span class="quote">"sw"</span><span class="sign">)</span>
+<span class="line_number">4014 </span>
+<span class="line_number">4015 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

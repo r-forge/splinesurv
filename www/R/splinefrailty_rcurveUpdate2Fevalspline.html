@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_rRFitting2FcurveUpdate.html#robo14">curveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo105">curveUpdate/evalspline</a></li>
+</ul>
+<hr />
+<a name="curveUpdate2fevalspline"></a>
+<a name="robo105"></a><h2>curveUpdate/evalspline [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>evalspline</strong> --- evaluate the spline component of a curve
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Evaluate the spline component of a curve with a new set of component weights, either
+    at all observations, or at a single index.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1991 </span><strong>evalspline</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>curve<span class="sign">,</span> i <span class="sign">=</span> 0<span class="sign">,</span> quick <span class="sign">=</span> FALSE<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    curve      an <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure
+    i          index of the observation that should be evaluated (0=all) 
+    quick      for hazard curve, whether the cumulative basis integrals should be computed
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    curve      the curve, with x[i] evaluated at the new curve$spline.par parameters
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1994 </span><span class="sign">{</span>
+<span class="line_number">1995 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>curve<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1996 </span>    <span class="comment"># extract observations and parameters</span>
+<span class="line_number">1997 </span>    <span class="keyword">if</span><span class="sign">(</span>i <span class="sign">=</span><span class="sign">=</span> 0<span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">1998 </span>                ind <span class="sign">&lt;</span><span class="sign">-</span> 1<span class="sign">:</span><span class="keyword">length</span><span class="sign">(</span>curve<span class="sign">$</span>x<span class="sign">)</span>
+<span class="line_number">1999 </span>                curve<span class="sign">$</span>spline<span class="sign">.</span>y <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">2000 </span>        <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>ind <span class="sign">&lt;</span><span class="sign">-</span> i<span class="sign">}</span>
+<span class="line_number">2001 </span>    spline<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>par
+<span class="line_number">2002 </span>    <span class="comment">#   normalize the frailty spline parameters</span>
+<span class="line_number">2003 </span>    <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"frailty"</span><span class="sign">)</span> spline<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> spline<span class="sign">.</span>par <span class="sign">-</span> log<span class="sign">(</span><span class="keyword">sum</span><span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>spline<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">2004 </span>    <span class="comment"># Evaluate the spline component</span>
+<span class="line_number">2005 </span>    curve<span class="sign">$</span>spline<span class="sign">.</span>y<span class="sign">[</span>ind<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> drop<span class="sign">(</span>curve<span class="sign">$</span>spline<span class="sign">.</span>basis<span class="sign">[</span>ind<span class="sign">,</span> <span class="sign">,</span>drop <span class="sign">=</span> FALSE<span class="sign">]</span><span class="sign">%</span><span class="sign">*</span><span class="sign">%</span><span class="keyword">exp</span><span class="sign">(</span>spline<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">2006 </span>    <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"hazard"</span> <span class="sign">&amp;</span> <span class="sign">!</span>quick<span class="sign">)</span>
+<span class="line_number">2007 </span>        <span class="comment"># for the hazard, evaluate the spline integrals</span>
+<span class="line_number">2008 </span>        curve<span class="sign">$</span>spline<span class="sign">.</span>ycum<span class="sign">[</span>ind<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> drop<span class="sign">(</span>curve<span class="sign">$</span>spline<span class="sign">.</span>basiscum<span class="sign">[</span>ind<span class="sign">,</span> <span class="sign">,</span>drop <span class="sign">=</span> FALSE<span class="sign">]</span><span class="sign">%</span><span class="sign">*</span><span class="sign">%</span><span class="keyword">exp</span><span class="sign">(</span>spline<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">2009 </span>    <span class="keyword">else</span>
+<span class="line_number">2010 </span>        curve<span class="sign">$</span>spline<span class="sign">.</span>ycum <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">2011 </span>    <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">2012 </span>        <span class="comment"># Reweight the curve</span>
+<span class="line_number">2013 </span>        curve <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rcurveUpdate2Fweightcurve.html#robo111">weightcurve</a><span class="sign">(</span>curve<span class="sign">,</span> i<span class="sign">)</span>
+<span class="line_number">2014 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">2015 </span>        curve<span class="sign">$</span>y<span class="sign">[</span>ind<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>y<span class="sign">[</span>ind<span class="sign">]</span>
+<span class="line_number">2016 </span>        curve<span class="sign">$</span>ycum<span class="sign">[</span>ind<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>ycum<span class="sign">[</span>ind<span class="sign">]</span>
+<span class="line_number">2017 </span>    <span class="sign">}</span>
+<span class="line_number">2018 </span>    <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">2019 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

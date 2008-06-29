@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo39">CcurveUpdate/RemakeSplineBasis</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fRemakeSplineBasis"></a>
+<a name="robo39"></a><h2>CcurveUpdate/RemakeSplineBasis [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>RemakeSplineBasis</strong> --- update spline basis after a birth-death-move operation
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This function is called by <a href="./mainloop_cCMetropolisHastings2FMH5FBDM.html#robo70">MH_BDM</a>, to update the spline basis after adding, moving
+    or deleting a knot. It's a more efficient version of <a href="./mainloop_cCcurveUpdate2FMakeSplineBasis.html#robo35">MakeSplineBasis</a> that only
+    updates the basis functions required by the operation.
+</p>
+
+<p>    For move steps, this means simply updating a subset of basis functions. For birth and move
+    steps, existing basis functions are moved, and the intermediate ones updated.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1161 </span><span class="keyword">void</span> <strong>RemakeSplineBasis</strong><span class="sign">(</span>curveP theCurve<span class="sign">,</span> char oper<span class="sign">,</span> <span class="keyword">int</span> j<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    theCurve      a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure
+    oper          character, either 'm' for move, 'b' for birth or 'd' for death.
+    j             index of the knot that was moved, added or deleted.
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    theCurve, with SplineBasis, SplineBasisCum, SplineBasisInt and SplineBasisExp updated
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1165 </span><span class="sign">{</span>
+<span class="line_number">1166 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span> <span class="keyword">return</span><span class="sign">;</span>
+<span class="line_number">1167 </span>    <span class="keyword">double</span> <span class="sign">*</span> knots <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineKnots<span class="sign">;</span>
+<span class="line_number">1168 </span>    <span class="keyword">int</span> ord <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineOrd<span class="sign">;</span>
+<span class="line_number">1169 </span>    <span class="keyword">int</span> nknots <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineNknots<span class="sign">;</span>
+<span class="line_number">1170 </span>    <span class="keyword">int</span> nj <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span>
+<span class="line_number">1171 </span>    <span class="keyword">int</span> nx <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">;</span>
+<span class="line_number">1172 </span>    <span class="keyword">double</span> <span class="sign">*</span> x <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">;</span>
+<span class="line_number">1173 </span>    <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">1174 </span>
+<span class="line_number">1175 </span>    <span class="comment">// compute integrals over each basis spline</span>
+<span class="line_number">1176 </span>    <a href="./init_cCsplineUtils2FcevalBinte.html#robo94">cevalBinte</a><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisInt<span class="sign">,</span> knots<span class="sign">,</span> <span class="sign">&amp;</span>ord<span class="sign">,</span> <span class="sign">&amp;</span>nknots<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1177 </span>
+<span class="line_number">1178 </span>    <span class="comment">// For frailty, compute the expectations</span>
+<span class="line_number">1179 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> 
+<span class="line_number">1180 </span>        <a href="./init_cCsplineUtils2FcevalEinte.html#robo98">cevalEinte</a><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisExp<span class="sign">,</span> knots<span class="sign">,</span> <span class="sign">&amp;</span>ord<span class="sign">,</span> <span class="sign">&amp;</span>nknots<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1181 </span>        
+<span class="line_number">1182 </span>    <span class="keyword">if</span><span class="sign">(</span>oper<span class="sign">=</span><span class="sign">=</span><span class="squote">'m'</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1183 </span>        <span class="comment">// Update basis from j to j+ord (j here is the moveind, in internal knot numbering)</span>
+<span class="line_number">1184 </span>        <a href="./mainloop_cCcurveUpdate2FUpdateSplineBasis.html#robo43">UpdateSplineBasis</a><span class="sign">(</span>theCurve<span class="sign">,</span><span class="sign">-</span>1<span class="sign">,</span>j<span class="sign">,</span><a href="./mainloop_cCmiscUtils2Fimin.html#robo90">imin</a><span class="sign">(</span>nj<span class="sign">,</span>j<span class="sign">+</span>ord<span class="sign">+</span>1<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">1185 </span>    <span class="sign">}</span>
+<span class="line_number">1186 </span>    <span class="keyword">if</span><span class="sign">(</span>oper<span class="sign">=</span><span class="sign">=</span><span class="squote">'d'</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1187 </span>        <span class="comment">//move basis j+1 through nj into j through nj-1</span>
+<span class="line_number">1188 </span>        <span class="keyword">int</span> nmv <span class="sign">=</span> <span class="sign">(</span><span class="sign">(</span>nj<span class="sign">)</span> <span class="sign">-</span> <span class="sign">(</span>j<span class="sign">+</span>1<span class="sign">)</span><span class="sign">)</span><span class="sign">*</span>nx<span class="sign">;</span>
+<span class="line_number">1189 </span>        nmv <span class="sign">=</span> nmv<span class="sign">&gt;</span>0 <span class="sign">?</span> nmv <span class="sign">:</span> 0<span class="sign">;</span>
+<span class="line_number">1190 </span>        <span class="keyword">if</span><span class="sign">(</span>nmv<span class="sign">&gt;</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1191 </span>            F77_CALL<span class="sign">(</span>dcopy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>nmv<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasis <span class="sign">+</span> <span class="sign">(</span>j<span class="sign">+</span>1<span class="sign">)</span><span class="sign">*</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span>
+<span class="line_number">1192 </span>                    theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasis <span class="sign">+</span> j<span class="sign">*</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1193 </span>            <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span>
+<span class="line_number">1194 </span>                F77_CALL<span class="sign">(</span>dcopy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>nmv<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisCum <span class="sign">+</span> <span class="sign">(</span>j<span class="sign">+</span>1<span class="sign">)</span><span class="sign">*</span>nx<span class="sign">,</span>
+<span class="line_number">1195 </span>                    <span class="sign">&amp;</span>c1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisCum <span class="sign">+</span> j<span class="sign">*</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1196 </span>        <span class="sign">}</span>
+<span class="line_number">1197 </span>        <span class="comment">// update basis functions j-ord through j</span>
+<span class="line_number">1198 </span>        <a href="./mainloop_cCcurveUpdate2FUpdateSplineBasis.html#robo43">UpdateSplineBasis</a><span class="sign">(</span>theCurve<span class="sign">,</span><span class="sign">-</span>1<span class="sign">,</span><a href="./mainloop_cCmiscUtils2Fimax.html#robo89">imax</a><span class="sign">(</span>0<span class="sign">,</span>j<span class="sign">-</span>ord<span class="sign">)</span><span class="sign">,</span>j<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1199 </span>    <span class="sign">}</span>
+<span class="line_number">1200 </span>    <span class="keyword">if</span><span class="sign">(</span>oper<span class="sign">=</span><span class="sign">=</span><span class="squote">'b'</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1201 </span>        <span class="comment">// //move basis j+1 : nj to j+2 : nj+1</span>
+<span class="line_number">1202 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">=</span>nj<span class="sign">-</span>2<span class="sign">;</span>k<span class="sign">&gt;</span>j<span class="sign">;</span>k<span class="sign">-</span><span class="sign">-</span><span class="sign">)</span> F77_CALL<span class="sign">(</span>dcopy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>nx<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasis <span class="sign">+</span> k<span class="sign">*</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span>
+<span class="line_number">1203 </span>                theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasis <span class="sign">+</span> <span class="sign">(</span>k<span class="sign">+</span>1<span class="sign">)</span><span class="sign">*</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1204 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">=</span>nj<span class="sign">-</span>2<span class="sign">;</span>k<span class="sign">&gt;</span>j<span class="sign">;</span>k<span class="sign">-</span><span class="sign">-</span><span class="sign">)</span> F77_CALL<span class="sign">(</span>dcopy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>nx<span class="sign">,</span>
+<span class="line_number">1205 </span>                theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisCum <span class="sign">+</span> k<span class="sign">*</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisCum <span class="sign">+</span> <span class="sign">(</span>k<span class="sign">+</span>1<span class="sign">)</span><span class="sign">*</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1206 </span>        <span class="comment">// update basis from j-ord to j+2</span>
+<span class="line_number">1207 </span>        <a href="./mainloop_cCcurveUpdate2FUpdateSplineBasis.html#robo43">UpdateSplineBasis</a><span class="sign">(</span>theCurve<span class="sign">,</span><span class="sign">-</span>1<span class="sign">,</span><a href="./mainloop_cCmiscUtils2Fimax.html#robo89">imax</a><span class="sign">(</span>0<span class="sign">,</span>j<span class="sign">-</span>ord<span class="sign">)</span><span class="sign">,</span><a href="./mainloop_cCmiscUtils2Fimin.html#robo90">imin</a><span class="sign">(</span>nj<span class="sign">,</span>j<span class="sign">+</span>2<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1208 </span>    <span class="sign">}</span>
+<span class="line_number">1209 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

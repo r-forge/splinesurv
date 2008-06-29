@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FinitRoutine.html#robo3">initRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo124">initRoutine/makepenalty</a></li>
+</ul>
+<hr />
+<a name="initRoutine2fmakepenalty"></a>
+<a name="robo124"></a><h2>initRoutine/makepenalty [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>makepenalty</strong> --- construct a penalty matrix
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Construct a penalty matrix for use with penalized spline fitting. Options are
+    a penalty on the squared second differences of the spline parameters, or a penalty
+    on the integrated squared second derivative.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1699 </span><strong>makepenalty</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>curve<span class="sign">,</span> usec <span class="sign">=</span> TRUE<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    curve      an <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure
+    usec       boolean, whether to use fast C code
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    curve      the input curve, with spline.penaltymatrix component updated
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1702 </span><span class="sign">{</span>
+<span class="line_number">1703 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>curve<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1704 </span>    penalty <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>penalty
+<span class="line_number">1705 </span>    ord <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>ord<span class="sign">;</span> nknots <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>nknots<span class="sign">;</span> knots <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>knots
+<span class="line_number">1706 </span>    <span class="comment"># second difference penalty</span>
+<span class="line_number">1707 </span>    <span class="keyword">if</span><span class="sign">(</span>penalty <span class="sign">=</span><span class="sign">=</span> <span class="quote">"2diff"</span><span class="sign">)</span> P <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rinitRoutine2FmakePenalty2E2diff.html#robo126">makePenalty.2diff</a><span class="sign">(</span>ord <span class="sign">+</span> nknots<span class="sign">)</span>
+<span class="line_number">1708 </span>    <span class="comment"># second derivative penalty</span>
+<span class="line_number">1709 </span>    <span class="keyword">if</span><span class="sign">(</span>penalty <span class="sign">=</span><span class="sign">=</span> <span class="quote">"2deriv"</span> <span class="sign">|</span> penalty <span class="sign">=</span><span class="sign">=</span> <span class="quote">"log2deriv"</span><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">1710 </span>        <span class="keyword">if</span><span class="sign">(</span>usec<span class="sign">)</span> P <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rCWrappers2FcmakePenalty2E2deriv.html#robo115">cmakePenalty.2deriv</a><span class="sign">(</span>ord<span class="sign">,</span> knots<span class="sign">)</span>
+<span class="line_number">1711 </span>        <span class="keyword">else</span>  P <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rinitRoutine2FmakePenalty2E2deriv.html#robo125">makePenalty.2deriv</a><span class="sign">(</span>ord<span class="sign">,</span> knots<span class="sign">)</span>
+<span class="line_number">1712 </span>        <span class="comment"># adjust for normalized B-splines for frailties</span>
+<span class="line_number">1713 </span>        <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>spline<span class="sign">.</span>norm<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1714 </span>            Bint <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>basisint
+<span class="line_number">1715 </span>            P <span class="sign">&lt;</span><span class="sign">-</span> P <span class="sign">/</span> <span class="sign">(</span>Bint<span class="sign">%</span><span class="sign">*</span><span class="sign">%</span>t<span class="sign">(</span>Bint<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1716 </span>        <span class="sign">}</span>
+<span class="line_number">1717 </span>    <span class="sign">}</span>
+<span class="line_number">1718 </span>    <span class="keyword">if</span><span class="sign">(</span>penalty <span class="sign">=</span><span class="sign">=</span> <span class="quote">"none"</span><span class="sign">)</span> P <span class="sign">&lt;</span><span class="sign">-</span> 0
+<span class="line_number">1719 </span>    curve<span class="sign">$</span>spline<span class="sign">.</span>penaltymatrix <span class="sign">&lt;</span><span class="sign">-</span> P
+<span class="line_number">1720 </span>    <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1721 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

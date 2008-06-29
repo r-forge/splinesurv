@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCsplineUtils.html#robo12">CsplineUtils</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo97">CsplineUtils/cevalCinteOld</a></li>
+</ul>
+<hr />
+<a name="CsplineUtils2fcevalCinteOld"></a>
+<a name="robo97"></a><h2>CsplineUtils/cevalCinteOld [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>cevalCinteOld</strong> --- old method for computing <a href="./init_cCsplineUtils2FcevalCinte.html#robo95">cevalCinte</a>
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    See <a href="../R/splinefrailty_rsplineUtils2FevalCinte.html#robo180">evalCinte</a>. This function works analogously to the R implementation, but
+    was too slow, so it was replaced by <a href="./init_cCsplineUtils2FcevalCinte2.html#robo96">cevalCinte2</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">199 </span><span class="keyword">void</span> <strong>cevalCinteOld</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>cinte<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>x<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nx<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>binte<span class="sign">)</span>
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">203 </span><span class="sign">{</span>
+<span class="line_number">204 </span>    <span class="keyword">int</span> nj <span class="sign">=</span> <span class="sign">*</span>K <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">205 </span>    <span class="keyword">int</span> nk <span class="sign">=</span> nj <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">206 </span>    <span class="keyword">double</span> <span class="sign">*</span> knots2 <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="sign">(</span>nk <span class="sign">+</span>2<span class="sign">)</span> <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">207 </span>    knots2<span class="sign">[</span>0<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>0<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">208 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nk<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">209 </span>        knots2<span class="sign">[</span>j<span class="sign">+</span>1<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">210 </span>    knots2<span class="sign">[</span>nk<span class="sign">+</span>1<span class="sign">]</span><span class="sign">=</span>knots<span class="sign">[</span>nk<span class="sign">-</span>1<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">211 </span><span class="comment">#ifdef DEBUGCINTE</span>
+<span class="line_number">212 </span>    Rprintf<span class="sign">(</span><span class="quote">"knots2:\n "</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">213 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nk<span class="sign">+</span>2<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"%f "</span><span class="sign">,</span>knots2<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">214 </span>    Rprintf<span class="sign">(</span><span class="quote">"\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">215 </span><span class="comment">#endif</span>
+<span class="line_number">216 </span>    <span class="keyword">int</span> ord2 <span class="sign">=</span> <span class="sign">*</span>ord<span class="sign">+</span>1<span class="sign">;</span>
+<span class="line_number">217 </span>    <span class="keyword">double</span> <span class="sign">*</span> bs2 <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="sign">(</span>nj<span class="sign">+</span>1<span class="sign">)</span><span class="sign">*</span> <span class="sign">*</span>nx <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">218 </span>    <a href="./init_cCsplineUtils2Fcsplinedesign.html#robo102">csplinedesign</a><span class="sign">(</span>bs2<span class="sign">,</span>x<span class="sign">,</span>nx<span class="sign">,</span>knots2<span class="sign">,</span><span class="sign">&amp;</span>ord2<span class="sign">,</span>K<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">219 </span><span class="comment">#ifdef  DEBUGCINTE</span>
+<span class="line_number">220 </span>    Rprintf<span class="sign">(</span><span class="quote">"bs2:\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">221 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"%f "</span><span class="sign">,</span>bs2<span class="sign">[</span>j <span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">222 </span>    Rprintf<span class="sign">(</span><span class="quote">"\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">223 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"%f "</span><span class="sign">,</span>bs2<span class="sign">[</span>1<span class="sign">+</span> j <span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">224 </span>    Rprintf<span class="sign">(</span><span class="quote">"\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">225 </span><span class="comment">#endif</span>
+<span class="line_number">226 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span> <span class="sign">*</span>nx<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">227 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>nj<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">228 </span>            cinte<span class="sign">[</span>i<span class="sign">+</span>j<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">229 </span>            <span class="keyword">if</span><span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&gt;</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">]</span><span class="sign">)</span> cinte<span class="sign">[</span>i <span class="sign">+</span> j<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span> <span class="sign">=</span> binte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">230 </span>            <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&lt;</span>knots<span class="sign">[</span>j<span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">]</span><span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>x<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&gt;</span><span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">231 </span>            <span class="sign">{</span>
+<span class="line_number">232 </span>                <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">=</span>j<span class="sign">+</span>1<span class="sign">;</span>k<span class="sign">&lt;</span>nj<span class="sign">+</span>1<span class="sign">;</span>k<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> 
+<span class="line_number">233 </span>                    cinte<span class="sign">[</span>i <span class="sign">+</span> j<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">+</span><span class="sign">=</span>binte<span class="sign">[</span>j<span class="sign">]</span><span class="sign">*</span>bs2<span class="sign">[</span>i <span class="sign">+</span> k<span class="sign">*</span> <span class="sign">*</span>nx<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">234 </span>            <span class="sign">}</span>
+<span class="line_number">235 </span>        <span class="sign">}</span>
+<span class="line_number">236 </span>    <span class="sign">}</span>
+<span class="line_number">237 </span>    <span class="keyword">free</span><span class="sign">(</span>bs2<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">238 </span>    <span class="keyword">free</span><span class="sign">(</span>knots2<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">239 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

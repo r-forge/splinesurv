@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_rRFitting2FcurveUpdate.html#robo14">curveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo110">curveUpdate/updatespline</a></li>
+</ul>
+<hr />
+<a name="curveUpdate2fupdatespline"></a>
+<a name="robo110"></a><h2>curveUpdate/updatespline [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>updatespline</strong> --- update the curve's spline parameters
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Update a curve with new spline parameters. This simply consists of copying the parameters
+    into the curve structure and re-evaluating it using <a href="./splinefrailty_rcurveUpdate2Fevalspline.html#robo105">evalspline</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">2059 </span><strong>updatespline</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>curve<span class="sign">,</span> spline<span class="sign">.</span>par<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    curve      an <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure
+    spline.par a new set of parameters for the spline component
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    curve      the input curve with the spline component updated to the new parameters.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">2062 </span><span class="sign">{</span>
+<span class="line_number">2063 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>curve<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">2064 </span>    <span class="comment"># For the frailty, make sure that the parameter at the fixed index is 0</span>
+<span class="line_number">2065 </span>    <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"frailty"</span><span class="sign">)</span> spline<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> spline<span class="sign">.</span>par <span class="sign">-</span> spline<span class="sign">.</span>par<span class="sign">[</span>curve<span class="sign">$</span>spline<span class="sign">.</span>fixedind<span class="sign">]</span>
+<span class="line_number">2066 </span>    <span class="comment"># copy new parameters into the curve</span>
+<span class="line_number">2067 </span>    curve<span class="sign">$</span>spline<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> spline<span class="sign">.</span>par
+<span class="line_number">2068 </span>    <span class="comment"># evaluate the curve</span>
+<span class="line_number">2069 </span>    curve <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rcurveUpdate2Fevalspline.html#robo105">evalspline</a><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">2070 </span>    <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">2071 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

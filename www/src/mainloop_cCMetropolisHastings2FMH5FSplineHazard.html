@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCMetropolisHastings.html#robo10">CMetropolisHastings</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo76">CMetropolisHastings/MH_SplineHazard</a></li>
+</ul>
+<hr />
+<a name="CMetropolisHastings2fMH5fSplineHazard"></a>
+<a name="robo76"></a><h2>CMetropolisHastings/MH_SplineHazard [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>MH_SplineHazard</strong> --- MH for hazard spline parameters
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Update the parameters of the hazard spline component by Metropolis-Hastings.
+    See also <a href="../R/splinefrailty_rMetropolisHastings2Fmh2Ehazard2Espline.html#robo149">mh.hazard.spline</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">2069 </span><span class="keyword">void</span> <strong>MH_SplineHazard</strong><span class="sign">(</span>curveP hazard<span class="sign">,</span> curveP frailty<span class="sign">,</span> regressionP regression<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    hazard        <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the hazard
+    frailty       <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the frailty
+    regression    <a href="./mainloop_c01structures2FCRegression.html#robo25">CRegression</a> structure
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">2073 </span><span class="sign">{</span>
+<span class="line_number">2074 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span> <span class="keyword">return</span><span class="sign">;</span>
+<span class="line_number">2075 </span>    <span class="keyword">double</span> baselik<span class="sign">,</span> candlik<span class="sign">;</span>
+<span class="line_number">2076 </span>    <span class="keyword">double</span> sumacc<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">2077 </span>    <span class="comment">// base likelihood</span>
+<span class="line_number">2078 </span>    baselik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodSplineHazard.html#robo65">LikelihoodSplineHazard</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">2079 </span>    <span class="keyword">double</span> <span class="sign">*</span> cand <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">calloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2080 </span>    <span class="keyword">double</span> <span class="sign">*</span> thiscand <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">calloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2081 </span>    <span class="comment">// allocate storage for parameters of old spline</span>
+<span class="line_number">2082 </span>    <span class="comment">// if the move is not accepted, these will be used to restore it, to make it faster</span>
+<span class="line_number">2083 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldPar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nj <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2084 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldEPar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nj <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2085 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldY <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nx <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2086 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldYcum <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nx <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2087 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldSplineY <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nx <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2088 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldSplineYcum <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nx <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2089 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">,</span> oldPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2090 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">,</span> oldEPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2091 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">,</span> thiscand<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2092 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">,</span> oldY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2093 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">,</span> oldSplineY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2094 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">,</span> oldYcum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2095 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">,</span> oldSplineYcum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2096 </span>    <span class="comment">// create candidate parameters</span>
+<span class="line_number">2097 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span>j<span class="sign">&lt;</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span>j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">2098 </span>        cand<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">[</span>j<span class="sign">]</span><span class="sign">+</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineTun<span class="sign">[</span>0<span class="sign">]</span><span class="sign">*</span>
+<span class="line_number">2099 </span>            <span class="keyword">rnorm</span><span class="sign">(</span>0<span class="sign">,</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineCandSD<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2100 </span>    <span class="comment">// update spline parameters one at a time</span>
+<span class="line_number">2101 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j <span class="sign">&lt;</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">2102 </span>        thiscand<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> cand<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">2103 </span>        <a href="./mainloop_cCcurveUpdate2FUpdateSplinePar.html#robo44">UpdateSplinePar</a><span class="sign">(</span>hazard<span class="sign">,</span>thiscand<span class="sign">,</span>j<span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">2104 </span>        <span class="comment">// candidate likelihod</span>
+<span class="line_number">2105 </span>        candlik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodSplineHazard.html#robo65">LikelihoodSplineHazard</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2106 </span>        <span class="keyword">int</span> acc <span class="sign">=</span> <a href="./mainloop_cCMetropolisHastings2FAcceptReject.html#robo69">AcceptReject</a><span class="sign">(</span>baselik<span class="sign">,</span> candlik<span class="sign">,</span> 1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2107 </span>        <span class="keyword">if</span><span class="sign">(</span>acc<span class="sign">)</span><span class="sign">{</span> <span class="comment">// accepted, so store the new information</span>
+<span class="line_number">2108 </span>            baselik <span class="sign">=</span> candlik<span class="sign">;</span>
+<span class="line_number">2109 </span>            sumacc<span class="sign">+</span><span class="sign">+</span><span class="sign">;</span>
+<span class="line_number">2110 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">,</span> oldEPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2111 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">,</span> oldY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2112 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">,</span> oldSplineY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2113 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">,</span> oldYcum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2114 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">,</span> oldSplineYcum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2115 </span>        <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span> <span class="comment">// rejected, so restore the old information</span>
+<span class="line_number">2116 </span>            thiscand<span class="sign">[</span>j<span class="sign">]</span><span class="sign">=</span>oldPar<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">2117 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> thiscand<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2118 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> oldEPar<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2119 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> oldY<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2120 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> oldSplineY<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2121 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> oldYcum<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2122 </span>            <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> oldSplineYcum<span class="sign">,</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2123 </span>        <span class="sign">}</span>
+<span class="line_number">2124 </span>    <span class="sign">}</span>
+<span class="line_number">2125 </span>    <span class="comment">// acceptance rate</span>
+<span class="line_number">2126 </span>    hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineAccept<span class="sign">[</span>0<span class="sign">]</span> <span class="sign">=</span>  sumacc <span class="sign">/</span> <span class="sign">(</span><span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2127 </span>    <span class="comment">// free memory</span>
+<span class="line_number">2128 </span>    <span class="keyword">free</span><span class="sign">(</span>cand<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2129 </span>    <span class="keyword">free</span><span class="sign">(</span>thiscand<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2130 </span>    <span class="keyword">free</span><span class="sign">(</span>oldPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2131 </span>    <span class="keyword">free</span><span class="sign">(</span>oldEPar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2132 </span>    <span class="keyword">free</span><span class="sign">(</span>oldY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2133 </span>    <span class="keyword">free</span><span class="sign">(</span>oldYcum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2134 </span>    <span class="keyword">free</span><span class="sign">(</span>oldSplineY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2135 </span>    <span class="keyword">free</span><span class="sign">(</span>oldSplineYcum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2136 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

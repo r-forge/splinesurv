@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="../R/splinefrailty_r2F00main.html#robo0">00main</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo22">00main/SplineSurvMainLoop</a></li>
+</ul>
+<hr />
+<a name="00main2fSplineSurvMainLoop"></a>
+<a name="robo22"></a><h2>00main/SplineSurvMainLoop [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>SplineSurvMainLoop</strong> --- main loop in C
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This is the main fitting loop in C, which is called by <a href="../R/splinefrailty_r00main2Fsplinesurv2Eagdata.html#robo21">splinesurv.agdata</a> if it
+    is called with usec=TRUE (default). Everything in the set of <a href="./mainloop_c2FCFitting.html#robo2">CFitting</a> routines is
+    implemented to match the <a href="../R/splinefrailty_r2FRFitting.html#robo4">RFitting</a> routines, with the caveat of C's memory management.
+</p>
+
+<p>    See also the call graph linked from <a href="../R/splinefrailty_r2F00main.html#robo0">00main</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">2734 </span>SEXP <strong>SplineSurvMainLoop</strong><span class="sign">(</span> SEXP Rhazard<span class="sign">,</span> SEXP Rfrailty<span class="sign">,</span> SEXP Rregression<span class="sign">,</span> 
+<span class="line_number">2735 </span>        SEXP Rhistory<span class="sign">,</span> SEXP Rstartiter<span class="sign">,</span> SEXP Renditer<span class="sign">,</span> SEXP Rthin<span class="sign">,</span> 
+<span class="line_number">2736 </span>        SEXP Rverbose<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    Rhazard       <a href="../R/splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure for the hazard
+    Rfrailty      <a href="../R/splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure for the frailty
+    Rregression   <a href="../R/splinefrailty_r01structures2FRRegression.html#robo28">RRegression</a> structure for the regression information
+    Rhistory      <a href="../R/splinefrailty_r01structures2FRHistory.html#robo27">RHistory</a> structure for the history of the parameters
+    Rstartiter    integer, for the starting iteration from which the loop should begin
+    Renditer      integer, for the iteration until which the loop should run
+    Rthin         integer, for the number of iterations that should be discarded each time
+    Rverbose      integer, containing the amount of output that should be printed to the
+                  screen. This is not as well-behaved as the verbose option within R.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">2740 </span><span class="sign">{</span>
+<span class="line_number">2741 </span>    
+<span class="line_number">2742 </span>    <span class="comment">// initialize random number generator.</span>
+<span class="line_number">2743 </span>    GetRNGstate<span class="sign">(</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2744 </span>    <span class="comment">// Create local curve and regression structures, as <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a>, <a href="./mainloop_c01structures2FCRegression.html#robo25">CRegression</a> </span>
+<span class="line_number">2745 </span>    <span class="comment">// and <a href="./mainloop_c01structures2FCHistory.html#robo24">CHistory</a> structures. These consist primarily of pointers to the memory</span>
+<span class="line_number">2746 </span>    <span class="comment">// allocated by R, but they make the addressing easier.</span>
+<span class="line_number">2747 </span>    curveP hazard <span class="sign">=</span> <span class="sign">(</span><span class="keyword">struct</span> curve <span class="sign">*</span><span class="sign">)</span> R_alloc<span class="sign">(</span>1<span class="sign">,</span>sizeof<span class="sign">(</span><span class="keyword">struct</span> curve<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2748 </span>    curveP frailty <span class="sign">=</span> <span class="sign">(</span><span class="keyword">struct</span> curve <span class="sign">*</span><span class="sign">)</span> R_alloc<span class="sign">(</span>1<span class="sign">,</span>sizeof<span class="sign">(</span><span class="keyword">struct</span> curve<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2749 </span>    regressionP regression <span class="sign">=</span> <span class="sign">(</span><span class="keyword">struct</span> regress <span class="sign">*</span><span class="sign">)</span> R_alloc<span class="sign">(</span>1<span class="sign">,</span>sizeof<span class="sign">(</span><span class="keyword">struct</span> regress<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2750 </span>    historyP history <span class="sign">=</span> <span class="sign">(</span><span class="keyword">struct</span> hist <span class="sign">*</span><span class="sign">)</span> R_alloc<span class="sign">(</span>1<span class="sign">,</span>sizeof<span class="sign">(</span><span class="keyword">struct</span> hist<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2751 </span>    hazard<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">=</span>1<span class="sign">;</span>
+<span class="line_number">2752 </span>    frailty<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">2753 </span>    <a href="./mainloop_cCcurveUpdate2FPopulateLocalCurve.html#robo36">PopulateLocalCurve</a><span class="sign">(</span>hazard<span class="sign">,</span> Rhazard<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2754 </span>    <a href="./mainloop_cCcurveUpdate2FPopulateLocalCurve.html#robo36">PopulateLocalCurve</a><span class="sign">(</span>frailty<span class="sign">,</span> Rfrailty<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2755 </span>    <a href="./mainloop_cCcurveUpdate2FPopulateLocalRegression.html#robo38">PopulateLocalRegression</a><span class="sign">(</span>regression<span class="sign">,</span> Rregression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2756 </span>    <a href="./mainloop_cCcurveUpdate2FPopulateLocalHistory.html#robo37">PopulateLocalHistory</a><span class="sign">(</span>history<span class="sign">,</span>Rhistory<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2757 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>regression<span class="sign">-</span><span class="sign">&gt;</span>m<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> 
+<span class="line_number">2758 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>regression<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span> i<span class="sign">&lt;</span>regression<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>j<span class="sign">+</span>1<span class="sign">]</span><span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">2759 </span>            regression<span class="sign">-</span><span class="sign">&gt;</span>frailrep<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">2760 </span>    <span class="comment">// compute the value of the frailty*lp vector</span>
+<span class="line_number">2761 </span>    <a href="./mainloop_cCmiscUtils2FdiagmvWrapper.html#robo83">diagmvWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>frailrep<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>frailelp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2762 </span>
+<span class="line_number">2763 </span>    <span class="comment">// Begin main loop</span>
+<span class="line_number">2764 </span>    <span class="keyword">int</span> iter <span class="sign">=</span> asInteger<span class="sign">(</span>Rstartiter<span class="sign">)</span><span class="sign">;</span> <span class="comment">// iteration counter</span>
+<span class="line_number">2765 </span>    <span class="keyword">int</span> enditer <span class="sign">=</span> asInteger<span class="sign">(</span>Renditer<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2766 </span>    <span class="keyword">int</span> thin <span class="sign">=</span> asInteger<span class="sign">(</span>Rthin<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2767 </span>    <span class="keyword">int</span> verbose <span class="sign">=</span> asInteger<span class="sign">(</span>Rverbose<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2768 </span>    <span class="keyword">int</span> iterEl <span class="sign">=</span> 0<span class="sign">;</span> <span class="comment">// counts the elapsed iterations between history updates</span>
+<span class="line_number">2769 </span>    <span class="keyword">while</span><span class="sign">(</span>iter <span class="sign">&lt;</span> enditer<span class="sign">)</span>
+<span class="line_number">2770 </span>    <span class="sign">{</span>
+<span class="line_number">2771 </span>        R_CheckUserInterrupt<span class="sign">(</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2772 </span>        iterEl<span class="sign">+</span><span class="sign">+</span><span class="sign">;</span>
+<span class="line_number">2773 </span>        <span class="keyword">if</span><span class="sign">(</span>verbose <span class="sign">&gt;</span><span class="sign">=</span> 4<span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"%d"</span><span class="sign">,</span> iterEl<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2774 </span>        
+<span class="line_number">2775 </span>        <span class="comment">// Metropolis-Hastings steps</span>
+<span class="line_number">2776 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FFrail.html#robo71">MH_Frail</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2777 </span>
+<span class="line_number">2778 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FRegression.html#robo74">MH_Regression</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2779 </span>        
+<span class="line_number">2780 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FSplineHazard.html#robo76">MH_SplineHazard</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2781 </span>
+<span class="line_number">2782 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FSplineFrailty.html#robo75">MH_SplineFrailty</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2783 </span>        
+<span class="line_number">2784 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FParamHazard.html#robo73">MH_ParamHazard</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2785 </span>
+<span class="line_number">2786 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FParamFrailty.html#robo72">MH_ParamFrailty</a><span class="sign">(</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2787 </span>
+<span class="line_number">2788 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FWeight.html#robo77">MH_Weight</a><span class="sign">(</span>hazard<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2789 </span>        <a href="./mainloop_cCMetropolisHastings2FMH5FWeight.html#robo77">MH_Weight</a><span class="sign">(</span>frailty<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2790 </span>
+<span class="line_number">2791 </span>        <a href="./mainloop_cCMetropolisHastings2FUpdatePostvarCurve.html#robo78">UpdatePostvarCurve</a><span class="sign">(</span>hazard<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2792 </span>        <a href="./mainloop_cCMetropolisHastings2FUpdatePostvarCurve.html#robo78">UpdatePostvarCurve</a><span class="sign">(</span>frailty<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2793 </span>        <a href="./mainloop_cCMetropolisHastings2FUpdatePostvarRegression.html#robo79">UpdatePostvarRegression</a><span class="sign">(</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2794 </span>
+<span class="line_number">2795 </span>        <span class="comment">// RJMCMC steps for adaptive knot selection</span>
+<span class="line_number">2796 </span>        <span class="keyword">if</span><span class="sign">(</span>hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineAdaptive<span class="sign">)</span> <a href="./mainloop_cCMetropolisHastings2FMH5FBDM.html#robo70">MH_BDM</a><span class="sign">(</span><span class="squote">'h'</span><span class="sign">,</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2797 </span>        <span class="keyword">if</span><span class="sign">(</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineAdaptive<span class="sign">)</span> <a href="./mainloop_cCMetropolisHastings2FMH5FBDM.html#robo70">MH_BDM</a><span class="sign">(</span><span class="squote">'f'</span><span class="sign">,</span>hazard<span class="sign">,</span>frailty<span class="sign">,</span>regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2798 </span>        
+<span class="line_number">2799 </span>        <span class="comment">// store current state in <a href="./mainloop_c01structures2FCHistory.html#robo24">CHistory</a></span>
+<span class="line_number">2800 </span>        <span class="keyword">if</span><span class="sign">(</span>iterEl <span class="sign">=</span><span class="sign">=</span> thin<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">2801 </span>            iter<span class="sign">+</span><span class="sign">+</span><span class="sign">;</span>
+<span class="line_number">2802 </span>            <a href="./mainloop_cCmiscUtils2FUpdateHistory.html#robo93">UpdateHistory</a><span class="sign">(</span>hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">,</span> history<span class="sign">,</span> iter<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2803 </span>            iterEl <span class="sign">=</span> 0<span class="sign">;</span>
+<span class="line_number">2804 </span>            <span class="keyword">if</span><span class="sign">(</span>verbose<span class="sign">&gt;</span><span class="sign">=</span>3<span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">" %d "</span><span class="sign">,</span>iter<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2805 </span>        <span class="sign">}</span>
+<span class="line_number">2806 </span>        
+<span class="line_number">2807 </span>    <span class="sign">}</span>
+<span class="line_number">2808 </span>    REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhazard<span class="sign">,</span><span class="quote">"spline.nknots"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">[</span>0<span class="sign">]</span> <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span> hazard<span class="sign">-</span><span class="sign">&gt;</span>SplineNknots<span class="sign">;</span>
+<span class="line_number">2809 </span>    REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rfrailty<span class="sign">,</span><span class="quote">"spline.nknots"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">[</span>0<span class="sign">]</span> <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineNknots<span class="sign">;</span>
+<span class="line_number">2810 </span>    SEXP returnval <span class="sign">=</span> R_NilValue<span class="sign">;</span>
+<span class="line_number">2811 </span>    PutRNGstate<span class="sign">(</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2812 </span>    <span class="keyword">return</span> returnval<span class="sign">;</span>
+<span class="line_number">2813 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

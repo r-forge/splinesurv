@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./init_cinitRoutine2FCinitRoutine.html#robo13">CinitRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo56">CinitRoutine/cMakePenalty2diff</a></li>
+</ul>
+<hr />
+<a name="CinitRoutine2fcMakePenalty2diff"></a>
+<a name="robo56"></a><h2>CinitRoutine/cMakePenalty2diff [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>cMakePenalty2diff</strong> --- compute a penalty matrix on second derivatives
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Generates a penalty matrix that penalizes the integral of the squared second derivative
+    of a curve. See also <a href="../R/splinefrailty_rinitRoutine2FmakePenalty2E2deriv.html#robo125">makePenalty.2deriv</a>.
+</p>
+    
+<p>    This function should be called cMakePenalty2deriv, but I'm scared of changing its name.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">436 </span><span class="keyword">void</span> <strong>cMakePenalty2diff</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    P     a matrix of dimension (K+ord) x (K+ord)
+    knots set of knots on which the spline is defined
+    ord   order of the spline
+    K     number of interior knots
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">440 </span><span class="sign">{</span>
+<span class="line_number">441 </span>    <span class="comment">// P should be (K+ord)^2</span>
+<span class="line_number">442 </span>    <span class="keyword">int</span> nj <span class="sign">=</span> <span class="sign">*</span>K <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">443 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j1<span class="sign">=</span>0<span class="sign">;</span> j1<span class="sign">&lt;</span>nj<span class="sign">;</span> j1<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span>
+<span class="line_number">444 </span>    <span class="sign">{</span>
+<span class="line_number">445 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j2<span class="sign">=</span>j1<span class="sign">;</span> j2<span class="sign">&lt;</span>nj<span class="sign">;</span> j2<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">446 </span>            P<span class="sign">[</span>j1 <span class="sign">+</span> j2<span class="sign">*</span>nj<span class="sign">]</span><span class="sign">=</span><a href="./init_cCsplineUtils2FcSplineDerivInt.html#robo101">cSplineDerivInt</a><span class="sign">(</span>2<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> j1<span class="sign">,</span> 2<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> j2<span class="sign">,</span> knots<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">447 </span>            P<span class="sign">[</span>j2 <span class="sign">+</span> j1<span class="sign">*</span>nj<span class="sign">]</span><span class="sign">=</span>P<span class="sign">[</span>j1 <span class="sign">+</span> j2<span class="sign">*</span>nj<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">448 </span>        <span class="sign">}</span>
+<span class="line_number">449 </span>    <span class="sign">}</span>
+<span class="line_number">450 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

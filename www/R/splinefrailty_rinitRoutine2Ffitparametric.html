@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FinitRoutine.html#robo3">initRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo120">initRoutine/fitparametric</a></li>
+</ul>
+<hr />
+<a name="initRoutine2ffitparametric"></a>
+<a name="robo120"></a><h2>initRoutine/fitparametric [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>fitparametric</strong> --- fit a parametric component to a curve
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Given a curve with a parametric component, compute a good set of initial
+    values for the parametric component parameters. The parametric component
+    distributions are parametrized in a way that allows Gaussian priors on the
+    parameters, and this function incorporates that.
+</p>
+
+<p>    See also <a href="./splinefrailty_rcurveUpdate2Fevalparametric.html#robo104">evalparametric</a> for the parametrization used.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1857 </span><strong>fitparametric</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>curve<span class="sign">,</span> x<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    curve      an <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure with a parametric component
+    x          a set of data points used for estimation
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    curve      updated curve with curve$param.par holding initial values
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1860 </span><span class="sign">{</span>
+<span class="line_number">1861 </span>    name <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>name
+<span class="line_number">1862 </span>    dist <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>param<span class="sign">.</span>dist
+<span class="line_number">1863 </span>    <span class="keyword">if</span><span class="sign">(</span>dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"none"</span><span class="sign">)</span> <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1864 </span>    <span class="comment"># frailty curve</span>
+<span class="line_number">1865 </span>    <span class="keyword">if</span><span class="sign">(</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"frailty"</span><span class="sign">)</span>
+<span class="line_number">1866 </span>    <span class="sign">{</span>
+<span class="line_number">1867 </span>        <span class="comment"># compute the variance of the frailties and set the parameter</span>
+<span class="line_number">1868 </span>        <span class="comment"># according to the parametrization selected.</span>
+<span class="line_number">1869 </span>        Ui <span class="sign">&lt;</span><span class="sign">-</span> x
+<span class="line_number">1870 </span>        <span class="keyword">if</span><span class="sign">(</span>dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"gamma"</span><span class="sign">)</span>
+<span class="line_number">1871 </span>            par <span class="sign">&lt;</span><span class="sign">-</span> log<span class="sign">(</span>var<span class="sign">(</span>Ui<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1872 </span>        <span class="keyword">if</span><span class="sign">(</span>dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"lognormal"</span><span class="sign">)</span>
+<span class="line_number">1873 </span>        <span class="sign">{</span>
+<span class="line_number">1874 </span>            varu <span class="sign">&lt;</span><span class="sign">-</span> var<span class="sign">(</span>Ui<span class="sign">)</span>
+<span class="line_number">1875 </span>            par <span class="sign">&lt;</span><span class="sign">-</span> log<span class="sign">(</span>log<span class="sign">(</span>varu <span class="sign">+</span> 1<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1876 </span>        <span class="sign">}</span>
+<span class="line_number">1877 </span>        curve<span class="sign">$</span>param<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> par
+<span class="line_number">1878 </span>        curve<span class="sign">$</span>x <span class="sign">&lt;</span><span class="sign">-</span> Ui
+<span class="line_number">1879 </span>    <span class="sign">}</span>
+<span class="line_number">1880 </span>    <span class="comment"># hazard curve</span>
+<span class="line_number">1881 </span>    <span class="keyword">if</span><span class="sign">(</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"hazard"</span><span class="sign">)</span>
+<span class="line_number">1882 </span>    <span class="sign">{</span>
+<span class="line_number">1883 </span>        agdata <span class="sign">&lt;</span><span class="sign">-</span> x
+<span class="line_number">1884 </span>        varnames <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">colnames</span><span class="sign">(</span>agdata<span class="sign">)</span><span class="sign">[</span> <span class="sign">-</span> <span class="sign">(</span>1<span class="sign">:</span>4<span class="sign">)</span><span class="sign">]</span>
+<span class="line_number">1885 </span>        qvarnames <span class="sign">&lt;</span><span class="sign">-</span> paste<span class="sign">(</span><span class="quote">"`"</span><span class="sign">,</span> varnames<span class="sign">,</span> <span class="quote">"`"</span><span class="sign">,</span> sep <span class="sign">=</span> <span class="quote">""</span><span class="sign">)</span>
+<span class="line_number">1886 </span>        <span class="comment"># use survreg to fit a parametric component to the hazard</span>
+<span class="line_number">1887 </span>        <span class="comment"># and transform the estimated parameters to the parametrization</span>
+<span class="line_number">1888 </span>        fit <span class="sign">&lt;</span><span class="sign">-</span> survreg<span class="sign">(</span>as<span class="sign">.</span>formula<span class="sign">(</span>paste<span class="sign">(</span><span class="quote">"Surv(time, delta)~"</span><span class="sign">,</span> 
+<span class="line_number">1889 </span>            paste<span class="sign">(</span>qvarnames<span class="sign">,</span> collapse <span class="sign">=</span> <span class="quote">" + "</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span><span class="sign">,</span> data <span class="sign">=</span> agdata<span class="sign">,</span> dist <span class="sign">=</span> dist<span class="sign">)</span>
+<span class="line_number">1890 </span>        <span class="keyword">if</span><span class="sign">(</span>dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"exponential"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1891 </span>            par <span class="sign">&lt;</span><span class="sign">-</span> log<span class="sign">(</span>fit<span class="sign">$</span>icoef<span class="sign">[</span>1<span class="sign">]</span><span class="sign">)</span>
+<span class="line_number">1892 </span>        <span class="sign">}</span>
+<span class="line_number">1893 </span>        <span class="keyword">if</span><span class="sign">(</span>dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"weibull"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1894 </span>            lambda <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">exp</span><span class="sign">(</span><span class="sign">-</span>fit<span class="sign">$</span>icoef<span class="sign">[</span>1<span class="sign">]</span><span class="sign">)</span>
+<span class="line_number">1895 </span>            gamma <span class="sign">&lt;</span><span class="sign">-</span> 1 <span class="sign">/</span> <span class="keyword">exp</span><span class="sign">(</span>fit<span class="sign">$</span>icoef<span class="sign">[</span>2<span class="sign">]</span><span class="sign">)</span>
+<span class="line_number">1896 </span>            par <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span>log<span class="sign">(</span>lambda<span class="sign">)</span><span class="sign">,</span> log<span class="sign">(</span>gamma<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1897 </span>        <span class="sign">}</span>
+<span class="line_number">1898 </span>        <span class="keyword">if</span><span class="sign">(</span>dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"lognormal"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1899 </span>            par <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span>fit<span class="sign">$</span>icoef<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> fit<span class="sign">$</span>icoef<span class="sign">[</span>2<span class="sign">]</span><span class="sign">)</span>
+<span class="line_number">1900 </span>        <span class="sign">}</span>
+<span class="line_number">1901 </span>        names<span class="sign">(</span>par<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">1902 </span>        curve<span class="sign">$</span>param<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> par
+<span class="line_number">1903 </span>        curve<span class="sign">$</span>x <span class="sign">&lt;</span><span class="sign">-</span> agdata<span class="sign">$</span>time
+<span class="line_number">1904 </span>    <span class="sign">}</span>
+<span class="line_number">1905 </span>    <span class="comment"># Evaluate the curve at the parameter values chosen.</span>
+<span class="line_number">1906 </span>    curve <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rcurveUpdate2Fevalparametric.html#robo104">evalparametric</a><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1907 </span>    <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1908 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

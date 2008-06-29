@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_rRFitting2FmakeLikelihood.html#robo16">makeLikelihood</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo139">makeLikelihood/mklik.weight.haz</a></li>
+</ul>
+<hr />
+<a name="makeLikelihood2fmklik2eweight2ehaz"></a>
+<a name="robo139"></a><h2>makeLikelihood/mklik.weight.haz [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>mklik.weight.haz</strong> --- likelihood of weight of spline component for hazard
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>   Compute loglikelihood of relative weight of spline and parametric components
+   if the hazard curve has both.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">2481 </span><strong>mklik.weight.haz</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>weight<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    weight     weight of the spline component (0&lt;=weight&lt;=1)
+    hazard     <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> for hazard
+    frailty    <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> for frailty
+    regression <a href="./splinefrailty_r01structures2FRRegression.html#robo28">RRegression</a> structure
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    lik        loglikelihood of weight
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">2484 </span><span class="sign">{</span>
+<span class="line_number">2485 </span>    hazard<span class="sign">$</span>weight <span class="sign">&lt;</span><span class="sign">-</span> weight
+<span class="line_number">2486 </span>    hazard <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rcurveUpdate2Fweightcurve.html#robo111">weightcurve</a><span class="sign">(</span>hazard<span class="sign">)</span>
+<span class="line_number">2487 </span>    status <span class="sign">&lt;</span><span class="sign">-</span> regression<span class="sign">$</span>status
+<span class="line_number">2488 </span>    lp <span class="sign">&lt;</span><span class="sign">-</span> regression<span class="sign">$</span>lp
+<span class="line_number">2489 </span>    frailrep <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rep</span><span class="sign">(</span>frailty<span class="sign">$</span>x<span class="sign">,</span> regression<span class="sign">$</span>Ji<span class="sign">)</span>
+<span class="line_number">2490 </span>    <span class="comment"># point process likelihood</span>
+<span class="line_number">2491 </span>    lik <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">sum</span><span class="sign">(</span>status <span class="sign">*</span> log<span class="sign">(</span>hazard<span class="sign">$</span>y<span class="sign">)</span> <span class="sign">-</span> frailrep <span class="sign">*</span> hazard<span class="sign">$</span>ycum <span class="sign">*</span> <span class="keyword">exp</span><span class="sign">(</span>lp<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">2492 </span>    <span class="comment"># prior on the weight</span>
+<span class="line_number">2493 </span>    lik <span class="sign">&lt;</span><span class="sign">-</span> lik <span class="sign">+</span> <span class="sign">(</span>hazard<span class="sign">$</span>weight<span class="sign">.</span>hyper<span class="sign">[</span>1<span class="sign">]</span> <span class="sign">-</span> 1<span class="sign">)</span> <span class="sign">*</span> log<span class="sign">(</span>hazard<span class="sign">$</span>weight<span class="sign">)</span> <span class="sign">+</span>
+<span class="line_number">2494 </span>        <span class="sign">(</span>hazard<span class="sign">$</span>weight<span class="sign">.</span>hyper<span class="sign">[</span>2<span class="sign">]</span> <span class="sign">-</span> 1<span class="sign">)</span> <span class="sign">*</span> log<span class="sign">(</span>1 <span class="sign">-</span> hazard<span class="sign">$</span>weight<span class="sign">)</span>
+<span class="line_number">2495 </span>    <span class="keyword">return</span><span class="sign">(</span>lik<span class="sign">)</span> 
+<span class="line_number">2496 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FinitRoutine.html#robo3">initRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo128">initRoutine/numHess.par</a></li>
+</ul>
+<hr />
+<a name="initRoutine2fnumHess2epar"></a>
+<a name="robo128"></a><h2>initRoutine/numHess.par [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>numHess.par</strong>  --- compute a numerical Hessian for the parametric component
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Since there are so many parametric component specifications and parametrizations,
+    it is easiest to compute the Hessian of the parameters numerically. Given a set
+    of parameters and a likelihood function, this routine computes the Hessian of
+    the function at the given parameters.
+</p>
+
+<p>    The method used is basic finite differences
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">959 </span><strong>numHess.par</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">,</span> fun<span class="sign">,</span> eps <span class="sign">=</span> 1e<span class="sign">-</span>5<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    param.par  parameters of the parametric component
+    fun        likelihood function for the parametric component
+    eps        precision to use for numerical Hessian
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">962 </span><span class="sign">{</span>
+<span class="line_number">963 </span>    <span class="comment"># Utility function to compute numerical derivatives</span>
+<span class="line_number">964 </span>    numDer<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">,</span> fun<span class="sign">,</span> eps <span class="sign">=</span> 1e<span class="sign">-</span>5<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">965 </span>    <span class="sign">{</span>        
+<span class="line_number">966 </span>        lik1 <span class="sign">&lt;</span><span class="sign">-</span> fun<span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">967 </span>        nd <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rep</span><span class="sign">(</span>0<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">968 </span>        <span class="comment">#   take finite differences along the set of parameters</span>
+<span class="line_number">969 </span>        <span class="keyword">for</span><span class="sign">(</span>i in 1<span class="sign">:</span><span class="keyword">length</span><span class="sign">(</span>nd<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">970 </span>        <span class="sign">{</span>
+<span class="line_number">971 </span>            param<span class="sign">.</span>par2 <span class="sign">&lt;</span><span class="sign">-</span> param<span class="sign">.</span>par
+<span class="line_number">972 </span>            param<span class="sign">.</span>par2<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> param<span class="sign">.</span>par2<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">+</span> eps
+<span class="line_number">973 </span>            lik2 <span class="sign">&lt;</span><span class="sign">-</span> fun<span class="sign">(</span>param<span class="sign">.</span>par2<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">974 </span>            nd<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="sign">(</span>lik2 <span class="sign">-</span> lik1<span class="sign">)</span> <span class="sign">/</span> eps
+<span class="line_number">975 </span>        <span class="sign">}</span>
+<span class="line_number">976 </span>        <span class="keyword">return</span><span class="sign">(</span>nd<span class="sign">)</span>
+<span class="line_number">977 </span>    <span class="sign">}</span>
+<span class="line_number">978 </span>    <span class="comment"># allocate storage for numerical Hessian</span>
+<span class="line_number">979 </span>    nh <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">980 </span>    <span class="comment">#   base gradient</span>
+<span class="line_number">981 </span>    gr1 <span class="sign">&lt;</span><span class="sign">-</span> numDer<span class="sign">.</span>par<span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">,</span> fun<span class="sign">,</span> eps<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">982 </span>    <span class="comment">#   compute gradients by finite differences</span>
+<span class="line_number">983 </span>    <span class="keyword">for</span><span class="sign">(</span>i in 1<span class="sign">:</span><span class="keyword">length</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">984 </span>    <span class="sign">{</span>
+<span class="line_number">985 </span>        param<span class="sign">.</span>par2 <span class="sign">&lt;</span><span class="sign">-</span> param<span class="sign">.</span>par
+<span class="line_number">986 </span>        param<span class="sign">.</span>par2<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> param<span class="sign">.</span>par2<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">+</span> eps
+<span class="line_number">987 </span>        gr2 <span class="sign">&lt;</span><span class="sign">-</span> numDer<span class="sign">.</span>par<span class="sign">(</span>param<span class="sign">.</span>par2<span class="sign">,</span> fun<span class="sign">,</span> eps<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">988 </span>        nh<span class="sign">[</span>i<span class="sign">,</span> <span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="sign">(</span>gr2 <span class="sign">-</span> gr1<span class="sign">)</span> <span class="sign">/</span> eps
+<span class="line_number">989 </span>    <span class="sign">}</span>
+<span class="line_number">990 </span>    <span class="keyword">return</span><span class="sign">(</span>nh<span class="sign">)</span>
+<span class="line_number">991 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

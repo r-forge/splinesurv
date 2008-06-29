@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FS3Methods.html#robo5">S3Methods</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo165">S3Methods/printcurvesummary</a></li>
+</ul>
+<hr />
+<a name="S3Methods2fprintcurvesummary"></a>
+<a name="robo165"></a><h2>S3Methods/printcurvesummary [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>printcurvesummary</strong> --- summarize a curve for <a href="./splinefrailty_rS3Methods2Fsummary2Esplinesurv.html#robo170">summary.splinesurv</a>
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Routine called by <a href="./splinefrailty_rS3Methods2Fsummary2Esplinesurv.html#robo170">summary.splinesurv</a> to print a nice summary of a curve structure
+    including mean number of knots, boundaries, parametric/spline components and weights, etc.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">3720 </span><strong>printcurvesummary</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>curve<span class="sign">,</span> w <span class="sign">=</span> NULL<span class="sign">,</span> param<span class="sign">.</span>par <span class="sign">=</span> NULL<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    curve  an <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure, possibly with portions missing
+    w      weight of splines component
+    param.par  parametric component parameters to use
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    none, screen output only
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">3723 </span><span class="sign">{</span>
+<span class="line_number">3724 </span>    <a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a> <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"both"</span> <span class="sign">|</span><span class="sign">|</span> curve<span class="sign">$</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"parametric"</span>
+<span class="line_number">3725 </span>    <a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a> <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"both"</span> <span class="sign">|</span><span class="sign">|</span> curve<span class="sign">$</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"spline"</span>
+<span class="line_number">3726 </span>    <span class="comment"># print spline component</span>
+<span class="line_number">3727 </span>    <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">3728 </span>        <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\tSpline"</span><span class="sign">)</span>
+<span class="line_number">3729 </span>        <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">)</span> <span class="keyword">cat</span><span class="sign">(</span><span class="quote">" ( weight ="</span><span class="sign">,</span> format<span class="sign">(</span>w<span class="sign">,</span> digits <span class="sign">=</span> 3<span class="sign">)</span><span class="sign">,</span> <span class="quote">"):"</span><span class="sign">)</span> <span class="keyword">else</span> <span class="keyword">cat</span><span class="sign">(</span><span class="quote">":"</span><span class="sign">)</span>
+<span class="line_number">3730 </span>        <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tOrder:"</span><span class="sign">,</span> curve<span class="sign">$</span>spline<span class="sign">.</span>ord<span class="sign">)</span>
+<span class="line_number">3731 </span>        <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tMean Interior knots:"</span><span class="sign">,</span> format<span class="sign">(</span>curve<span class="sign">$</span>spline<span class="sign">.</span>nknots<span class="sign">,</span> digits <span class="sign">=</span> 2<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3732 </span>        <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"frailty"</span><span class="sign">)</span> <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tVariance: "</span><span class="sign">,</span> format<span class="sign">(</span>curve<span class="sign">$</span>spline<span class="sign">.</span>fvar<span class="sign">,</span>
+<span class="line_number">3733 </span>            digits <span class="sign">=</span> 3<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3734 </span>    <span class="sign">}</span>
+<span class="line_number">3735 </span>    <span class="comment"># print parametric component</span>
+<span class="line_number">3736 </span>    <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3737 </span>        <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\tParametric"</span><span class="sign">)</span>
+<span class="line_number">3738 </span>        <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="keyword">cat</span><span class="sign">(</span><span class="quote">" ( weight ="</span><span class="sign">,</span> format<span class="sign">(</span>1 <span class="sign">-</span> w<span class="sign">,</span> digits <span class="sign">=</span> 3<span class="sign">)</span><span class="sign">,</span> <span class="quote">"):"</span><span class="sign">)</span> <span class="keyword">else</span> <span class="keyword">cat</span><span class="sign">(</span><span class="quote">":"</span><span class="sign">)</span>
+<span class="line_number">3739 </span>        dist <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>param<span class="sign">.</span>dist
+<span class="line_number">3740 </span>        <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tDistribution:"</span><span class="sign">,</span> curve<span class="sign">$</span>param<span class="sign">.</span>dist<span class="sign">)</span>
+<span class="line_number">3741 </span>        <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"hazard"</span> <span class="sign">&amp;</span> dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"exponential"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3742 </span>            <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tRate:"</span><span class="sign">,</span> format<span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">,</span> digits <span class="sign">=</span> 3<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3743 </span>        <span class="sign">}</span>
+<span class="line_number">3744 </span>        <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"hazard"</span> <span class="sign">&amp;</span> dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"weibull"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3745 </span>            <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tRate:"</span><span class="sign">,</span> format<span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">[</span>1<span class="sign">]</span><span class="sign">)</span><span class="sign">,</span> digits <span class="sign">=</span> 3<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3746 </span>            <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tScale:"</span><span class="sign">,</span> format<span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">[</span>2<span class="sign">]</span><span class="sign">)</span><span class="sign">,</span> digits <span class="sign">=</span> 3<span class="sign">)</span><span class="sign">)</span> 
+<span class="line_number">3747 </span>        <span class="sign">}</span>
+<span class="line_number">3748 </span>        <span class="keyword">if</span><span class="sign">(</span>curve<span class="sign">$</span>name <span class="sign">=</span><span class="sign">=</span> <span class="quote">"frailty"</span> <span class="sign">&amp;</span> <span class="sign">(</span>dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"gamma"</span> <span class="sign">|</span> dist <span class="sign">=</span><span class="sign">=</span> <span class="quote">"lognormal"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3749 </span>            <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\n\t\tVariance:"</span><span class="sign">,</span> format<span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">,</span> digits <span class="sign">=</span> 3<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3750 </span>        <span class="sign">}</span>
+<span class="line_number">3751 </span>        
+<span class="line_number">3752 </span>    <span class="sign">}</span>
+<span class="line_number">3753 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

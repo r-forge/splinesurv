@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2F01structures.html#robo1">01structures</a><a class="menuitem" href="../robo_definitions.html#robo_top_of_doc">Definitions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo26">01structures/RCurve</a></li>
+</ul>
+<hr />
+<a name="01structures2fRCurve"></a>
+<a name="robo26"></a><h2>01structures/RCurve [ Definitions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>RCurve</strong> --- structure to store a curve in R
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This type of structure contains the information about a curve, either the hazard or frailty.
+    This includes all parameters for spline and parametric components, weights, knot positions,
+    etc, basis functions, tuning parameters, etc. It is the R analogue of the <a href="../src/mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure.
+</p>
+
+<p>    In R, this is implemented as a simple list. Most of the components are defined at
+    initialization, others are added during the procedure.
+</p>
+
+<p>    The components are:
+</p>
+
+<pre>        type                    "spline", "parametric" or "both"
+        <a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a>               boolean, whether a splien component is included
+        <a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a>                  boolean, whether a parametric component is included
+        name                    "hazard" or "frailty"
+        spline.ord              order of the spline
+        spline.adaptive         boolean, whether to use adaptive knot selection
+        spline.knotspacing      "equal", "quantile", type of knot distribution 
+        spline.nknots           number of knots
+        spline.nknots.prior     prior on the number of knots
+        spline.nknots.hyper     hyperparameters for the number of knots
+        spline.ncandknots       number of candidate knots
+        spline.candknots        candidate knots
+        spline.maxoccknots      maximum number of occupied candidate knots
+        spline.bdmconst         constant for birth-death-move step
+        spline.knots            vector of knots
+        spline.par              spline parameters
+        spline.min              minimum value of a spline parameter
+        spline.penalty          type of smoothness penalty to use ("none","2diff","2deriv")
+        spline.penaltyfactor    scaling of the penalty
+        spline.priorvar         prior variance for the spline penalty
+        spline.hyper            hyperparameters for the prior variance
+        spline.basis            B-spline basis
+        spline.basisint         integrals of each B-spline basis function
+        spline.basiscum         cumulative integrals of each basis function (hazard only)
+        spline.basisexp         expectation of each spline basis function (frailty only)
+        spline.candcov          covariance matrix used to generate candidate parameter sets
+        spline.candcholcov      cholesky factorization of spline.candcov
+        spline.fvar             frailty variance (frailty only)
+        spline.fixedind         index of the spline component that remains fixed (frailty only)
+        spline.tun              tuning parameter for the spline parameters
+        spline.accept           acceptance rate of spline parameters
+        param.dist              parametric distribution type
+        param.par               parameters for the distribution
+        param.priorvar          prior variance for the parametric parameters
+        param.hyper             hyperparameters for the variance
+        param.tun               tuning parameter
+        param.accept            acceptance rate of parametric parameters
+        weight                  weight of spline component
+        weight.priorvar         variance of the weight
+        weight.hyper            hyperparameters of the weight
+        weight.tun              tuning parameter for the weight
+        weight.accept           acceptance rate of the weight
+        x                       observations (times for hazard, frailties for frailty curve)
+        spline.y                spline component evaluated at x
+        param.y                 parametric component evaluated at x
+        y                       both components weighted
+        spline.ycum             cumulative hazard evaluated at x using spline component
+        param.ycum              cumulative hazard evaluated at y using parametric component
+        ycum                    cumulative hazard
+</pre>
+<p></p>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

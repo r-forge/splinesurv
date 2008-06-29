@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./init_cinitRoutine2FCinitRoutine.html#robo13">CinitRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo51">CinitRoutine/addInitSmoothnessPenaltyGr</a></li>
+</ul>
+<hr />
+<a name="CinitRoutine2faddInitSmoothnessPenaltyGr"></a>
+<a name="robo51"></a><h2>CinitRoutine/addInitSmoothnessPenaltyGr [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>addInitSmoothnessPenaltyGr</strong> --- adds gradient of smoothness penalty to an input vector
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Computes the gradient of the smoothness penaly over the spline parameters and adds it to
+    an input vector.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">540 </span><span class="keyword">void</span> <strong>addInitSmoothnessPenaltyGr</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>gr<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span> penpar<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>penaltyType<span class="sign">,</span>
+<span class="line_number">541 </span>        <span class="keyword">double</span> <span class="sign">*</span> sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    gr        gradient vector
+    penpar    parameters of the spline
+    P         penalty matrix
+    penaltyType   integer indexing the type of penalty (0=gaussian, 1=2diff, 2=2deriv, 3=log2deriv)
+    sigma2    prior variance
+    nj        number of B-spline basis functions
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">545 </span><span class="sign">{</span>
+<span class="line_number">546 </span>    <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">547 </span>    <span class="keyword">if</span><span class="comment">(*penaltyType==0){
+<span class="line_number">548 </span>        double scalefactor = -1 / *sigma2;
+<span class="line_number">549 </span>        F77_CALL(daxpy)(nj, &amp;scalefactor, penpar, &amp;c1, gr, &amp;c1);
+<span class="line_number">550 </span>    }
+<span class="line_number">551 </span>    // second differences or second derivative
+<span class="line_number">552 </span>    if(*penaltyType==1 || *penaltyType==2 || *penaltyType==3){   
+<span class="line_number">553 </span>        double * temp = (double *)</span> <span class="keyword">calloc</span><span class="sign">(</span><span class="comment">(*nj) , sizeof(double));
+<span class="line_number">554 </span>        double c1d = 1.0;
+<span class="line_number">555 </span>        char uplo = 'u';
+<span class="line_number">556 </span>        // compute smoothness penaly gradient.
+<span class="line_number">557 </span>        F77_CALL(dsymv)( &amp;uplo, nj, &amp;c1d, P, nj, penpar, &amp;c1, &amp;c1d, temp, &amp;c1);
+<span class="line_number">558 </span>        for(int i=0; i&lt;*nj; i++) temp[i]=temp[i]*penpar[i] / *sigma2;
+<span class="line_number">559 </span>        double scalefactor=-1;
+<span class="line_number">560 </span>        if(*penaltyType==3) {
+<span class="line_number">561 </span>            double pen=0;
+<span class="line_number">562 </span>            int c2 = 2;
+<span class="line_number">563 </span>            <a href="./init_cCinitRoutine2FInitSmoothnessPenalty.html#robo57">InitSmoothnessPenalty</a>( &amp;pen, penpar, P, &amp;c2, sigma2, nj);
+<span class="line_number">564 </span>            scalefactor= -1/((2* *sigma2) * pen + 1);
+<span class="line_number">565 </span>        }
+<span class="line_number">566 </span>        // add to gradient
+<span class="line_number">567 </span>        F77_CALL(daxpy)(nj, &amp;scalefactor, temp, &amp;c1, gr, &amp;c1);
+<span class="line_number">568 </span>        free( temp );
+<span class="line_number">569 </span>    }
+<span class="line_number">570 </span>}
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

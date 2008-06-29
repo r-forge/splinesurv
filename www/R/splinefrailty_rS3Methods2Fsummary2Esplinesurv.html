@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FS3Methods.html#robo5">S3Methods</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo170">S3Methods/summary.splinesurv</a></li>
+</ul>
+<hr />
+<a name="S3Methods2fsummary2esplinesurv"></a>
+<a name="robo170"></a><h2>S3Methods/summary.splinesurv [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>summary.splinesurv</strong> --- creates an object of class <strong>summary.splinesurv</strong>
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Summarizes a <a href="./splinefrailty_rS3Methods2Fsplinesurv.html#robo166">splinesurv</a> fit. See package documentation for details.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">3576 </span><strong>summary.splinesurv</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>object<span class="sign">,</span> quantiles <span class="sign">=</span> c<span class="sign">(</span><span class="sign">.</span>025<span class="sign">,</span> <span class="sign">.</span>975<span class="sign">)</span><span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">3579 </span><span class="sign">{</span>
+<span class="line_number">3580 </span>    x <span class="sign">&lt;</span><span class="sign">-</span> object
+<span class="line_number">3581 </span>    out <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">3582 </span>    <span class="comment">#  Extract components of the fit that should be included in the summary</span>
+<span class="line_number">3583 </span>    out<span class="sign">$</span><span class="keyword">call</span> <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span><span class="keyword">call</span>
+<span class="line_number">3584 </span>    out<span class="sign">$</span>coef <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>matrix<span class="sign">(</span>x<span class="sign">$</span>posterior<span class="sign">.</span>mean<span class="sign">$</span>coefficients<span class="sign">,</span> ncol <span class="sign">=</span> 1<span class="sign">)</span>
+<span class="line_number">3585 </span>    <span class="keyword">colnames</span><span class="sign">(</span>out<span class="sign">$</span>coef<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="quote">"mean"</span>
+<span class="line_number">3586 </span>    out<span class="sign">$</span>iter <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>control<span class="sign">$</span>iter
+<span class="line_number">3587 </span>    out<span class="sign">$</span>burnin <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>control<span class="sign">$</span>burnin
+<span class="line_number">3588 </span>    out<span class="sign">$</span>hazard <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>hazard
+<span class="line_number">3589 </span>    out<span class="sign">$</span>frailty <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>frailty
+<span class="line_number">3590 </span>    <span class="comment"># compute frailty variance using two estimators:</span>
+<span class="line_number">3591 </span>    <span class="comment"># as the mean of the variances of the posterior densities</span>
+<span class="line_number">3592 </span>    fvar <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rS3Methods2Fpost2Efvar.html#robo161">post.fvar</a><span class="sign">(</span>x<span class="sign">,</span> quantiles<span class="sign">)</span>
+<span class="line_number">3593 </span>    <span class="comment"># or as the variance of the posterior frailty samples</span>
+<span class="line_number">3594 </span>    fvar2 <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">apply</span><span class="sign">(</span>x<span class="sign">$</span>history<span class="sign">$</span>frailty<span class="sign">[</span><span class="sign">(</span>out<span class="sign">$</span>burnin <span class="sign">+</span> 1<span class="sign">)</span><span class="sign">:</span>out<span class="sign">$</span>iter<span class="sign">,</span> <span class="sign">]</span><span class="sign">,</span> 1<span class="sign">,</span> var<span class="sign">)</span>
+<span class="line_number">3595 </span>    out<span class="sign">$</span>frailty<span class="sign">$</span>spline<span class="sign">.</span>fvar <span class="sign">&lt;</span><span class="sign">-</span> fvar<span class="sign">$</span>mean<span class="sign">[</span><span class="quote">"spline.fvar"</span><span class="sign">,</span> <span class="sign">]</span>
+<span class="line_number">3596 </span>    out<span class="sign">$</span>frailty<span class="sign">$</span>param<span class="sign">.</span>fvar <span class="sign">&lt;</span><span class="sign">-</span> fvar<span class="sign">$</span>mean<span class="sign">[</span><span class="quote">"param.fvar"</span><span class="sign">,</span> <span class="sign">]</span>
+<span class="line_number">3597 </span>    out<span class="sign">$</span>frailty<span class="sign">$</span>fvar <span class="sign">&lt;</span><span class="sign">-</span> fvar<span class="sign">$</span>mean<span class="sign">[</span><span class="quote">"fvar"</span><span class="sign">,</span> <span class="sign">]</span>
+<span class="line_number">3598 </span>    out<span class="sign">$</span>frailty<span class="sign">$</span>fvar2 <span class="sign">&lt;</span><span class="sign">-</span> mean<span class="sign">(</span>fvar2<span class="sign">)</span>
+<span class="line_number">3599 </span>    out<span class="sign">$</span>posterior<span class="sign">.</span>mean <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>posterior<span class="sign">.</span>mean
+<span class="line_number">3600 </span>    out<span class="sign">$</span>quantiles<span class="sign">.</span>coef <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">3601 </span>    <span class="keyword">if</span><span class="sign">(</span>out<span class="sign">$</span>iter <span class="sign">&lt;</span> out<span class="sign">$</span>burnin<span class="sign">)</span> out<span class="sign">$</span>burnin <span class="sign">&lt;</span><span class="sign">-</span> 0
+<span class="line_number">3602 </span>    <span class="comment"># Compute posterior quantiles of regression coefficients</span>
+<span class="line_number">3603 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>quantiles<span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3604 </span>        goodind <span class="sign">&lt;</span><span class="sign">-</span> <span class="sign">(</span>out<span class="sign">$</span>burnin <span class="sign">+</span> 1<span class="sign">)</span><span class="sign">:</span><span class="sign">(</span>out<span class="sign">$</span>iter<span class="sign">)</span>
+<span class="line_number">3605 </span>        goodcoef <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>history<span class="sign">$</span>coefficients<span class="sign">[</span>goodind<span class="sign">,</span> <span class="sign">,</span>drop <span class="sign">=</span> FALSE<span class="sign">]</span>
+<span class="line_number">3606 </span>        <span class="keyword">for</span><span class="sign">(</span>q in quantiles<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3607 </span>            out<span class="sign">$</span>quantiles<span class="sign">.</span>coef <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">cbind</span><span class="sign">(</span>out<span class="sign">$</span>quantiles<span class="sign">.</span>coef<span class="sign">,</span> 
+<span class="line_number">3608 </span>                <span class="keyword">apply</span><span class="sign">(</span>goodcoef<span class="sign">,</span> 2<span class="sign">,</span> <span class="keyword">function</span><span class="sign">(</span>x<span class="sign">)</span> <span class="keyword">quantile</span><span class="sign">(</span>x<span class="sign">,</span> q<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3609 </span>        <span class="sign">}</span>
+<span class="line_number">3610 </span>        <span class="comment"># For presentation, make sure the colnames and rownames are nice</span>
+<span class="line_number">3611 </span>        <span class="keyword">colnames</span><span class="sign">(</span>out<span class="sign">$</span>quantiles<span class="sign">.</span>coef<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> paste<span class="sign">(</span>quantiles <span class="sign">*</span> 100<span class="sign">,</span> <span class="quote">"%"</span><span class="sign">,</span> sep <span class="sign">=</span> <span class="quote">""</span><span class="sign">)</span>
+<span class="line_number">3612 </span>        <span class="keyword">rownames</span><span class="sign">(</span>out<span class="sign">$</span>quantiles<span class="sign">.</span>coef<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rownames</span><span class="sign">(</span>out<span class="sign">$</span>coef<span class="sign">)</span>
+<span class="line_number">3613 </span>        out<span class="sign">$</span>quantiles<span class="sign">.</span>fvar <span class="sign">&lt;</span><span class="sign">-</span> fvar<span class="sign">$</span>quantiles
+<span class="line_number">3614 </span>        out<span class="sign">$</span>quantiles<span class="sign">.</span>fvar2 <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">quantile</span><span class="sign">(</span>fvar2<span class="sign">,</span> quantiles<span class="sign">)</span>
+<span class="line_number">3615 </span>    <span class="sign">}</span>
+<span class="line_number">3616 </span>    <span class="comment"># save the dots for printing parameters</span>
+<span class="line_number">3617 </span>    out<span class="sign">$</span>dots <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span><span class="keyword">list</span><span class="sign">(</span>substitute<span class="sign">(</span><span class="keyword">list</span><span class="sign">(</span><span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span><span class="sign">[</span> <span class="sign">-</span> 1<span class="sign">]</span>
+<span class="line_number">3618 </span>    class<span class="sign">(</span>out<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="quote">"<strong>summary.splinesurv</strong>"</span>   
+<span class="line_number">3619 </span>    <span class="keyword">return</span><span class="sign">(</span>out<span class="sign">)</span>
+<span class="line_number">3620 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

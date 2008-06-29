@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./init_cinitRoutine2FCinitRoutine.html#robo13">CinitRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo55">CinitRoutine/cInitMultAndWeight</a></li>
+</ul>
+<hr />
+<a name="CinitRoutine2fcInitMultAndWeight"></a>
+<a name="robo55"></a><h2>CinitRoutine/cInitMultAndWeight [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>cInitMultAndWeight</strong> --- multiply a spline component and add it to a weighted parametric component
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Given a B-spline basis and a set of parameters, this curve multiplies the basis by the parameters
+    to produce an estimate of the spline component, then weights it and adds it to an existing
+    parametric component. It's inelegant, but fast for initialization.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">469 </span><span class="keyword">void</span> <strong>cInitMultAndWeight</strong><span class="sign">(</span> <span class="keyword">double</span> <span class="sign">*</span>y<span class="sign">,</span>  <span class="keyword">double</span> <span class="sign">*</span>B<span class="sign">,</span>  <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span>  <span class="keyword">double</span> <span class="sign">*</span>weight<span class="sign">,</span>  <span class="keyword">int</span>  <span class="sign">*</span>ny<span class="sign">,</span>  <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    y         parametric curve component, on output holds the total curve
+    B         B-spline basis
+    par       weights of each basis element
+    weight    weight of the spline component
+    ny        length of y
+    nj        number of basis functions
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">473 </span><span class="sign">{</span>
+<span class="line_number">474 </span>    <span class="comment">// compute w*B%*%exp(par) + (1-w)y</span>
+<span class="line_number">475 </span>    const <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">476 </span>    const char trans <span class="sign">=</span> <span class="squote">'N'</span><span class="sign">;</span>
+<span class="line_number">477 </span>    const <span class="keyword">double</span> onemw<span class="sign">=</span>1<span class="sign">-</span><span class="sign">*</span>weight<span class="sign">;</span>
+<span class="line_number">478 </span>    F77_CALL<span class="sign">(</span>dgemv<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>trans<span class="sign">,</span>ny<span class="sign">,</span>nj<span class="sign">,</span>weight<span class="sign">,</span>B<span class="sign">,</span>ny<span class="sign">,</span>par<span class="sign">,</span><span class="sign">&amp;</span>c1<span class="sign">,</span><span class="sign">&amp;</span>onemw<span class="sign">,</span>y<span class="sign">,</span><span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">479 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

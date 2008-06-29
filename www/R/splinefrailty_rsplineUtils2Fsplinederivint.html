@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_rRFitting2FsplineUtils.html#robo19">splineUtils</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo190">splineUtils/splinederivint</a></li>
+</ul>
+<hr />
+<a name="splineUtils2fsplinederivint"></a>
+<a name="robo190"></a><h2>splineUtils/splinederivint [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>splinederivint</strong> --- compute the convolution of the derivatives of two spline bases
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Used to compute the penalty matrix for the integrated squared second derivative. This
+    routine computes the integral from 0 to infinity of the l1 derivative and the l2
+    derivative of the j1 and j2-th splines of order n1 and n2 defined on a set of knots.
+    For instance, in order to compute the [j1,j2] entry of the penalty matrix,
+    the function <a href="./splinefrailty_rinitRoutine2FmakePenalty2E2deriv.html#robo125">makePenalty.2deriv</a> calls
+</p>
+<pre>       out[j1, j2] &lt;- <strong>splinederivint</strong>(2, ord, j1, 2, ord, j2, knots)
+</pre>
+<p></p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1627 </span><strong>splinederivint</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>l1<span class="sign">,</span> n1<span class="sign">,</span> j1<span class="sign">,</span> l2<span class="sign">,</span> n2<span class="sign">,</span> j2<span class="sign">,</span> knots<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    l1     derivative of the first spline
+    n1     order of the first spline
+    j1     index of the first spline
+    l2     derivative of the second spline
+    n2     order of the second spline
+    j2     index of the second spline
+    knots  set of knots on which the splines are defined
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    a double containing the convolution of the derivatives of two basis functions
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1630 </span><span class="sign">{</span>
+<span class="line_number">1631 </span>    <span class="comment"># if they don't overlap, the integral is 0</span>
+<span class="line_number">1632 </span>    <span class="keyword">if</span><span class="sign">(</span>j1 <span class="sign">-</span> n1 <span class="sign">&gt;</span><span class="sign">=</span> j2 <span class="sign">|</span> j2 <span class="sign">-</span> n2 <span class="sign">&gt;</span><span class="sign">=</span> j1<span class="sign">)</span> <span class="keyword">return</span><span class="sign">(</span>0<span class="sign">)</span>
+<span class="line_number">1633 </span>    <span class="comment"># For the 0th derivatives, use the regular convolution method</span>
+<span class="line_number">1634 </span>    <span class="keyword">if</span><span class="sign">(</span>l1 <span class="sign">=</span><span class="sign">=</span> 0 <span class="sign">&amp;</span> l2 <span class="sign">=</span><span class="sign">=</span> 0<span class="sign">)</span> <span class="keyword">return</span><span class="sign">(</span><a href="./splinefrailty_rsplineUtils2Fsplineconv.html#robo189">splineconv</a><span class="sign">(</span>0<span class="sign">,</span> n2<span class="sign">,</span> j1<span class="sign">,</span> n2<span class="sign">,</span> j2<span class="sign">,</span> knots<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1635 </span>    <span class="comment"># symmetry</span>
+<span class="line_number">1636 </span>    <span class="keyword">if</span><span class="sign">(</span>l2 <span class="sign">&gt;</span> l1<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1637 </span>        l3 <span class="sign">&lt;</span><span class="sign">-</span> l1<span class="sign">;</span> l1 <span class="sign">&lt;</span><span class="sign">-</span> l2<span class="sign">;</span> l2 <span class="sign">&lt;</span><span class="sign">-</span> l3
+<span class="line_number">1638 </span>        n3 <span class="sign">&lt;</span><span class="sign">-</span> n1<span class="sign">;</span> n1 <span class="sign">&lt;</span><span class="sign">-</span> n2<span class="sign">;</span> n2 <span class="sign">&lt;</span><span class="sign">-</span> n3
+<span class="line_number">1639 </span>        j3 <span class="sign">&lt;</span><span class="sign">-</span> j1<span class="sign">;</span> j1 <span class="sign">&lt;</span><span class="sign">-</span> j2<span class="sign">;</span> j2 <span class="sign">&lt;</span><span class="sign">-</span> j3
+<span class="line_number">1640 </span>    <span class="sign">}</span>
+<span class="line_number">1641 </span>    out <span class="sign">&lt;</span><span class="sign">-</span> 0
+<span class="line_number">1642 </span>    <span class="comment"># recursive method to step-by-step reduce this problem to a regular convolution problem</span>
+<span class="line_number">1643 </span>    denom1 <span class="sign">&lt;</span><span class="sign">-</span> knots<span class="sign">[</span><a href="./splinefrailty_rsplineUtils2Fki.html#robo183">ki</a><span class="sign">(</span>knots<span class="sign">,</span> j1 <span class="sign">-</span> 1<span class="sign">)</span><span class="sign">]</span> <span class="sign">-</span> knots<span class="sign">[</span><a href="./splinefrailty_rsplineUtils2Fki.html#robo183">ki</a><span class="sign">(</span>knots<span class="sign">,</span> j1 <span class="sign">-</span> n1<span class="sign">)</span><span class="sign">]</span>
+<span class="line_number">1644 </span>    denom2 <span class="sign">&lt;</span><span class="sign">-</span> knots<span class="sign">[</span><a href="./splinefrailty_rsplineUtils2Fki.html#robo183">ki</a><span class="sign">(</span>knots<span class="sign">,</span> j1<span class="sign">)</span><span class="sign">]</span> <span class="sign">-</span> knots<span class="sign">[</span><a href="./splinefrailty_rsplineUtils2Fki.html#robo183">ki</a><span class="sign">(</span>knots<span class="sign">,</span> j1 <span class="sign">-</span> n1 <span class="sign">+</span> 1<span class="sign">)</span><span class="sign">]</span>
+<span class="line_number">1645 </span>    <span class="keyword">if</span><span class="sign">(</span>denom1 <span class="sign">&gt;</span> 0<span class="sign">)</span> out <span class="sign">&lt;</span><span class="sign">-</span> out <span class="sign">+</span> <span class="sign">(</span>n1 <span class="sign">-</span> 1<span class="sign">)</span> <span class="sign">/</span> denom1 <span class="sign">*</span>
+<span class="line_number">1646 </span>        <strong>splinederivint</strong><span class="sign">(</span>l1 <span class="sign">-</span> 1<span class="sign">,</span> n1 <span class="sign">-</span> 1<span class="sign">,</span> j1 <span class="sign">-</span> 1<span class="sign">,</span> l2<span class="sign">,</span> n2<span class="sign">,</span> j2<span class="sign">,</span> knots<span class="sign">)</span>
+<span class="line_number">1647 </span>    <span class="keyword">if</span><span class="sign">(</span>denom2 <span class="sign">&gt;</span> 0<span class="sign">)</span> out <span class="sign">&lt;</span><span class="sign">-</span> out <span class="sign">-</span> <span class="sign">(</span>n1 <span class="sign">-</span> 1<span class="sign">)</span> <span class="sign">/</span> denom2 <span class="sign">*</span>
+<span class="line_number">1648 </span>        <strong>splinederivint</strong><span class="sign">(</span>l1 <span class="sign">-</span> 1<span class="sign">,</span> n1 <span class="sign">-</span> 1<span class="sign">,</span> j1<span class="sign">,</span> l2<span class="sign">,</span> n2<span class="sign">,</span> j2<span class="sign">,</span> knots<span class="sign">)</span>
+<span class="line_number">1649 </span>    <span class="keyword">return</span><span class="sign">(</span>out<span class="sign">)</span>
+<span class="line_number">1650 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

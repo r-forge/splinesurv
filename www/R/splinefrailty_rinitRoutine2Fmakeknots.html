@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FinitRoutine.html#robo3">initRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo123">initRoutine/makeknots</a></li>
+</ul>
+<hr />
+<a name="initRoutine2fmakeknots"></a>
+<a name="robo123"></a><h2>initRoutine/makeknots [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>makeknots</strong> --- make knots for a curve with a spline component
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Automatically initialize the set of spline knots if they are not given
+    in the input. Also initializes candidate knots for adaptive knot selection.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1292 </span><strong>makeknots</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>curve<span class="sign">,</span> x<span class="sign">,</span> bounds <span class="sign">=</span> NULL<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    curve      an <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure
+    x          a set of data points to be used for constructing knots
+    bounds     optional boundary knots (length 2 vector)
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    the input <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a>, with additional spline.knots and spline.candknots components.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1295 </span><span class="sign">{</span>
+<span class="line_number">1296 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>curve<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1297 </span>    <span class="comment">#   extract needed curve components</span>
+<span class="line_number">1298 </span>    BUF <span class="sign">&lt;</span><span class="sign">-</span> 0<span class="sign">.</span>01     <span class="comment"># boundary buffer </span>
+<span class="line_number">1299 </span>    knots <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>knots<span class="sign">;</span>
+<span class="line_number">1300 </span>    nknots <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>nknots<span class="sign">;</span>
+<span class="line_number">1301 </span>    ncandknots <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>ncandknots<span class="sign">;</span>
+<span class="line_number">1302 </span>    knotspacing <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>knotspacing<span class="sign">;</span>
+<span class="line_number">1303 </span>    adaptive <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>adaptive
+<span class="line_number">1304 </span>    ord <span class="sign">&lt;</span><span class="sign">-</span> curve<span class="sign">$</span>spline<span class="sign">.</span>ord
+<span class="line_number">1305 </span>    candknots <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">1306 </span>    K <span class="sign">&lt;</span><span class="sign">-</span> ord <span class="sign">+</span> nknots
+<span class="line_number">1307 </span>    <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>null<span class="sign">(</span>bounds<span class="sign">)</span><span class="sign">)</span> <span class="sign">{</span>   <span class="comment"># this version requires boundary knots to be given</span>
+<span class="line_number">1308 </span>        browser<span class="sign">(</span><span class="sign">)</span>
+<span class="line_number">1309 </span>    <span class="sign">}</span>
+<span class="line_number">1310 </span>    <span class="keyword">if</span><span class="sign">(</span>adaptive<span class="sign">)</span> nintknots <span class="sign">&lt;</span><span class="sign">-</span> ncandknots <span class="keyword">else</span> nintknots <span class="sign">&lt;</span><span class="sign">-</span> nknots
+<span class="line_number">1311 </span>    <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>null<span class="sign">(</span>knots<span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1312 </span>        <span class="comment"># distribute knots and candidate knots as quantiles of the data</span>
+<span class="line_number">1313 </span>        <span class="keyword">if</span><span class="sign">(</span>knotspacing <span class="sign">=</span><span class="sign">=</span> <span class="quote">"quantile"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1314 </span>            ibounds <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span>min<span class="sign">(</span>x<span class="sign">)</span><span class="sign">,</span> max<span class="sign">(</span>x<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1315 </span>            lrep <span class="sign">&lt;</span><span class="sign">-</span> ord<span class="sign">;</span> rrep <span class="sign">&lt;</span><span class="sign">-</span> ord
+<span class="line_number">1316 </span>            <span class="keyword">if</span><span class="sign">(</span>ibounds<span class="sign">[</span>1<span class="sign">]</span> <span class="sign">=</span><span class="sign">=</span> bounds<span class="sign">[</span>1<span class="sign">]</span><span class="sign">)</span> <span class="sign">{</span>nintknots <span class="sign">&lt;</span><span class="sign">-</span> nintknots <span class="sign">+</span> 1<span class="sign">;</span> lrep <span class="sign">&lt;</span><span class="sign">-</span> ord <span class="sign">-</span> 1<span class="sign">}</span>
+<span class="line_number">1317 </span>            <span class="keyword">if</span><span class="sign">(</span>ibounds<span class="sign">[</span>2<span class="sign">]</span> <span class="sign">=</span><span class="sign">=</span> bounds<span class="sign">[</span>2<span class="sign">]</span><span class="sign">)</span> <span class="sign">{</span>nintknots <span class="sign">&lt;</span><span class="sign">-</span> nintknots <span class="sign">+</span> 1<span class="sign">;</span> rrep <span class="sign">&lt;</span><span class="sign">-</span> ord <span class="sign">-</span> 1<span class="sign">}</span>
+<span class="line_number">1318 </span>            candknots <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">quantile</span><span class="sign">(</span><span class="keyword">unique</span><span class="sign">(</span>x<span class="sign">)</span><span class="sign">,</span> seq<span class="sign">(</span>from <span class="sign">=</span> BUF<span class="sign">,</span> to <span class="sign">=</span> 1 <span class="sign">-</span> BUF<span class="sign">,</span> <span class="keyword">length</span> <span class="sign">=</span> nintknots<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1319 </span>            <span class="comment"># select the occupied knots as a random subset of the candidate knots</span>
+<span class="line_number">1320 </span>            occknots <span class="sign">&lt;</span><span class="sign">-</span> sort<span class="sign">(</span>sample<span class="sign">(</span>1<span class="sign">:</span>nintknots<span class="sign">,</span> nknots<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1321 </span>            knots <span class="sign">&lt;</span><span class="sign">-</span> candknots<span class="sign">[</span>occknots<span class="sign">]</span>
+<span class="line_number">1322 </span>            candknots <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> lrep<span class="sign">)</span><span class="sign">,</span> candknots<span class="sign">,</span> <span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>2<span class="sign">]</span><span class="sign">,</span> rrep<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1323 </span>            knots <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> lrep<span class="sign">)</span><span class="sign">,</span> knots<span class="sign">,</span> <span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>2<span class="sign">]</span><span class="sign">,</span> rrep<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1324 </span>            attr<span class="sign">(</span>candknots<span class="sign">,</span> <span class="quote">"occupied"</span><span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>2<span class="sign">,</span> lrep<span class="sign">)</span><span class="sign">,</span> <span class="sign">(</span>1<span class="sign">:</span>nintknots<span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>occknots<span class="sign">,</span> 
+<span class="line_number">1325 </span>                <span class="keyword">rep</span><span class="sign">(</span>2<span class="sign">,</span> rrep<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1326 </span>        <span class="sign">}</span>
+<span class="line_number">1327 </span>        <span class="comment"># distribute knots and candidate knots equally over the data range</span>
+<span class="line_number">1328 </span>        <span class="keyword">if</span><span class="sign">(</span>knotspacing <span class="sign">=</span><span class="sign">=</span> <span class="quote">"equal"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1329 </span>            dbounds <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">diff</span><span class="sign">(</span>bounds<span class="sign">)</span>
+<span class="line_number">1330 </span>            <span class="comment"># distribute candidate knots equally</span>
+<span class="line_number">1331 </span>            candknots <span class="sign">&lt;</span><span class="sign">-</span> seq<span class="sign">(</span>from <span class="sign">=</span> bounds<span class="sign">[</span>1<span class="sign">]</span> <span class="sign">+</span> BUF <span class="sign">*</span> dbounds<span class="sign">,</span> to <span class="sign">=</span> bounds<span class="sign">[</span>2<span class="sign">]</span> <span class="sign">-</span> BUF <span class="sign">*</span> dbounds<span class="sign">,</span>
+<span class="line_number">1332 </span>                <span class="keyword">length</span> <span class="sign">=</span> nintknots <span class="sign">+</span> 2<span class="sign">)</span>
+<span class="line_number">1333 </span>            candknots <span class="sign">&lt;</span><span class="sign">-</span> candknots<span class="sign">[</span> <span class="sign">-</span> 1<span class="sign">]</span><span class="sign">;</span>candknots <span class="sign">&lt;</span><span class="sign">-</span> candknots<span class="sign">[</span> <span class="sign">-</span> <span class="keyword">length</span><span class="sign">(</span>candknots<span class="sign">)</span><span class="sign">]</span>
+<span class="line_number">1334 </span>            occknots <span class="sign">&lt;</span><span class="sign">-</span> sort<span class="sign">(</span>sample<span class="sign">(</span>1<span class="sign">:</span>nintknots<span class="sign">,</span> nknots<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1335 </span>            <span class="comment"># select the occupied knots as a random subset of the candidate knots</span>
+<span class="line_number">1336 </span>            knots <span class="sign">&lt;</span><span class="sign">-</span> candknots<span class="sign">[</span>occknots<span class="sign">]</span>
+<span class="line_number">1337 </span>            knots <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">,</span> knots<span class="sign">,</span> <span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>2<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1338 </span>            candknots <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">,</span> candknots<span class="sign">,</span> <span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>2<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1339 </span>            attr<span class="sign">(</span>candknots<span class="sign">,</span> <span class="quote">"occupied"</span><span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>2<span class="sign">,</span> ord<span class="sign">)</span><span class="sign">,</span> <span class="sign">(</span>1<span class="sign">:</span>nintknots<span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>occknots<span class="sign">,</span> <span class="keyword">rep</span><span class="sign">(</span>2<span class="sign">,</span> ord<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1340 </span>        <span class="sign">}</span>
+<span class="line_number">1341 </span>        <span class="comment"># half of the knots are equally distributed, the other half are quantiles</span>
+<span class="line_number">1342 </span>        <span class="keyword">if</span><span class="sign">(</span>knotspacing <span class="sign">=</span><span class="sign">=</span> <span class="quote">"mixed"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1343 </span>            dbounds <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">diff</span><span class="sign">(</span>bounds<span class="sign">)</span>
+<span class="line_number">1344 </span>            <span class="comment"># quantile candknots</span>
+<span class="line_number">1345 </span>            candknots1 <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">quantile</span><span class="sign">(</span><span class="keyword">unique</span><span class="sign">(</span>x<span class="sign">)</span><span class="sign">,</span> seq<span class="sign">(</span>from <span class="sign">=</span> BUF<span class="sign">,</span> to <span class="sign">=</span> 1 <span class="sign">-</span> BUF<span class="sign">,</span>
+<span class="line_number">1346 </span>                <span class="keyword">length</span> <span class="sign">=</span> floor<span class="sign">(</span>nintknots <span class="sign">/</span> 2<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1347 </span>            candknots2 <span class="sign">&lt;</span><span class="sign">-</span> seq<span class="sign">(</span>from <span class="sign">=</span> bounds<span class="sign">[</span>1<span class="sign">]</span> <span class="sign">+</span> BUF <span class="sign">*</span> dbounds<span class="sign">,</span> to <span class="sign">=</span> bounds<span class="sign">[</span>2<span class="sign">]</span> <span class="sign">-</span> BUF <span class="sign">*</span> dbounds<span class="sign">,</span>
+<span class="line_number">1348 </span>                <span class="keyword">length</span> <span class="sign">=</span> ceiling<span class="sign">(</span>nintknots <span class="sign">/</span> 2<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1349 </span>            candknots <span class="sign">&lt;</span><span class="sign">-</span> sort<span class="sign">(</span>sample<span class="sign">(</span><span class="keyword">unique</span><span class="sign">(</span>c<span class="sign">(</span>candknots1<span class="sign">,</span> candknots2<span class="sign">)</span><span class="sign">)</span><span class="sign">,</span> nintknots<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1350 </span>            occknots <span class="sign">&lt;</span><span class="sign">-</span> sort<span class="sign">(</span>sample<span class="sign">(</span>1<span class="sign">:</span>nintknots<span class="sign">,</span> nknots<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1351 </span>            knots <span class="sign">&lt;</span><span class="sign">-</span> candknots<span class="sign">[</span>occknots<span class="sign">]</span>
+<span class="line_number">1352 </span>            knots <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">,</span> knots<span class="sign">,</span> <span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>2<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1353 </span>            candknots <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">,</span> candknots<span class="sign">,</span> <span class="keyword">rep</span><span class="sign">(</span>bounds<span class="sign">[</span>2<span class="sign">]</span><span class="sign">,</span> ord<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1354 </span>            attr<span class="sign">(</span>candknots<span class="sign">,</span> <span class="quote">"occupied"</span><span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>2<span class="sign">,</span> ord<span class="sign">)</span><span class="sign">,</span> <span class="sign">(</span>1<span class="sign">:</span>nintknots<span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>occknots<span class="sign">,</span>
+<span class="line_number">1355 </span>                <span class="keyword">rep</span><span class="sign">(</span>2<span class="sign">,</span> ord<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1356 </span>        <span class="sign">}</span>
+<span class="line_number">1357 </span>    <span class="sign">}</span>
+<span class="line_number">1358 </span>    <span class="comment"># attributes for the knots object</span>
+<span class="line_number">1359 </span>    attr<span class="sign">(</span>knots<span class="sign">,</span> <span class="quote">"boundary"</span><span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> bounds
+<span class="line_number">1360 </span>    attr<span class="sign">(</span>knots<span class="sign">,</span> <span class="quote">"index"</span><span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> seq<span class="sign">(</span>from<span class="sign">=</span><span class="sign">-</span><span class="sign">(</span>ord <span class="sign">-</span> 1<span class="sign">)</span><span class="sign">,</span> <span class="keyword">length</span> <span class="sign">=</span> <span class="keyword">length</span><span class="sign">(</span>knots<span class="sign">)</span><span class="sign">,</span> by <span class="sign">=</span> 1<span class="sign">)</span>
+<span class="line_number">1361 </span>    attr<span class="sign">(</span>knots<span class="sign">,</span> <span class="quote">"order"</span><span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> ord
+<span class="line_number">1362 </span>    curve<span class="sign">$</span>spline<span class="sign">.</span>knots <span class="sign">&lt;</span><span class="sign">-</span> knots
+<span class="line_number">1363 </span>    curve<span class="sign">$</span>spline<span class="sign">.</span>candknots <span class="sign">&lt;</span><span class="sign">-</span> candknots
+<span class="line_number">1364 </span>    <span class="keyword">return</span><span class="sign">(</span>curve<span class="sign">)</span>
+<span class="line_number">1365 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

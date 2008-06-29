@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCsplineUtils.html#robo12">CsplineUtils</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo103">CsplineUtils/csplineeval</a></li>
+</ul>
+<hr />
+<a name="CsplineUtils2fcsplineeval"></a>
+<a name="robo103"></a><h2>CsplineUtils/csplineeval [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>csplineeval</strong> --- evaluate a B-spline function
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Evaluates a B-spline function at a given value. This is the lowest-level
+    B-spline evaluator in this code. It uses the simple recursive formulation of
+    a B-spline basis function.
+</p>
+
+<p>    Given a set of knots, this routine evaluates at x the basis function of order ord
+    that has support on knots [j-ord,j]. Note that because negative array indices are not
+    allowed, knot -ord is stored in knots[0] here.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">127 </span><span class="keyword">double</span> <strong>csplineeval</strong><span class="sign">(</span> <span class="keyword">double</span> x<span class="sign">,</span> <span class="keyword">int</span> j<span class="sign">,</span> <span class="keyword">int</span> ord<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> splord<span class="sign">,</span> <span class="keyword">int</span> nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    x     the value at which it should be evaluated
+    j     which of the basis functions should be evaluated
+    ord   order of the spline
+    knots knots on which the spline is defined
+    splord order of the spline, but remains unchanged throughout evaluation
+    nj    number of basis functions defined on the knots (length(knots)-splord)
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    The j-th basis function evaluated at x: B_j(x)
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">131 </span><span class="sign">{</span>
+<span class="line_number">132 </span>    <span class="keyword">double</span> knotj<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">133 </span>    <span class="keyword">double</span> knotjm1<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">-</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">134 </span>    <span class="comment">// base case for ord=1</span>
+<span class="line_number">135 </span>    <span class="keyword">if</span><span class="sign">(</span>ord<span class="sign">=</span><span class="sign">=</span>1<span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">136 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>x <span class="sign">&gt;</span><span class="sign">=</span> knotjm1<span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>x <span class="sign">&lt;</span> knotj<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> 1<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">137 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>x<span class="sign">=</span><span class="sign">=</span>knotj<span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>j<span class="sign">+</span>splord<span class="sign">=</span><span class="sign">=</span>nj<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> 1<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">138 </span>        <span class="keyword">return</span> 0<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">139 </span>    <span class="sign">}</span>
+<span class="line_number">140 </span>    <span class="comment">// recursive formula otherwise</span>
+<span class="line_number">141 </span>    <span class="keyword">double</span> out <span class="sign">=</span> 0<span class="sign">;</span>
+<span class="line_number">142 </span>    <span class="keyword">double</span> knotjmn<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">-</span>ord<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">143 </span>    <span class="keyword">double</span> denom1 <span class="sign">=</span> <span class="sign">(</span>knotjm1 <span class="sign">-</span> knotjmn<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">144 </span>    <span class="keyword">if</span><span class="sign">(</span>denom1<span class="sign">&gt;</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">145 </span>        <span class="keyword">double</span> numer1 <span class="sign">=</span> <span class="sign">(</span>x<span class="sign">-</span>knotjmn<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">146 </span>        <span class="keyword">double</span> rec1 <span class="sign">=</span> <strong>csplineeval</strong><span class="sign">(</span>x<span class="sign">,</span>j<span class="sign">-</span>1<span class="sign">,</span>ord<span class="sign">-</span>1<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">,</span>nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">147 </span>        out <span class="sign">+</span><span class="sign">=</span> numer1<span class="sign">/</span>denom1<span class="sign">*</span>rec1<span class="sign">;</span>
+<span class="line_number">148 </span>    <span class="sign">}</span>
+<span class="line_number">149 </span>    <span class="keyword">double</span> knotjmn1<span class="sign">=</span>knots<span class="sign">[</span>j<span class="sign">-</span>ord<span class="sign">+</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">150 </span>    <span class="keyword">double</span> denom2 <span class="sign">=</span> <span class="sign">(</span>knotj <span class="sign">-</span> knotjmn1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">151 </span>    <span class="keyword">if</span><span class="sign">(</span>denom2<span class="sign">&gt;</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">152 </span>        <span class="keyword">double</span> numer2 <span class="sign">=</span> <span class="sign">(</span>knotj<span class="sign">-</span>x<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">153 </span>        <span class="keyword">double</span> rec2 <span class="sign">=</span> <strong>csplineeval</strong><span class="sign">(</span>x<span class="sign">,</span>j<span class="sign">,</span>ord<span class="sign">-</span>1<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">,</span>nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">154 </span>        out <span class="sign">+</span><span class="sign">=</span> numer2<span class="sign">/</span>denom2<span class="sign">*</span>rec2<span class="sign">;</span>
+<span class="line_number">155 </span>    <span class="sign">}</span>
+<span class="line_number">156 </span>    <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">157 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

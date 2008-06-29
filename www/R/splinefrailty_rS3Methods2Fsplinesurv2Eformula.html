@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FS3Methods.html#robo5">S3Methods</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo168">S3Methods/splinesurv.formula</a></li>
+</ul>
+<hr />
+<a name="S3Methods2fsplinesurv2eformula"></a>
+<a name="robo168"></a><h2>S3Methods/splinesurv.formula [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>splinesurv.formula</strong> --- formula interface for <a href="./splinefrailty_rS3Methods2Fsplinesurv.html#robo166">splinesurv</a>
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This is the main user-facing interface function. It takes a formula and additional
+    parameters, conducts basic input checking and builds a data frame in the format
+    required by <a href="./splinefrailty_r00main2Fsplinesurv2Eagdata.html#robo21">splinesurv.agdata</a>. After fitting is done, it constructs the <a href="./splinefrailty_rS3Methods2Fsplinesurv.html#robo166">splinesurv</a>
+    output object.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">3490 </span><strong>splinesurv.formula</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>formula<span class="sign">,</span> data <span class="sign">=</span> parent<span class="sign">.</span>frame<span class="sign">(</span><span class="sign">)</span><span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    See package documentation
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    See package documentation for <a href="./splinefrailty_rS3Methods2Fsplinesurv.html#robo166">splinesurv</a> object
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">3493 </span><span class="sign">{</span>
+<span class="line_number">3494 </span>    <span class="comment"># in part based on coxph function</span>
+<span class="line_number">3495 </span>    <span class="keyword">call</span> <span class="sign">&lt;</span><span class="sign">-</span> match<span class="sign">.</span><span class="keyword">call</span><span class="sign">(</span><span class="sign">)</span>
+<span class="line_number">3496 </span>    m <span class="sign">&lt;</span><span class="sign">-</span> match<span class="sign">.</span><span class="keyword">call</span><span class="sign">(</span>expand<span class="sign">.</span>dots <span class="sign">=</span> FALSE<span class="sign">)</span>
+<span class="line_number">3497 </span>    <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>matrix<span class="sign">(</span>eval<span class="sign">(</span>m<span class="sign">$</span>data<span class="sign">,</span> sys<span class="sign">.</span>parent<span class="sign">(</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span> m<span class="sign">$</span>data <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>data<span class="sign">.</span>frame<span class="sign">(</span>data<span class="sign">)</span>
+<span class="line_number">3498 </span>    m<span class="sign">$</span><span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">&lt;</span><span class="sign">-</span>NULL
+<span class="line_number">3499 </span>    m<span class="sign">[</span><span class="sign">[</span>1<span class="sign">]</span><span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>name<span class="sign">(</span><span class="quote">"model.frame"</span><span class="sign">)</span>
+<span class="line_number">3500 </span>    special <span class="sign">&lt;</span><span class="sign">-</span> <span class="quote">"cluster"</span>
+<span class="line_number">3501 </span>    Terms <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">if</span> <span class="sign">(</span>missing<span class="sign">(</span>data<span class="sign">)</span><span class="sign">)</span> terms<span class="sign">(</span>formula<span class="sign">,</span> special<span class="sign">)</span> <span class="keyword">else</span> 
+<span class="line_number">3502 </span>        terms<span class="sign">(</span>formula<span class="sign">,</span> special<span class="sign">,</span> data <span class="sign">=</span> data<span class="sign">)</span>    
+<span class="line_number">3503 </span>    m<span class="sign">$</span>formula <span class="sign">&lt;</span><span class="sign">-</span> Terms
+<span class="line_number">3504 </span>    m <span class="sign">&lt;</span><span class="sign">-</span> eval<span class="sign">(</span>m<span class="sign">,</span> sys<span class="sign">.</span>parent<span class="sign">(</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3505 </span>    n <span class="sign">&lt;</span><span class="sign">-</span> nrow<span class="sign">(</span>m<span class="sign">)</span>
+<span class="line_number">3506 </span>    <span class="comment"># Check response</span>
+<span class="line_number">3507 </span>    resp <span class="sign">&lt;</span><span class="sign">-</span> model<span class="sign">.</span>extract<span class="sign">(</span>m<span class="sign">,</span> <span class="quote">"response"</span><span class="sign">)</span>
+<span class="line_number">3508 </span>    <span class="keyword">if</span> <span class="sign">(</span><span class="sign">!</span>is<span class="sign">.</span>Surv<span class="sign">(</span>resp<span class="sign">)</span><span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"model response must be a Surv object"</span><span class="sign">)</span>
+<span class="line_number">3509 </span>    <span class="keyword">if</span><span class="sign">(</span>attr<span class="sign">(</span>resp<span class="sign">,</span> <span class="quote">"type"</span><span class="sign">)</span> <span class="sign">!</span><span class="sign">=</span> <span class="quote">"right"</span><span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"right - censored survival data only"</span><span class="sign">)</span>
+<span class="line_number">3510 </span>    time <span class="sign">&lt;</span><span class="sign">-</span> resp<span class="sign">[</span><span class="sign">,</span> <span class="quote">"time"</span><span class="sign">]</span>
+<span class="line_number">3511 </span>    delta <span class="sign">&lt;</span><span class="sign">-</span> resp<span class="sign">[</span><span class="sign">,</span> <span class="quote">"status"</span><span class="sign">]</span>
+<span class="line_number">3512 </span>    clusterind <span class="sign">&lt;</span><span class="sign">-</span> attr<span class="sign">(</span>Terms<span class="sign">,</span> <span class="quote">"specials"</span><span class="sign">)</span><span class="sign">$</span>cluster
+<span class="line_number">3513 </span>    clusterind0 <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">3514 </span>    dropx <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">3515 </span>    <span class="comment"># handle cluster special terms</span>
+<span class="line_number">3516 </span>    clusternames <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">3517 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>clusterind<span class="sign">)</span> <span class="sign">&gt;</span> 0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3518 </span>        cluster <span class="sign">&lt;</span><span class="sign">-</span> m<span class="sign">[</span><span class="sign">,</span> clusterind<span class="sign">]</span>
+<span class="line_number">3519 </span>        <span class="keyword">for</span><span class="sign">(</span>j in 1<span class="sign">:</span><span class="keyword">dim</span><span class="sign">(</span>data<span class="sign">)</span><span class="sign">[</span>2<span class="sign">]</span><span class="sign">)</span> <span class="keyword">if</span><span class="sign">(</span>isTRUE<span class="sign">(</span>all<span class="sign">.</span>equal<span class="sign">(</span>data<span class="sign">[</span><span class="sign">,</span> j<span class="sign">]</span><span class="sign">,</span> cluster<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span> clusterind0 <span class="sign">&lt;</span><span class="sign">-</span> j
+<span class="line_number">3520 </span>        <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>factor<span class="sign">(</span>cluster<span class="sign">)</span><span class="sign">)</span> clusternames <span class="sign">&lt;</span><span class="sign">-</span> levels<span class="sign">(</span>cluster<span class="sign">)</span>
+<span class="line_number">3521 </span>        <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>numeric<span class="sign">(</span>cluster<span class="sign">)</span><span class="sign">)</span> clusternames <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>character<span class="sign">(</span><span class="keyword">unique</span><span class="sign">(</span>cluster<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3522 </span>        i <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>numeric<span class="sign">(</span>as<span class="sign">.</span>factor<span class="sign">(</span>cluster<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3523 </span>        tempc <span class="sign">&lt;</span><span class="sign">-</span> untangle<span class="sign">.</span>specials<span class="sign">(</span>Terms<span class="sign">,</span> <span class="quote">"cluster"</span><span class="sign">,</span> 1<span class="sign">:</span>10<span class="sign">)</span>
+<span class="line_number">3524 </span>        ord <span class="sign">&lt;</span><span class="sign">-</span> attr<span class="sign">(</span>Terms<span class="sign">,</span> <span class="quote">"order"</span><span class="sign">)</span><span class="sign">[</span>tempc<span class="sign">$</span>terms<span class="sign">]</span>
+<span class="line_number">3525 </span>        <span class="keyword">if</span> <span class="sign">(</span>any<span class="sign">(</span>ord <span class="sign">&gt;</span> 1<span class="sign">)</span><span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"Cluster can not be used in an interaction"</span><span class="sign">)</span>
+<span class="line_number">3526 </span>        dropx <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span>dropx<span class="sign">,</span> tempc<span class="sign">$</span>terms<span class="sign">)</span>
+<span class="line_number">3527 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">3528 </span>        i <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rep</span><span class="sign">(</span>1<span class="sign">,</span> n<span class="sign">)</span>
+<span class="line_number">3529 </span>    <span class="sign">}</span>
+<span class="line_number">3530 </span>    Ji <span class="sign">&lt;</span><span class="sign">-</span> drop<span class="sign">(</span>table<span class="sign">(</span>i<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3531 </span>    j <span class="sign">&lt;</span><span class="sign">-</span> unlist<span class="sign">(</span>as<span class="sign">.</span>vector<span class="sign">(</span>sapply<span class="sign">(</span>Ji<span class="sign">,</span> <span class="keyword">function</span><span class="sign">(</span>x<span class="sign">)</span> 1<span class="sign">:</span>x<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3532 </span>    newTerms <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>dropx<span class="sign">)</span><span class="sign">)</span>  Terms<span class="sign">[</span> <span class="sign">-</span> dropx<span class="sign">]</span> <span class="keyword">else</span> Terms
+<span class="line_number">3533 </span>    <span class="comment"># construct data frame for <a href="./splinefrailty_r00main2Fsplinesurv2Eagdata.html#robo21">splinesurv.agdata</a></span>
+<span class="line_number">3534 </span>    X <span class="sign">&lt;</span><span class="sign">-</span> model<span class="sign">.</span>matrix<span class="sign">(</span>newTerms<span class="sign">,</span> m<span class="sign">)</span>
+<span class="line_number">3535 </span>    X <span class="sign">&lt;</span><span class="sign">-</span> X<span class="sign">[</span><span class="sign">,</span> <span class="sign">-</span>1<span class="sign">,</span> drop <span class="sign">=</span> FALSE<span class="sign">]</span>
+<span class="line_number">3536 </span>    agdata <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>data<span class="sign">.</span>frame<span class="sign">(</span><span class="keyword">cbind</span><span class="sign">(</span>i<span class="sign">,</span> j<span class="sign">,</span> time<span class="sign">,</span> delta<span class="sign">,</span> X<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3537 </span>    agdata<span class="sign">[</span><span class="sign">,</span> <span class="sign">-</span>2<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> agdata<span class="sign">[</span>order<span class="sign">(</span>agdata<span class="sign">$</span>i<span class="sign">)</span><span class="sign">,</span> <span class="sign">-</span>2<span class="sign">]</span>
+<span class="line_number">3538 </span>    class<span class="sign">(</span>agdata<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="quote">"agdata"</span><span class="sign">,</span> <span class="quote">"data.frame"</span><span class="sign">)</span>
+<span class="line_number">3539 </span>    fit <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_r00main2Fsplinesurv2Eagdata.html#robo21">splinesurv.agdata</a><span class="sign">(</span>agdata<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">3540 </span>    gcout <span class="sign">&lt;</span><span class="sign">-</span> gc<span class="sign">(</span><span class="sign">)</span>
+<span class="line_number">3541 </span>    <span class="comment"># clean up output object</span>
+<span class="line_number">3542 </span>    fit<span class="sign">$</span><span class="keyword">call</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">call</span>
+<span class="line_number">3543 </span>    <span class="keyword">colnames</span><span class="sign">(</span>fit<span class="sign">$</span>history<span class="sign">$</span>frailty<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> clusternames
+<span class="line_number">3544 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>is<span class="sign">.</span>null<span class="sign">(</span>fit<span class="sign">$</span>posterior<span class="sign">.</span>mean<span class="sign">)</span><span class="sign">)</span> names<span class="sign">(</span>fit<span class="sign">$</span>posterior<span class="sign">.</span>mean<span class="sign">$</span>frailty<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> clusternames
+<span class="line_number">3545 </span>    fit<span class="sign">$</span>terms <span class="sign">&lt;</span><span class="sign">-</span> newTerms
+<span class="line_number">3546 </span>    attr<span class="sign">(</span>fit<span class="sign">$</span>terms<span class="sign">,</span> <span class="quote">"special"</span><span class="sign">)</span><span class="sign">$</span>cluster <span class="sign">&lt;</span><span class="sign">-</span> clusterind0
+<span class="line_number">3547 </span>    <span class="keyword">return</span><span class="sign">(</span>fit<span class="sign">)</span>
+<span class="line_number">3548 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

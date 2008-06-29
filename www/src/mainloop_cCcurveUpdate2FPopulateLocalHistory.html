@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo37">CcurveUpdate/PopulateLocalHistory</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fPopulateLocalHistory"></a>
+<a name="robo37"></a><h2>CcurveUpdate/PopulateLocalHistory [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>PopulateLocalHistory</strong> --- populate a local <a href="./mainloop_c01structures2FCHistory.html#robo24">CHistory</a> curve
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Given an <a href="../R/splinefrailty_r01structures2FRHistory.html#robo27">RHistory</a>, populate a <a href="./mainloop_c01structures2FCHistory.html#robo24">CHistory</a> structure with pointers to the
+    memory allocated by R.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">916 </span><span class="keyword">void</span> <strong>PopulateLocalHistory</strong><span class="sign">(</span> historyP theHist<span class="sign">,</span> SEXP Rhistory<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">920 </span><span class="sign">{</span>
+<span class="line_number">921 </span>    SEXP elmt<span class="sign">;</span>
+<span class="line_number">922 </span>    <span class="comment">// frailties</span>
+<span class="line_number">923 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"frailty"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">924 </span>    theHist<span class="sign">-</span><span class="sign">&gt;</span>ny <span class="sign">=</span> INTEGER<span class="sign">(</span>getAttrib<span class="sign">(</span>elmt<span class="sign">,</span> R_DimSymbol<span class="sign">)</span><span class="sign">)</span><span class="sign">[</span>0<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">925 </span>    theHist<span class="sign">-</span><span class="sign">&gt;</span>frailty <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">926 </span>    <span class="comment">// regression coefficients</span>
+<span class="line_number">927 </span>    theHist<span class="sign">-</span><span class="sign">&gt;</span>coefficients <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"coefficients"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">928 </span>    <span class="comment">// Only populate history components if there is a spline/parametric component</span>
+<span class="line_number">929 </span>    <span class="comment">// hazard spline</span>
+<span class="line_number">930 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"hazard.spline.par"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">931 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>HazardSplinePar <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">932 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"hazard.spline.knots"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">933 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>HazardSplineKnots <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">934 </span>    <span class="comment">// hazard parametric</span>
+<span class="line_number">935 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"hazard.param.par"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">936 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>HazardParamPar <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">937 </span>    <span class="comment">// hazard weight</span>
+<span class="line_number">938 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"hazard.weight"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">939 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>HazardWeight <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">940 </span>    <span class="comment">// frailty spline</span>
+<span class="line_number">941 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"frailty.spline.par"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">942 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>FrailtySplinePar <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">943 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"frailty.spline.knots"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">944 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>FrailtySplineKnots <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">945 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"frailty.spline.fvar"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">946 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>FrailtySplineFvar <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">947 </span>    <span class="comment">// frailty parametric </span>
+<span class="line_number">948 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"frailty.param.par"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">949 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>FrailtyParamPar <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">950 </span>    elmt <span class="sign">=</span> <a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"frailty.weight"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">951 </span>    <span class="keyword">if</span><span class="sign">(</span>elmt <span class="sign">!</span><span class="sign">=</span> R_NilValue <span class="sign">)</span> theHist<span class="sign">-</span><span class="sign">&gt;</span>FrailtyWeight <span class="sign">=</span> REAL<span class="sign">(</span>elmt<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">952 </span>    theHist<span class="sign">-</span><span class="sign">&gt;</span>priorvar <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"priorvar"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">953 </span>    theHist<span class="sign">-</span><span class="sign">&gt;</span>accept <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rhistory<span class="sign">,</span> <span class="quote">"accept"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">954 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

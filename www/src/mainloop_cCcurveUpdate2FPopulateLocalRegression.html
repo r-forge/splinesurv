@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo38">CcurveUpdate/PopulateLocalRegression</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fPopulateLocalRegression"></a>
+<a name="robo38"></a><h2>CcurveUpdate/PopulateLocalRegression [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>PopulateLocalRegression</strong> --- populate a local <a href="../R/splinefrailty_r01structures2FRRegression.html#robo28">RRegression</a> structure
+</pre>
+<p class="item_name">FUNCTION</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">871 </span> <span class="sign">*</span>    <span class="keyword">void</span> <strong>PopulateLocalRegression</strong><span class="sign">(</span> regressionP theReg<span class="sign">,</span> SEXP Rregression<span class="sign">)</span><span class="sign">{</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">877 </span><span class="keyword">void</span> <strong>PopulateLocalRegression</strong><span class="sign">(</span> regressionP theReg<span class="sign">,</span> SEXP Rregression<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">878 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>m <span class="sign">=</span> asInteger<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span> <span class="quote">"m"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">879 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>Ji <span class="sign">=</span> INTEGER<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span> <span class="quote">"Ji"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">880 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>Jicum <span class="sign">=</span> <span class="sign">(</span><span class="keyword">int</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> <span class="sign">(</span>theReg<span class="sign">-</span><span class="sign">&gt;</span>m <span class="sign">+</span> 1<span class="sign">)</span> <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">int</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">881 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>0<span class="sign">]</span> <span class="sign">=</span> 0<span class="sign">;</span>
+<span class="line_number">882 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i <span class="sign">&lt;</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>m<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>i<span class="sign">+</span>1<span class="sign">]</span> <span class="sign">=</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">+</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>Ji<span class="sign">[</span>i<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">883 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>n <span class="sign">=</span> <span class="sign">(</span><span class="keyword">int</span><span class="sign">)</span> <span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"cluster"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">884 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>p <span class="sign">=</span> <span class="sign">(</span><span class="keyword">int</span><span class="sign">)</span> <span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"coefficients"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">885 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>cluster <span class="sign">=</span> INTEGER<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span> <span class="quote">"cluster"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">886 </span>
+<span class="line_number">887 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>coefficients <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"coefficients"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">888 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>covariates <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"covariates"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">889 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>lp <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"lp"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">890 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>status <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"status"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">891 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>time <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"time"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">892 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>frailrep <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>n <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>    
+<span class="line_number">893 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>frailelp <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>n <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>    
+<span class="line_number">894 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>CandCov <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"candcov"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">895 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>CholCov <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"cholcandcov"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">896 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>priorvar <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"priorvar"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">897 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>hyper <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"hyper"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">898 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>Accept <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"accept"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">899 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>tun <span class="sign">=</span> REAL<span class="sign">(</span><a href="./mainloop_cCmiscUtils2FgetListElement.html#robo88">getListElement</a><span class="sign">(</span>Rregression<span class="sign">,</span><span class="quote">"tun"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">900 </span>    theReg<span class="sign">-</span><span class="sign">&gt;</span>elp <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>n <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">901 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span>theReg<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> theReg<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">[</span>i<span class="sign">]</span><span class="sign">=</span><span class="keyword">exp</span><span class="sign">(</span>theReg<span class="sign">-</span><span class="sign">&gt;</span>lp<span class="sign">[</span>i<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">902 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

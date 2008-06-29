@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_rRFitting2FsplineUtils.html#robo19">splineUtils</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo185">splineUtils/mysplineDesign</a></li>
+</ul>
+<hr />
+<a name="splineUtils2fmysplineDesign"></a>
+<a name="robo185"></a><h2>splineUtils/mysplineDesign [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>mysplineDesign</strong> --- works like splineDesign()
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    a plug-in replacement for splineDesign() in the splines package. It calls the
+    same internal code, but skips the input error checking and reformatting. This should
+    only be called with known-good input.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1668 </span><strong>mysplineDesign</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span> <span class="sign">(</span>knots<span class="sign">,</span> x<span class="sign">,</span> ord <span class="sign">=</span> 4<span class="sign">)</span> 
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    knots  knots in the format required by splineDesign
+    x      set of observations at which the basis should be evaluated
+    ord    spline order
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    a spline basis matrix in which entry (i,j) contains the j-th basis function
+    evaluated at x[i]
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1671 </span><span class="sign">{</span>
+<span class="line_number">1672 </span>    nk <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">length</span><span class="sign">(</span>knots<span class="sign">)</span>
+<span class="line_number">1673 </span>    x <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>numeric<span class="sign">(</span>x<span class="sign">)</span>
+<span class="line_number">1674 </span>    derivs <span class="sign">&lt;</span><span class="sign">-</span> integer<span class="sign">(</span>1<span class="sign">)</span>
+<span class="line_number">1675 </span>    <span class="comment"># call the internal function used by splineDesign()</span>
+<span class="line_number">1676 </span>    temp <span class="sign">&lt;</span><span class="sign">-</span> <span class="sign">.</span><span class="keyword">Call</span><span class="sign">(</span><span class="quote">"spline_basis"</span><span class="sign">,</span> knots<span class="sign">,</span> ord<span class="sign">,</span> x<span class="sign">,</span> derivs<span class="sign">,</span> PACKAGE <span class="sign">=</span> <span class="quote">"splines"</span><span class="sign">)</span>
+<span class="line_number">1677 </span>    ncoef <span class="sign">&lt;</span><span class="sign">-</span> nk <span class="sign">-</span> ord
+<span class="line_number">1678 </span>    design <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rep</span><span class="sign">(</span>0<span class="sign">,</span> ncoef<span class="sign">)</span>
+<span class="line_number">1679 </span>    jj <span class="sign">&lt;</span><span class="sign">-</span> 1<span class="sign">:</span>ord <span class="sign">+</span> attr<span class="sign">(</span>temp<span class="sign">,</span> <span class="quote">"Offsets"</span><span class="sign">)</span>
+<span class="line_number">1680 </span>    design<span class="sign">[</span>jj<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> temp
+<span class="line_number">1681 </span>    <span class="keyword">dim</span><span class="sign">(</span>design<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span>1<span class="sign">,</span> ncoef<span class="sign">)</span>
+<span class="line_number">1682 </span>    design
+<span class="line_number">1683 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

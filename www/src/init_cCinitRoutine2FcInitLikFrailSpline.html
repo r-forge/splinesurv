@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./init_cinitRoutine2FCinitRoutine.html#robo13">CinitRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo53">CinitRoutine/cInitLikFrailSpline</a></li>
+</ul>
+<hr />
+<a name="CinitRoutine2fcInitLikFrailSpline"></a>
+<a name="robo53"></a><h2>CinitRoutine/cInitLikFrailSpline [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>cInitLikFrailSpline</strong> --- loglikelihood of parameters for spline component of frailty curve
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute the loglikelihood of parameters of the frailty spline component,
+    called by <a href="../R/splinefrailty_rCWrappers2Fcmklik2Espline2Efrail.html#robo117">cmklik.spline.frail</a> during initialization only.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">665 </span><span class="keyword">void</span> <strong>cInitLikFrailSpline</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>lik<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>frailParY<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>weight<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>B<span class="sign">,</span>
+<span class="line_number">666 </span>        <span class="keyword">double</span> <span class="sign">*</span>E<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>M<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span> penaltyType<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ny<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    see <a href="../R/splinefrailty_rCWrappers2Fcmklik2Espline2Efrail.html#robo117">cmklik.spline.frail</a>
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">670 </span><span class="sign">{</span>
+<span class="line_number">671 </span>    <span class="keyword">double</span> out<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">672 </span>    <span class="keyword">int</span> c1<span class="sign">=</span>1<span class="sign">;</span>
+<span class="line_number">673 </span>    <span class="keyword">double</span> <span class="sign">*</span> epar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*nj) * sizeof(double));
+<span class="line_number">674 </span>    double * eparnorm = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*nj) * sizeof(double));
+<span class="line_number">675 </span>    double * frailY = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">676 </span>    F77_CALL(dcopy)(ny, frailParY, &amp;c1, frailY, &amp;c1);
+<span class="line_number">677 </span>    for(int i=0; i&lt; *nj; i++) epar[i]=exp(par[i]);
+<span class="line_number">678 </span>    double  eparsum = 0;
+<span class="line_number">679 </span>    for(int i=0; i&lt; *nj; i++) eparsum+=epar[i];
+<span class="line_number">680 </span>    for(int i=0; i&lt; *nj; i++) eparnorm[i]=epar[i]/eparsum;
+<span class="line_number">681 </span>    <a href="./init_cCinitRoutine2FcInitMultAndWeight.html#robo55">cInitMultAndWeight</a>( frailY, B, eparnorm, weight, ny, nj);
+<span class="line_number">682 </span>    for(int i=0; i&lt;*ny; i++) out+=log(frailY[i]); 
+<span class="line_number">683 </span>    double pen = 0;
+<span class="line_number">684 </span>    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
+<span class="line_number">685 </span>    <a href="./init_cCinitRoutine2FInitSmoothnessPenalty.html#robo57">InitSmoothnessPenalty</a>(&amp;pen, penpar, P, penaltyType, sigma2, nj);
+<span class="line_number">686 </span>    out-=pen;
+<span class="line_number">687 </span>    out -= *M * pow((F77_CALL(ddot)(nj, E, &amp;c1, epar, &amp;c1)),2);
+<span class="line_number">688 </span>    *lik = out;
+<span class="line_number">689 </span>    free(epar);
+<span class="line_number">690 </span>    free(eparnorm);
+<span class="line_number">691 </span>    free(frailY);
+<span class="line_number">692 </span>}
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

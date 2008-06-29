@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FS3Methods.html#robo5">S3Methods</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo161">S3Methods/post.fvar</a></li>
+</ul>
+<hr />
+<a name="S3Methods2fpost2efvar"></a>
+<a name="robo161"></a><h2>S3Methods/post.fvar [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>post.fvar</strong> --- compute posterior frailty variance
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute the posterior mean frailty variance and its quantiles by weighing posterior
+    spline and parametric component frailty variances together. The former is computed
+    at each iteration as the variance of the density defined by the current set of knots
+    and parameters for the frailty spline.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">3639 </span><strong>post.fvar</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>x<span class="sign">,</span> quantiles <span class="sign">=</span> c<span class="sign">(</span><span class="sign">.</span>025<span class="sign">,</span> <span class="sign">.</span>975<span class="sign">)</span><span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    x      an object of class <a href="./splinefrailty_rS3Methods2Fsplinesurv.html#robo166">splinesurv</a>
+    quantiles  a list of quantiles at which to compute
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    means  a vector containing the overall frailty variance, the variance of the spline
+           component, and the variance of the parametric component
+    quantiles  a matrix containing the same for each given quantile
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">3642 </span><span class="sign">{</span>
+<span class="line_number">3643 </span>    goodind <span class="sign">&lt;</span><span class="sign">-</span> <span class="sign">(</span>x<span class="sign">$</span>control<span class="sign">$</span>burnin <span class="sign">+</span> 1<span class="sign">)</span><span class="sign">:</span><span class="sign">(</span>x<span class="sign">$</span>control<span class="sign">$</span>iter<span class="sign">)</span>
+<span class="line_number">3644 </span>    <span class="comment"># spline component</span>
+<span class="line_number">3645 </span>    <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">)</span><span class="sign">)</span> spline<span class="sign">.</span>fvars <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>history<span class="sign">$</span>frailty<span class="sign">.</span>spline<span class="sign">.</span>fvar<span class="sign">[</span>goodind<span class="sign">]</span> <span class="keyword">else</span> 
+<span class="line_number">3646 </span>        spline<span class="sign">.</span>fvars <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">3647 </span>    <span class="comment"># parametric component</span>
+<span class="line_number">3648 </span>    <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">)</span><span class="sign">)</span> 
+<span class="line_number">3649 </span>        param<span class="sign">.</span>fvars <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">exp</span><span class="sign">(</span>x<span class="sign">$</span>history<span class="sign">$</span>frailty<span class="sign">.</span>param<span class="sign">.</span>par<span class="sign">[</span>goodind<span class="sign">,</span> <span class="sign">,</span>drop <span class="sign">=</span> FALSE<span class="sign">]</span><span class="sign">)</span> <span class="keyword">else</span> 
+<span class="line_number">3650 </span>            param<span class="sign">.</span>fvars <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">3651 </span>    <span class="comment"># weigh the two components</span>
+<span class="line_number">3652 </span>    <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">)</span> <span class="sign">&amp;</span> <a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">3653 </span>        weights <span class="sign">&lt;</span><span class="sign">-</span> x<span class="sign">$</span>history<span class="sign">$</span>frailty<span class="sign">.</span>weight<span class="sign">[</span>goodind<span class="sign">,</span> <span class="sign">,</span>drop <span class="sign">=</span> F<span class="sign">]</span>
+<span class="line_number">3654 </span>        fvars <span class="sign">&lt;</span><span class="sign">-</span> weights <span class="sign">*</span> spline<span class="sign">.</span>fvars <span class="sign">+</span> <span class="sign">(</span>1 <span class="sign">-</span> weights<span class="sign">)</span> <span class="sign">*</span> param<span class="sign">.</span>fvars
+<span class="line_number">3655 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">3656 </span>        <span class="keyword">if</span><span class="sign">(</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">)</span><span class="sign">)</span> fvars <span class="sign">&lt;</span><span class="sign">-</span> param<span class="sign">.</span>fvars <span class="keyword">else</span> fvars <span class="sign">&lt;</span><span class="sign">-</span> spline<span class="sign">.</span>fvars
+<span class="line_number">3657 </span>    <span class="sign">}</span>
+<span class="line_number">3658 </span>    <span class="comment"># compute means</span>
+<span class="line_number">3659 </span>    fvar<span class="sign">.</span>means <span class="sign">&lt;</span><span class="sign">-</span> suppressWarnings<span class="sign">(</span><span class="keyword">rbind</span><span class="sign">(</span>mean<span class="sign">(</span>fvars<span class="sign">)</span><span class="sign">,</span> mean<span class="sign">(</span>spline<span class="sign">.</span>fvars<span class="sign">)</span><span class="sign">,</span> mean<span class="sign">(</span>param<span class="sign">.</span>fvars<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3660 </span>    <span class="comment"># compute quantiles</span>
+<span class="line_number">3661 </span>    fvar<span class="sign">.</span>quantiles <span class="sign">&lt;</span><span class="sign">-</span> suppressWarnings<span class="sign">(</span><span class="keyword">rbind</span><span class="sign">(</span><span class="keyword">quantile</span><span class="sign">(</span>fvars<span class="sign">,</span> quantiles<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">3662 </span>        <span class="keyword">quantile</span><span class="sign">(</span>spline<span class="sign">.</span>fvars<span class="sign">,</span> quantiles<span class="sign">)</span><span class="sign">,</span> <span class="keyword">quantile</span><span class="sign">(</span>param<span class="sign">.</span>fvars<span class="sign">,</span> quantiles<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3663 </span>    <span class="keyword">rownames</span><span class="sign">(</span>fvar<span class="sign">.</span>means<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rownames</span><span class="sign">(</span>fvar<span class="sign">.</span>quantiles<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="quote">"fvar"</span><span class="sign">,</span> <span class="quote">"spline.fvar"</span><span class="sign">,</span> <span class="quote">"param.fvar"</span><span class="sign">)</span>
+<span class="line_number">3664 </span>    <span class="keyword">return</span><span class="sign">(</span><span class="keyword">list</span><span class="sign">(</span>mean <span class="sign">=</span> fvar<span class="sign">.</span>means<span class="sign">,</span> quantiles <span class="sign">=</span> fvar<span class="sign">.</span>quantiles<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3665 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

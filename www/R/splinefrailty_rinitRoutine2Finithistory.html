@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FinitRoutine.html#robo3">initRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo121">initRoutine/inithistory</a></li>
+</ul>
+<hr />
+<a name="initRoutine2finithistory"></a>
+<a name="robo121"></a><h2>initRoutine/inithistory [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>inithistory</strong> --- initialize the history structure
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    The history structure keeps track of the posterior samples from the
+    chain. It contains components for all the parameters that change
+    in the course of the chain. The function <a href="./splinefrailty_rcurveUpdate2Fupdatehistory.html#robo107">updatehistory</a> is called
+    at the end of each iteration to update this structure.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1010 </span><strong>inithistory</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">,</span> control<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    hazard     a hazard <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a>
+    frailty    a frailty <a href="./splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a>
+    regression a <a href="./splinefrailty_r01structures2FRRegression.html#robo28">RRegression</a> structure
+    control    an RControl structure
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    an <a href="./splinefrailty_r01structures2FRHistory.html#robo27">RHistory</a> structure
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1013 </span><span class="sign">{</span>
+<span class="line_number">1014 </span>    history <span class="sign">&lt;</span><span class="sign">-</span> NULL
+<span class="line_number">1015 </span>    maxiter <span class="sign">&lt;</span><span class="sign">-</span> control<span class="sign">$</span>maxiter
+<span class="line_number">1016 </span>    history<span class="sign">$</span>frailty <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> maxiter<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>frailty<span class="sign">$</span>x<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1017 </span>    history<span class="sign">$</span>coefficients <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> maxiter<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>regression<span class="sign">$</span>coefficients<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1018 </span>    <span class="comment"># ssorate for spline knots and parameters</span>
+<span class="line_number">1019 </span>    <span class="keyword">if</span><span class="sign">(</span>hazard<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">1020 </span>        history<span class="sign">$</span>hazard<span class="sign">.</span>spline<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span><span class="sign">-</span>Inf<span class="sign">,</span> maxiter<span class="sign">,</span> 
+<span class="line_number">1021 </span>            hazard<span class="sign">$</span>spline<span class="sign">.</span>maxoccknots <span class="sign">+</span> hazard<span class="sign">$</span>spline<span class="sign">.</span>ord<span class="sign">)</span>
+<span class="line_number">1022 </span>        history<span class="sign">$</span>hazard<span class="sign">.</span>spline<span class="sign">.</span>knots <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span><span class="sign">-</span>Inf<span class="sign">,</span> maxiter<span class="sign">,</span> 
+<span class="line_number">1023 </span>            hazard<span class="sign">$</span>spline<span class="sign">.</span>maxoccknots <span class="sign">+</span> 2 <span class="sign">*</span> hazard<span class="sign">$</span>spline<span class="sign">.</span>ord<span class="sign">)</span>
+<span class="line_number">1024 </span>    <span class="sign">}</span>
+<span class="line_number">1025 </span>    <span class="keyword">if</span><span class="sign">(</span>frailty<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">1026 </span>        history<span class="sign">$</span>frailty<span class="sign">.</span>spline<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span><span class="sign">-</span>Inf<span class="sign">,</span> maxiter<span class="sign">,</span> 
+<span class="line_number">1027 </span>            frailty<span class="sign">$</span>spline<span class="sign">.</span>maxoccknots <span class="sign">+</span> frailty<span class="sign">$</span>spline<span class="sign">.</span>ord<span class="sign">)</span>
+<span class="line_number">1028 </span>        history<span class="sign">$</span>frailty<span class="sign">.</span>spline<span class="sign">.</span>knots <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span><span class="sign">-</span>Inf<span class="sign">,</span> maxiter<span class="sign">,</span> 
+<span class="line_number">1029 </span>            frailty<span class="sign">$</span>spline<span class="sign">.</span>maxoccknots <span class="sign">+</span> 2 <span class="sign">*</span> frailty<span class="sign">$</span>spline<span class="sign">.</span>ord<span class="sign">)</span>
+<span class="line_number">1030 </span>        history<span class="sign">$</span>frailty<span class="sign">.</span>spline<span class="sign">.</span>fvar <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> maxiter<span class="sign">,</span> 1<span class="sign">)</span>
+<span class="line_number">1031 </span>    <span class="sign">}</span>
+<span class="line_number">1032 </span>    <span class="comment"># storage for parametric parameters</span>
+<span class="line_number">1033 </span>    <span class="keyword">if</span><span class="sign">(</span>hazard<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">)</span> history<span class="sign">$</span>hazard<span class="sign">.</span>param<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> 
+<span class="line_number">1034 </span>        maxiter<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>hazard<span class="sign">$</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1035 </span>    <span class="keyword">if</span><span class="sign">(</span>frailty<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">)</span> history<span class="sign">$</span>frailty<span class="sign">.</span>param<span class="sign">.</span>par <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> 
+<span class="line_number">1036 </span>        maxiter<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>frailty<span class="sign">$</span>param<span class="sign">.</span>par<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">1037 </span>    <span class="comment"># storage for weights</span>
+<span class="line_number">1038 </span>    <span class="keyword">if</span><span class="sign">(</span>hazard<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a> <span class="sign">&amp;</span> hazard<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">)</span> history<span class="sign">$</span>hazard<span class="sign">.</span>weight <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> maxiter<span class="sign">,</span> 1<span class="sign">)</span>
+<span class="line_number">1039 </span>    <span class="keyword">if</span><span class="sign">(</span>frailty<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhasspline.html#robo155">hasspline</a> <span class="sign">&amp;</span> frailty<span class="sign">$</span><a href="./splinefrailty_rmiscUtils2Fhaspar.html#robo154">haspar</a><span class="sign">)</span> history<span class="sign">$</span>frailty<span class="sign">.</span>weight <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> maxiter<span class="sign">,</span> 1<span class="sign">)</span>
+<span class="line_number">1040 </span>    <span class="comment"># storage for prior variances</span>
+<span class="line_number">1041 </span>    history<span class="sign">$</span>priorvar <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> maxiter<span class="sign">,</span> 7<span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">1042 </span>    <span class="keyword">colnames</span><span class="sign">(</span>history<span class="sign">$</span>priorvar<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="quote">"coefficients"</span><span class="sign">,</span> <span class="quote">"hazard.spline"</span><span class="sign">,</span> <span class="quote">"frailty.spline"</span><span class="sign">,</span>
+<span class="line_number">1043 </span>            <span class="quote">"hazard.param"</span><span class="sign">,</span> <span class="quote">"frailty.param"</span><span class="sign">,</span> <span class="quote">"hazard.weight"</span><span class="sign">,</span> <span class="quote">"frailty.weight"</span><span class="sign">)</span>
+<span class="line_number">1044 </span>    <span class="comment"># storage for acceptance history</span>
+<span class="line_number">1045 </span>    history<span class="sign">$</span>accept <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>0<span class="sign">,</span> maxiter<span class="sign">,</span> 8<span class="sign">)</span>
+<span class="line_number">1046 </span>    <span class="keyword">colnames</span><span class="sign">(</span>history<span class="sign">$</span>accept<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="keyword">colnames</span><span class="sign">(</span>history<span class="sign">$</span>priorvar<span class="sign">)</span><span class="sign">,</span> <span class="quote">"frailty"</span><span class="sign">)</span>
+<span class="line_number">1047 </span>    <span class="comment"># update with first iteration</span>
+<span class="line_number">1048 </span>    history <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rcurveUpdate2Fupdatehistory.html#robo107">updatehistory</a><span class="sign">(</span>history<span class="sign">,</span> 1<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span>
+<span class="line_number">1049 </span>    <span class="keyword">return</span><span class="sign">(</span>history<span class="sign">)</span>
+<span class="line_number">1050 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

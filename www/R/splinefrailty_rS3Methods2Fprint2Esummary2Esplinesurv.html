@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FS3Methods.html#robo5">S3Methods</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo164">S3Methods/print.summary.splinesurv</a></li>
+</ul>
+<hr />
+<a name="S3Methods2fprint2esummary2esplinesurv"></a>
+<a name="robo164"></a><h2>S3Methods/print.summary.splinesurv [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>print.summary.splinesurv</strong> --- print <a href="./splinefrailty_rS3Methods2Fsummary2Esplinesurv.html#robo170">summary.splinesurv</a> object
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Pretty-print the output of <a href="./splinefrailty_rS3Methods2Fsummary2Esplinesurv.html#robo170">summary.splinesurv</a>
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">3677 </span><strong>print.summary.splinesurv</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>x<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>   
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    x      an object of class <a href="./splinefrailty_rS3Methods2Fsummary2Esplinesurv.html#robo170">summary.splinesurv</a>
+    ...    additional parameters passed to formatC
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">3680 </span><span class="sign">{</span> 
+<span class="line_number">3681 </span>    <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"Call: \n"</span><span class="sign">)</span>
+<span class="line_number">3682 </span>    print<span class="sign">(</span>x<span class="sign">$</span><span class="keyword">call</span><span class="sign">)</span>
+<span class="line_number">3683 </span>    <span class="comment"># print basic info</span>
+<span class="line_number">3684 </span>    <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\nIterations: "</span><span class="sign">,</span> x<span class="sign">$</span>iter<span class="sign">,</span> <span class="quote">" ("</span><span class="sign">,</span> x<span class="sign">$</span>burnin<span class="sign">,</span> <span class="quote">" discarded as burn - in)\n"</span><span class="sign">,</span> sep <span class="sign">=</span> <span class="quote">""</span><span class="sign">)</span>
+<span class="line_number">3685 </span>    printpars <span class="sign">&lt;</span><span class="sign">-</span> paste<span class="sign">(</span>names<span class="sign">(</span>x<span class="sign">$</span>dots<span class="sign">)</span><span class="sign">,</span> unlist<span class="sign">(</span>x<span class="sign">$</span>dots<span class="sign">)</span><span class="sign">,</span> sep <span class="sign">=</span> <span class="quote">" = "</span><span class="sign">,</span> collapse <span class="sign">=</span> <span class="quote">", "</span><span class="sign">)</span>
+<span class="line_number">3686 </span>    <span class="keyword">if</span><span class="sign">(</span>nchar<span class="sign">(</span>printpars<span class="sign">)</span><span class="sign">)</span> printpars <span class="sign">&lt;</span><span class="sign">-</span> paste<span class="sign">(</span><span class="quote">", "</span><span class="sign">,</span> printpars<span class="sign">)</span>
+<span class="line_number">3687 </span>    <span class="comment"># print regression coefficients and quantiles</span>
+<span class="line_number">3688 </span>    <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\nRegression parameter posterior:\n"</span><span class="sign">)</span>
+<span class="line_number">3689 </span>    eval<span class="sign">(</span>parse<span class="sign">(</span>text <span class="sign">=</span> paste<span class="sign">(</span><span class="quote">"print(cbind(x$coef, x$quantiles.coef)"</span><span class="sign">,</span> printpars<span class="sign">,</span> <span class="quote">")"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3690 </span>    <span class="comment"># print frailty variances</span>
+<span class="line_number">3691 </span>    <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\nFrailty variance:\n"</span><span class="sign">)</span>
+<span class="line_number">3692 </span>    fvarout <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rbind</span><span class="sign">(</span><span class="keyword">cbind</span><span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">$</span>fvar<span class="sign">,</span> x<span class="sign">$</span>quantiles<span class="sign">.</span>fvar<span class="sign">[</span>1<span class="sign">,</span> <span class="sign">,</span>drop <span class="sign">=</span> F<span class="sign">]</span><span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">3693 </span>        c<span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">$</span>fvar2<span class="sign">,</span> x<span class="sign">$</span>quantiles<span class="sign">.</span>fvar2<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3694 </span>    <span class="keyword">rownames</span><span class="sign">(</span>fvarout<span class="sign">)</span> <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="quote">"fvar"</span><span class="sign">,</span> <span class="quote">"fvar2"</span><span class="sign">)</span><span class="sign">;</span> <span class="keyword">colnames</span><span class="sign">(</span>fvarout<span class="sign">)</span><span class="sign">[</span>1<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="quote">"mean"</span>
+<span class="line_number">3695 </span>    eval<span class="sign">(</span>parse<span class="sign">(</span>text <span class="sign">=</span> paste<span class="sign">(</span><span class="quote">"print(fvarout"</span><span class="sign">,</span> printpars<span class="sign">,</span> <span class="quote">")"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">3696 </span>    <span class="comment"># print summaries of each of the curves</span>
+<span class="line_number">3697 </span>    <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\nBaseline hazard:"</span><span class="sign">)</span>
+<span class="line_number">3698 </span>    <a href="./splinefrailty_rS3Methods2Fprintcurvesummary.html#robo165">printcurvesummary</a><span class="sign">(</span>x<span class="sign">$</span>hazard<span class="sign">,</span> x<span class="sign">$</span>posterior<span class="sign">.</span>mean<span class="sign">$</span>hazard<span class="sign">.</span>weight<span class="sign">,</span>
+<span class="line_number">3699 </span>        x<span class="sign">$</span>posterior<span class="sign">.</span>mean<span class="sign">$</span>hazard<span class="sign">.</span>param<span class="sign">.</span>par<span class="sign">)</span>
+<span class="line_number">3700 </span>    <span class="keyword">cat</span><span class="sign">(</span><span class="quote">"\nFrailty density:"</span><span class="sign">)</span>
+<span class="line_number">3701 </span>    <a href="./splinefrailty_rS3Methods2Fprintcurvesummary.html#robo165">printcurvesummary</a><span class="sign">(</span>x<span class="sign">$</span>frailty<span class="sign">,</span> x<span class="sign">$</span>posterior<span class="sign">.</span>mean<span class="sign">$</span>frailty<span class="sign">.</span>weight<span class="sign">,</span>
+<span class="line_number">3702 </span>        x<span class="sign">$</span>posterior<span class="sign">.</span>mean<span class="sign">$</span>frailty<span class="sign">.</span>param<span class="sign">.</span>par<span class="sign">)</span>
+<span class="line_number">3703 </span>    invisible<span class="sign">(</span>x<span class="sign">)</span>
+<span class="line_number">3704 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

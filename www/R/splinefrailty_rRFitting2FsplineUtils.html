@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FRFitting.html#robo4">RFitting</a><a class="menuitem" href="../robo_modules.html#robo_top_of_doc">Modules</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo19">RFitting/splineUtils</a></li>
+<ul>
+<li>1.1. <a href="./splinefrailty_rsplineUtils2FevalBinte.html#robo179">splineUtils/evalBinte</a></li>
+<li>1.2. <a href="./splinefrailty_rsplineUtils2FevalCinte.html#robo180">splineUtils/evalCinte</a></li>
+<li>1.3. <a href="./splinefrailty_rsplineUtils2FevalEinte.html#robo181">splineUtils/evalEinte</a></li>
+<li>1.4. <a href="./splinefrailty_rsplineUtils2Ffrailtysplinefvar.html#robo182">splineUtils/frailtysplinefvar</a></li>
+<li>1.5. <a href="./splinefrailty_rsplineUtils2Fki.html#robo183">splineUtils/ki</a></li>
+<li>1.6. <a href="./splinefrailty_rsplineUtils2Fmakesplinebasis.html#robo184">splineUtils/makesplinebasis</a></li>
+<li>1.7. <a href="./splinefrailty_rsplineUtils2FmysplineDesign.html#robo185">splineUtils/mysplineDesign</a></li>
+<li>1.8. <a href="./splinefrailty_rsplineUtils2FnBsmom.html#robo186">splineUtils/nBsmom</a></li>
+<li>1.9. <a href="./splinefrailty_rsplineUtils2FnknotsPrior.html#robo187">splineUtils/nknotsPrior</a></li>
+<li>1.10. <a href="./splinefrailty_rsplineUtils2Fplotspline.html#robo188">splineUtils/plotspline</a></li>
+<li>1.11. <a href="./splinefrailty_rsplineUtils2Fsplineconv.html#robo189">splineUtils/splineconv</a></li>
+<li>1.12. <a href="./splinefrailty_rsplineUtils2Fsplinederivint.html#robo190">splineUtils/splinederivint</a></li>
+</ul>
+</ul>
+<hr />
+<a name="RFitting2fsplineUtils"></a>
+<a name="robo19"></a><h2>RFitting/splineUtils [ Modules ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>     <strong>splineUtils</strong> --- Utilities for evaluating splines and related integrals
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>     Evaluate B-splines and integrals over B-splines, either in R or fast
+     C code.
+</p>
+<p class="item_name">CONTENTS</p>
+<pre>    <a href="./splinefrailty_rsplineUtils2FevalBinte.html#robo179">evalBinte</a> --- compute the integrals of each spline basis function
+    <a href="./splinefrailty_rsplineUtils2FevalCinte.html#robo180">evalCinte</a> --- compute partial integrals over the spline basis
+    <a href="./splinefrailty_rsplineUtils2FevalEinte.html#robo181">evalEinte</a> --- compute the expected distance from 1 of a B-spline
+    <a href="./splinefrailty_rsplineUtils2Ffrailtysplinefvar.html#robo182">frailtysplinefvar</a> --- compute the spline component frailty variance
+    <a href="./splinefrailty_rsplineUtils2Fki.html#robo183">ki</a> --- addressing of spline indices
+    <a href="./splinefrailty_rsplineUtils2Fmakesplinebasis.html#robo184">makesplinebasis</a> --- construct B-spline basis functions
+    <a href="./splinefrailty_rsplineUtils2FmysplineDesign.html#robo185">mysplineDesign</a> --- works like splineDesign()
+    <a href="./splinefrailty_rsplineUtils2FnBsmom.html#robo186">nBsmom</a> --- compute the N-th moment of a B-spline basis function
+    <a href="./splinefrailty_rsplineUtils2FnknotsPrior.html#robo187">nknotsPrior</a> --- evaluate the prior on the number of knots
+    <a href="./splinefrailty_rsplineUtils2Fplotspline.html#robo188">plotspline</a> --- plot a spline given a set of knots and parameters
+    <a href="./splinefrailty_rsplineUtils2Fsplineconv.html#robo189">splineconv</a> --- compute the convolution of two splines
+    <a href="./splinefrailty_rsplineUtils2Fsplinederivint.html#robo190">splinederivint</a> --- compute the convolution of the derivatives of two spline bases
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

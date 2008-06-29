@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo32">CcurveUpdate/EvalSpline</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fEvalSpline"></a>
+<a name="robo32"></a><h2>CcurveUpdate/EvalSpline [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>EvalSpline</strong> --- evaluate spline component
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Evaluate the spline component if the spline parameters have been changed. This function
+    assumes the basis is correctly specified, and only the spline parameters (theta) have changed.
+</p>
+
+<p>    The only components of the curve that are changed are SplineY and SplineYcum; The function
+    <a href="./mainloop_cCcurveUpdate2FReweightCurve.html#robo40">ReweightCurve</a> is called at the end to update Y and Ycum.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1228 </span><span class="keyword">void</span> <strong>EvalSpline</strong><span class="sign">(</span>curveP theCurve<span class="sign">,</span> <span class="keyword">int</span> i<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    theCurve      <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure whose SplinePar and SplineEPar have changed
+    i             index of observation to update, or -1 for all
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    theCurve      <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> with Y and Ycum updated
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1232 </span><span class="sign">{</span>
+<span class="line_number">1233 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span> <span class="keyword">return</span><span class="sign">;</span>
+<span class="line_number">1234 </span>    <span class="keyword">if</span><span class="sign">(</span>i<span class="sign">&gt;</span><span class="sign">=</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1235 </span>        <span class="comment">// evaluate a single observation</span>
+<span class="line_number">1236 </span>        <span class="keyword">int</span> c1<span class="sign">=</span>1<span class="sign">;</span>
+<span class="line_number">1237 </span>        theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> F77_CALL<span class="sign">(</span>ddot<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasis <span class="sign">+</span> i<span class="sign">,</span>
+<span class="line_number">1238 </span>                <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1239 </span>        <span class="comment">// normalize frailty density</span>
+<span class="line_number">1240 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">/</span><span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEParSum<span class="sign">;</span>
+<span class="line_number">1241 </span>        <span class="comment">// compute cumulative hazard</span>
+<span class="line_number">1242 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span>
+<span class="line_number">1243 </span>            theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> F77_CALL<span class="sign">(</span>ddot<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisCum <span class="sign">+</span> i<span class="sign">,</span>
+<span class="line_number">1244 </span>                <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1245 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">1246 </span>        <span class="comment">// evaluate entire curve</span>
+<span class="line_number">1247 </span>        <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">1248 </span>        <span class="keyword">double</span> c0 <span class="sign">=</span> 0<span class="sign">;</span>
+<span class="line_number">1249 </span>        char trans <span class="sign">=</span> <span class="squote">'N'</span><span class="sign">;</span>
+<span class="line_number">1250 </span>        <span class="keyword">double</span> scaler <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard <span class="sign">?</span> 1<span class="sign">.</span>0 <span class="sign">:</span> 1<span class="sign">.</span>0<span class="sign">/</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEParSum<span class="sign">;</span>
+<span class="line_number">1251 </span>        <span class="comment">// set splineY = basis * splinepar + 0*splineY</span>
+<span class="line_number">1252 </span>        F77_CALL<span class="sign">(</span>dgemv<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>trans<span class="sign">,</span> <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span>scaler<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasis<span class="sign">,</span>
+<span class="line_number">1253 </span>                <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> <span class="sign">&amp;</span>c0<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1254 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span>
+<span class="line_number">1255 </span>            F77_CALL<span class="sign">(</span>dgemv<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>trans<span class="sign">,</span> <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span>scaler<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisCum<span class="sign">,</span>
+<span class="line_number">1256 </span>                    <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> <span class="sign">&amp;</span>c0<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1257 </span>    <span class="sign">}</span>
+<span class="line_number">1258 </span>    <a href="./mainloop_cCcurveUpdate2FReweightCurve.html#robo40">ReweightCurve</a><span class="sign">(</span>theCurve<span class="sign">,</span> i<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1259 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

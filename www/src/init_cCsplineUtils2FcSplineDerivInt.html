@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCsplineUtils.html#robo12">CsplineUtils</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo101">CsplineUtils/cSplineDerivInt</a></li>
+</ul>
+<hr />
+<a name="CsplineUtils2fcSplineDerivInt"></a>
+<a name="robo101"></a><h2>CsplineUtils/cSplineDerivInt [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>cSplineDerivInt</strong> --- compute the convolution of the derivatives of two spline basis functions
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Used to compute the penalty matrix for the integrated squared second derivative. This
+    routine computes the integral from 0 to infinity of the l1 derivative and the l2
+    derivative of the j1 and j2-th splines of order n1 and n2 defined on a set of knots.
+</p>
+
+<p>    See also <a href="../R/splinefrailty_rsplineUtils2Fsplinederivint.html#robo190">splinederivint</a> for the R implementation.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">397 </span><span class="keyword">double</span> <strong>cSplineDerivInt</strong><span class="sign">(</span><span class="keyword">int</span> l1<span class="sign">,</span> <span class="keyword">int</span> n1<span class="sign">,</span> <span class="keyword">int</span> j1<span class="sign">,</span> <span class="keyword">int</span> l2<span class="sign">,</span> <span class="keyword">int</span> n2<span class="sign">,</span> <span class="keyword">int</span> j2<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> splord<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    l1     derivative of the first spline
+    n1     order of the first spline
+    j1     index of the first spline
+    l2     derivative of the second spline
+    n2     order of the second spline
+    j2     index of the second spline
+    knots  set of knots on which the splines are defined
+    splord order of the splines
+</pre>
+<p class="item_name">OUTPUTS</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">401 </span><span class="sign">{</span>
+<span class="line_number">402 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>j1<span class="sign">-</span>n1<span class="sign">&gt;</span><span class="sign">=</span>j2<span class="sign">)</span> <span class="sign">|</span> <span class="sign">(</span>j2<span class="sign">-</span>n2<span class="sign">&gt;</span><span class="sign">=</span>j1<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> 0<span class="sign">;</span>
+<span class="line_number">403 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">(</span>l1<span class="sign">=</span><span class="sign">=</span>0<span class="sign">)</span> <span class="sign">&amp;</span> <span class="sign">(</span>l2<span class="sign">=</span><span class="sign">=</span>0<span class="sign">)</span><span class="sign">)</span> <span class="keyword">return</span> <a href="./init_cCsplineUtils2FcSplineConvolution.html#robo100">cSplineConvolution</a><span class="sign">(</span>0<span class="sign">,</span>n2<span class="sign">,</span>j1<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">404 </span>    <span class="keyword">if</span><span class="sign">(</span>l2<span class="sign">&gt;</span>l1<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">405 </span>        <span class="keyword">int</span> l3<span class="sign">=</span>l1<span class="sign">;</span> l1<span class="sign">=</span>l2<span class="sign">;</span> l2<span class="sign">=</span>l3<span class="sign">;</span>
+<span class="line_number">406 </span>        <span class="keyword">int</span> n3<span class="sign">=</span>n1<span class="sign">;</span> n1<span class="sign">=</span>n2<span class="sign">;</span> n2<span class="sign">=</span>n3<span class="sign">;</span>
+<span class="line_number">407 </span>        <span class="keyword">int</span> j3<span class="sign">=</span>j1<span class="sign">;</span> j1<span class="sign">=</span>j2<span class="sign">;</span> j2<span class="sign">=</span>j3<span class="sign">;</span>
+<span class="line_number">408 </span>    <span class="sign">}</span>
+<span class="line_number">409 </span>    <span class="keyword">double</span> out<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">410 </span>    <span class="keyword">double</span> denom1 <span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">-</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">-</span>knots<span class="sign">[</span>j1<span class="sign">-</span>n1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">411 </span>    <span class="keyword">double</span> denom2 <span class="sign">=</span> knots<span class="sign">[</span>j1<span class="sign">+</span>splord<span class="sign">]</span> <span class="sign">-</span> knots<span class="sign">[</span>j1<span class="sign">-</span>n1<span class="sign">+</span>1<span class="sign">+</span>splord<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">412 </span>    <span class="keyword">if</span><span class="sign">(</span>denom1<span class="sign">&gt;</span>0<span class="sign">)</span>
+<span class="line_number">413 </span>        out <span class="sign">+</span><span class="sign">=</span> <span class="sign">(</span>n1<span class="sign">-</span>1<span class="sign">.</span>0<span class="sign">)</span><span class="sign">/</span>denom1 <span class="sign">*</span> <strong>cSplineDerivInt</strong><span class="sign">(</span>l1<span class="sign">-</span>1<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">-</span>1<span class="sign">,</span>l2<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">414 </span>    <span class="keyword">if</span><span class="sign">(</span>denom2<span class="sign">&gt;</span>0<span class="sign">)</span>
+<span class="line_number">415 </span>        out <span class="sign">-</span><span class="sign">=</span> <span class="sign">(</span>n1<span class="sign">-</span>1<span class="sign">.</span>0<span class="sign">)</span><span class="sign">/</span>denom2 <span class="sign">*</span> <strong>cSplineDerivInt</strong><span class="sign">(</span>l1<span class="sign">-</span>1<span class="sign">,</span>n1<span class="sign">-</span>1<span class="sign">,</span>j1<span class="sign">,</span>l2<span class="sign">,</span>n2<span class="sign">,</span>j2<span class="sign">,</span>knots<span class="sign">,</span>splord<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">416 </span>    <span class="keyword">return</span> out<span class="sign">;</span>
+<span class="line_number">417 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

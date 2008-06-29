@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo40">CcurveUpdate/ReweightCurve</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fReweightCurve"></a>
+<a name="robo40"></a><h2>CcurveUpdate/ReweightCurve [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>ReweightCurve</strong> --- weight a curve's parametric and spline components
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    After updating either the parametric or spline component of a curve, or their
+    relative weight, the total curve must be recomputed.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1019 </span><span class="keyword">void</span> <strong>ReweightCurve</strong><span class="sign">(</span>curveP theCurve<span class="sign">,</span> <span class="keyword">int</span> i<span class="sign">)</span><span class="sign">{</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    theCurve  a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure
+    i         the index of the observation that should be reweighted, or -1 for all
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    theCurve  the original curve, with Y and Ycum components updated.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1023 </span>    <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasPar <span class="sign">&amp;</span> <span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span> <span class="sign">{</span> <span class="comment">//parametric only</span>
+<span class="line_number">1024 </span>        <span class="comment">// just copy ParamY and ParamYcum to Y and Ycum</span>
+<span class="line_number">1025 </span>        <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>ParamY<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1026 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>ParamYcum<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1027 </span>        <span class="keyword">return</span><span class="sign">;</span>
+<span class="line_number">1028 </span>    <span class="sign">}</span>
+<span class="line_number">1029 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasPar <span class="sign">&amp;</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span> <span class="sign">{</span> <span class="comment">//spline only</span>
+<span class="line_number">1030 </span>        <span class="comment">// just copy SplineY and SplineYcum to Y and Ycum</span>
+<span class="line_number">1031 </span>        <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1032 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1033 </span>        <span class="keyword">return</span><span class="sign">;</span>
+<span class="line_number">1034 </span>    <span class="sign">}</span>
+<span class="line_number">1035 </span>    <span class="keyword">double</span> w <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Weight<span class="sign">[</span>0<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1036 </span>    <span class="keyword">if</span><span class="sign">(</span>i<span class="sign">&gt;</span><span class="sign">=</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1037 </span>        <span class="comment">// reweight a single observation</span>
+<span class="line_number">1038 </span>        theCurve<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> w <span class="sign">*</span>  theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">+</span> <span class="sign">(</span>1<span class="sign">-</span>w<span class="sign">)</span> <span class="sign">*</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>ParamY<span class="sign">[</span>i<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1039 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> w <span class="sign">*</span>  theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">+</span> <span class="sign">(</span>1<span class="sign">-</span>w<span class="sign">)</span> <span class="sign">*</span>
+<span class="line_number">1040 </span>            theCurve<span class="sign">-</span><span class="sign">&gt;</span>ParamY<span class="sign">[</span>i<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1041 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">1042 </span>        <span class="comment">// reweight the entire curve</span>
+<span class="line_number">1043 </span>        <span class="keyword">double</span> c0<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">1044 </span>        <span class="keyword">int</span> c0i<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">1045 </span>        <span class="keyword">int</span> c1<span class="sign">=</span>1<span class="sign">;</span>
+<span class="line_number">1046 </span>        <span class="keyword">int</span> n <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">;</span>
+<span class="line_number">1047 </span>        <span class="keyword">double</span> wm1<span class="sign">=</span>1<span class="sign">-</span>w<span class="sign">;</span>
+<span class="line_number">1048 </span>        F77_CALL<span class="sign">(</span>dcopy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>n<span class="sign">,</span> <span class="sign">&amp;</span>c0<span class="sign">,</span> <span class="sign">&amp;</span>c0i<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> <span class="comment">//set Y=0</span>
+<span class="line_number">1049 </span>        F77_CALL<span class="sign">(</span>daxpy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>n<span class="sign">,</span> <span class="sign">&amp;</span>w<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> <span class="comment">//add w*splineY</span>
+<span class="line_number">1050 </span>        F77_CALL<span class="sign">(</span>daxpy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>n<span class="sign">,</span> <span class="sign">&amp;</span>wm1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>ParamY<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> <span class="comment">//add (1-w)*paramY</span>
+<span class="line_number">1051 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1052 </span>            F77_CALL<span class="sign">(</span>dcopy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>n<span class="sign">,</span> <span class="sign">&amp;</span>c0<span class="sign">,</span> <span class="sign">&amp;</span>c0i<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> <span class="comment">//set Y=0</span>
+<span class="line_number">1053 </span>            F77_CALL<span class="sign">(</span>daxpy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>n<span class="sign">,</span> <span class="sign">&amp;</span>w<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> <span class="comment">//add w*splineY</span>
+<span class="line_number">1054 </span>            F77_CALL<span class="sign">(</span>daxpy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>n<span class="sign">,</span> <span class="sign">&amp;</span>wm1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>ParamYcum<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Ycum<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> <span class="comment">//add (1-w)*paramY</span>
+<span class="line_number">1055 </span>        <span class="sign">}</span>
+<span class="line_number">1056 </span>    <span class="sign">}</span>
+<span class="line_number">1057 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo44">CcurveUpdate/UpdateSplinePar</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fUpdateSplinePar"></a>
+<a name="robo44"></a><h2>CcurveUpdate/UpdateSplinePar [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>UpdateSplinePar</strong> --- update the spline parameters
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Function called to update the spline parameters in a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a>. It copies a set
+    of new parameters into the curve and re-evaluates the curve appropriately.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1314 </span><span class="keyword">void</span> <strong>UpdateSplinePar</strong><span class="sign">(</span>curveP theCurve<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span> newpar<span class="sign">,</span> <span class="keyword">int</span> j<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    theCurve      a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure whose spline parameters should be updated
+    newpar        new spline parameters
+    j             index of single parameter to be updated (or -1 for all)
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    theCurve      <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> with updated Y and Ycum
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1318 </span><span class="sign">{</span>
+<span class="line_number">1319 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span> <span class="keyword">return</span><span class="sign">;</span>
+<span class="line_number">1320 </span>    <span class="keyword">if</span><span class="sign">(</span>j<span class="sign">&gt;</span><span class="sign">=</span>0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1321 </span>        <span class="comment">// updateSplinePar can only be called with j&gt;0 for hazard curve</span>
+<span class="line_number">1322 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"Bad call to <strong>UpdateSplinePar</strong>\n"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1323 </span>        <span class="keyword">double</span> oldeparj <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1324 </span>        <span class="keyword">double</span> neweparj <span class="sign">=</span> <span class="keyword">exp</span><span class="sign">(</span>newpar<span class="sign">[</span>j<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1325 </span>        <span class="keyword">double</span> epardiff <span class="sign">=</span> neweparj <span class="sign">-</span> oldeparj<span class="sign">;</span>
+<span class="line_number">1326 </span>        theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> newpar<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1327 </span>        theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> neweparj<span class="sign">;</span>
+<span class="line_number">1328 </span>        theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEParSum <span class="sign">+</span><span class="sign">=</span> epardiff<span class="sign">;</span>
+<span class="line_number">1329 </span>        <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">1330 </span>        <span class="comment">// update the curve by changing only the j-th parameter</span>
+<span class="line_number">1331 </span>        F77_CALL<span class="sign">(</span>daxpy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span>epardiff<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasis<span class="sign">+</span>j<span class="sign">*</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span>
+<span class="line_number">1332 </span>                theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">1333 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> F77_CALL<span class="sign">(</span>daxpy<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span>epardiff<span class="sign">,</span>
+<span class="line_number">1334 </span>                theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineBasisCum<span class="sign">+</span>j<span class="sign">*</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineYcum<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">1335 </span>        <a href="./mainloop_cCcurveUpdate2FReweightCurve.html#robo40">ReweightCurve</a><span class="sign">(</span>theCurve<span class="sign">,</span> <span class="sign">-</span>1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1336 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">1337 </span>        <span class="comment">// copy the new parameters into the curve structure</span>
+<span class="line_number">1338 </span>        <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> newpar<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1339 </span>        <span class="comment">// make sure that for the frailty, the parameter at the fixed index = 0</span>
+<span class="line_number">1340 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> 
+<span class="line_number">1341 </span>            <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span>i<span class="sign">&lt;</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">-</span><span class="sign">=</span> newpar<span class="sign">[</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineFixedInd<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1342 </span>        <span class="comment">// compute exponentials of parameters</span>
+<span class="line_number">1343 </span>        <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> <span class="keyword">exp</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">[</span>i<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1344 </span>        <span class="comment">// normalize parameters for frailty</span>
+<span class="line_number">1345 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1346 </span>            theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEParSum <span class="sign">=</span> 0<span class="sign">;</span>
+<span class="line_number">1347 </span>            <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> j<span class="sign">=</span>0<span class="sign">;</span> j<span class="sign">&lt;</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span> j<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEParSum<span class="sign">+</span><span class="sign">=</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1348 </span>            theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineFvar <span class="sign">=</span> <a href="./mainloop_cCcurveUpdate2FFrailtySplineVar.html#robo34">FrailtySplineVar</a><span class="sign">(</span>theCurve<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1349 </span>        <span class="sign">}</span>
+<span class="line_number">1350 </span>        <span class="comment">// evaluate the spline at the new parameters</span>
+<span class="line_number">1351 </span>        <a href="./mainloop_cCcurveUpdate2FEvalSpline.html#robo32">EvalSpline</a><span class="sign">(</span>theCurve<span class="sign">,</span> <span class="sign">-</span>1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1352 </span>    <span class="sign">}</span>
+<span class="line_number">1353 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

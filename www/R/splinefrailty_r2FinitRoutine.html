@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="../robo_modules.html#robo_top_of_doc">Modules</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo3">/initRoutine</a></li>
+<ul>
+<li>1.1. <a href="../src/init_cinitRoutine2FCinitRoutine.html#robo13">initRoutine/CinitRoutine</a></li>
+<ul>
+<li>1.1.1. <a href="../src/init_cCinitRoutine2FaddInitSmoothnessPenaltyGr.html#robo51">CinitRoutine/addInitSmoothnessPenaltyGr</a></li>
+<li>1.1.2. <a href="../src/init_cCinitRoutine2FcInitGrHazSpline.html#robo52">CinitRoutine/cInitGrHazSpline</a></li>
+<li>1.1.3. <a href="../src/init_cCinitRoutine2FcInitLikFrailSpline.html#robo53">CinitRoutine/cInitLikFrailSpline</a></li>
+<li>1.1.4. <a href="../src/init_cCinitRoutine2FcInitLikHazSpline.html#robo54">CinitRoutine/cInitLikHazSpline</a></li>
+<li>1.1.5. <a href="../src/init_cCinitRoutine2FcInitMultAndWeight.html#robo55">CinitRoutine/cInitMultAndWeight</a></li>
+<li>1.1.6. <a href="../src/init_cCinitRoutine2FcMakePenalty2diff.html#robo56">CinitRoutine/cMakePenalty2diff</a></li>
+<li>1.1.7. <a href="../src/init_cCinitRoutine2FInitSmoothnessPenalty.html#robo57">CinitRoutine/InitSmoothnessPenalty</a></li>
+</ul>
+<li>1.2. <a href="./splinefrailty_rinitRoutine2Ffitparametric.html#robo120">initRoutine/fitparametric</a></li>
+<li>1.3. <a href="./splinefrailty_rinitRoutine2Finithistory.html#robo121">initRoutine/inithistory</a></li>
+<li>1.4. <a href="./splinefrailty_rinitRoutine2Finverthessian.html#robo122">initRoutine/inverthessian</a></li>
+<li>1.5. <a href="./splinefrailty_rinitRoutine2Fmakeknots.html#robo123">initRoutine/makeknots</a></li>
+<li>1.6. <a href="./splinefrailty_rinitRoutine2Fmakepenalty.html#robo124">initRoutine/makepenalty</a></li>
+<li>1.7. <a href="./splinefrailty_rinitRoutine2FmakePenalty2E2deriv.html#robo125">initRoutine/makePenalty.2deriv</a></li>
+<li>1.8. <a href="./splinefrailty_rinitRoutine2FmakePenalty2E2diff.html#robo126">initRoutine/makePenalty.2diff</a></li>
+<li>1.9. <a href="./splinefrailty_rinitRoutine2FnknotsPriorMean.html#robo127">initRoutine/nknotsPriorMean</a></li>
+<li>1.10. <a href="./splinefrailty_rinitRoutine2FnumHess2Epar.html#robo128">initRoutine/numHess.par</a></li>
+</ul>
+</ul>
+<hr />
+<a name="2finitRoutine"></a>
+<a name="robo3"></a><h2>/initRoutine [ Modules ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>   <strong>initRoutine</strong> --- Initialize the <a href="./splinefrailty_rS3Methods2Fsplinesurv.html#robo166">splinesurv</a> routine
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>   Compute initial values for all parameters of interest and allocate the
+   necessary storage. The module <a href="../src/init_cinitRoutine2FCinitRoutine.html#robo13">CinitRoutine</a> contains functions implemented
+   in C that are used during the initialization only.
+</p>
+<p class="item_name">CONTENTS</p>
+<pre>    <a href="../src/init_cinitRoutine2FCinitRoutine.html#robo13">CinitRoutine</a> --- additional C functions used for initialization only
+    <a href="./splinefrailty_rinitRoutine2Ffitparametric.html#robo120">fitparametric</a> --- fit a parametric component to a curve
+    <a href="./splinefrailty_rinitRoutine2Finithistory.html#robo121">inithistory</a> --- initialize the history structure
+    <a href="./splinefrailty_rinitRoutine2Finverthessian.html#robo122">inverthessian</a> --- invert a Hessian matrix
+    <a href="./splinefrailty_rinitRoutine2FmakePenalty2E2deriv.html#robo125">makePenalty.2deriv</a> --- compute a penalty matrix on second derivatives of B-splines
+    <a href="./splinefrailty_rinitRoutine2FmakePenalty2E2diff.html#robo126">makePenalty.2diff</a> --- compute a penalty matrix on second differences
+    <a href="./splinefrailty_rinitRoutine2Fmakeknots.html#robo123">makeknots</a> --- make knots for a curve with a spline component
+    <a href="./splinefrailty_rinitRoutine2Fmakepenalty.html#robo124">makepenalty</a> --- construct a penalty matrix
+    <a href="./splinefrailty_rinitRoutine2FnknotsPriorMean.html#robo127">nknotsPriorMean</a> --- compute the prior mean of the number of knots of a curve
+    <a href="./splinefrailty_rinitRoutine2FnumHess2Epar.html#robo128">numHess.par</a>  --- compute a numerical Hessian for the parametric component
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

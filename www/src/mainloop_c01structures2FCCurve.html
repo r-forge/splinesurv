@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="../R/splinefrailty_r2F01structures.html#robo1">01structures</a><a class="menuitem" href="../robo_definitions.html#robo_top_of_doc">Definitions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo23">01structures/CCurve</a></li>
+</ul>
+<hr />
+<a name="01structures2fCCurve"></a>
+<a name="robo23"></a><h2>01structures/CCurve [ Definitions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>CCurve</strong> --- structure to store a curve
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This structure contains all the information about a curve, either the hazard
+    or the frailty. This includes all parameters for spline components, parametric
+    components, weights, and knot positions, as well as spline basis functions,
+    tuning parameters, etc. It is the C analogoue of the <a href="../R/splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a> structure.
+</p>
+
+<p>    Note that many of the elements of the structure are pointers. This allows
+    the memory allocated by R to be used directly, rather than having to re-allocate
+    memory within C.
+</p>
+
+<p>    The components are described by commments in the source.
+</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">254 </span><span class="keyword">typedef</span> <span class="keyword">struct</span> curve <span class="sign">{</span>
+<span class="line_number">255 </span>    <span class="keyword">int</span> hasSpline<span class="sign">,</span> <span class="comment">//has a spline component</span>
+<span class="line_number">256 </span>         hasPar<span class="sign">,</span> <span class="comment">//has a parametric component</span>
+<span class="line_number">257 </span>         isHazard<span class="sign">,</span> <span class="comment">//whether the curve represents hazard or frailty</span>
+<span class="line_number">258 </span>         SplineOrd<span class="sign">,</span> <span class="comment">// order of the spline</span>
+<span class="line_number">259 </span>         SplineAdaptive<span class="sign">,</span> <span class="comment">// whether the knots should birth/death/move</span>
+<span class="line_number">260 </span>         SplineNknots<span class="sign">,</span> <span class="comment">//spline number of interior knots</span>
+<span class="line_number">261 </span>         SplineNknotsMax<span class="sign">,</span> <span class="comment">// max number of knots</span>
+<span class="line_number">262 </span>         SplineNCandKnots<span class="sign">,</span> <span class="comment">// number of candidate knots</span>
+<span class="line_number">263 </span>         nx<span class="sign">,</span> <span class="comment">//number of observations</span>
+<span class="line_number">264 </span>         nj<span class="sign">,</span> <span class="comment">//number of basis functions (spline)</span>
+<span class="line_number">265 </span>         njmax<span class="sign">,</span> <span class="comment">// max value of nj</span>
+<span class="line_number">266 </span>         np<span class="sign">,</span> <span class="comment">// number of parameters (parametric)</span>
+<span class="line_number">267 </span>         SplineFixedInd<span class="sign">;</span> <span class="comment">// fixed index for frailty spline</span>
+<span class="line_number">268 </span>    <span class="keyword">double</span> SplineFvar<span class="sign">,</span> <span class="comment">// frailty variance</span>
+<span class="line_number">269 </span>           SplineEParSum<span class="sign">;</span> <span class="comment">// sum of exponentials of spline parameters</span>
+<span class="line_number">270 </span>    penalty SplinePenaltyType<span class="sign">;</span> <span class="comment">// (0=none, 1=diff, 2=2deriv, 3=log2der)</span>
+<span class="line_number">271 </span>    distribution ParDist<span class="sign">;</span> <span class="comment">// Parametric distribution function</span>
+<span class="line_number">272 </span>    nknotsprior SplineNknotsPrior<span class="sign">;</span>
+<span class="line_number">273 </span>    <span class="keyword">double</span> <span class="sign">*</span>SplineKnots<span class="sign">,</span> <span class="comment">//Knots of the spline</span>
+<span class="line_number">274 </span>           <span class="sign">*</span>SplineCandKnots<span class="sign">,</span> <span class="comment">// Candidate knots for adaptive spline</span>
+<span class="line_number">275 </span>           <span class="sign">*</span>SplineCandOcc<span class="sign">,</span> <span class="comment">// occupied indices for the spline candidate knots</span>
+<span class="line_number">276 </span>           <span class="sign">*</span>SplineNknotsHyper<span class="sign">,</span> <span class="comment">// parameter for prior on the number of knots</span>
+<span class="line_number">277 </span>           <span class="sign">*</span>SplineBDMConst<span class="sign">,</span> <span class="comment">//Tuning parameter for birth-death-move</span>
+<span class="line_number">278 </span>           <span class="sign">*</span>SplineBasis<span class="sign">,</span> <span class="comment">//Basis of the spline</span>
+<span class="line_number">279 </span>           <span class="sign">*</span>SplineBasisCum<span class="sign">,</span> <span class="comment">//Cumulative basis</span>
+<span class="line_number">280 </span>           <span class="sign">*</span>SplineBasisInt<span class="sign">,</span> <span class="comment">//Integral over the basis functions</span>
+<span class="line_number">281 </span>           <span class="sign">*</span>SplineBasisExp<span class="sign">,</span> <span class="comment">//Expectation of each spline component</span>
+<span class="line_number">282 </span>           <span class="sign">*</span>SplinePar<span class="sign">,</span> <span class="comment">//Spline parameters (theta)</span>
+<span class="line_number">283 </span>           <span class="sign">*</span>SplineEPar<span class="sign">,</span> <span class="comment">// exponential of Spline parameters (theta)</span>
+<span class="line_number">284 </span>           <span class="sign">*</span>SplineMin<span class="sign">,</span> <span class="comment">// minimum recommended parameter value</span>
+<span class="line_number">285 </span>           <span class="sign">*</span>SplinePenaltyMatrix<span class="sign">,</span> <span class="comment">// Penalty matrix on spline parameters</span>
+<span class="line_number">286 </span>           <span class="sign">*</span>SplinePenaltyFactor<span class="sign">,</span> <span class="comment">// Weight factor for smoothness penalty</span>
+<span class="line_number">287 </span>           <span class="sign">*</span>SplineMeanPenalty<span class="sign">,</span> <span class="comment">// penalty on the mean (frailty only)</span>
+<span class="line_number">288 </span>           <span class="sign">*</span>SplinePriorvar<span class="sign">,</span> <span class="comment">//prior variance</span>
+<span class="line_number">289 </span>           <span class="sign">*</span>SplineHyper<span class="sign">,</span> <span class="comment">//Spline Hyperparameters</span>
+<span class="line_number">290 </span>           <span class="sign">*</span>SplineCandCov<span class="sign">,</span> <span class="comment">// Covariance matrix of candidates</span>
+<span class="line_number">291 </span>           <span class="sign">*</span>SplineCandSD<span class="sign">,</span> <span class="comment">// standard deviations of candidates</span>
+<span class="line_number">292 </span>           <span class="sign">*</span>SplineCholCov<span class="sign">,</span> <span class="comment">//Covariance matrix Cholesky decomposition</span>
+<span class="line_number">293 </span>           <span class="sign">*</span>SplineTun<span class="sign">,</span> <span class="comment">// Tuning parameter for spline parameters</span>
+<span class="line_number">294 </span>           <span class="sign">*</span>SplineAccept<span class="sign">,</span> <span class="comment">// Acceptance indicator for spline parameters</span>
+<span class="line_number">295 </span>           <span class="sign">*</span>ParamPar<span class="sign">,</span> <span class="comment">//Parametric component parameters</span>
+<span class="line_number">296 </span>           <span class="sign">*</span>ParamPriorvar<span class="sign">,</span> <span class="comment">// Parametric Prior variance</span>
+<span class="line_number">297 </span>           <span class="sign">*</span>ParamCandCov<span class="sign">,</span> <span class="comment">// Candidate covariance</span>
+<span class="line_number">298 </span>           <span class="sign">*</span>ParamCholCov<span class="sign">,</span> <span class="comment">// Candidate covariance Cholesky</span>
+<span class="line_number">299 </span>           <span class="sign">*</span>ParamTun<span class="sign">,</span> <span class="comment">// Parametric tuning parameter</span>
+<span class="line_number">300 </span>           <span class="sign">*</span>ParamHyper<span class="sign">,</span> <span class="comment">//Parametric hyperparameters</span>
+<span class="line_number">301 </span>           <span class="sign">*</span>ParamAccept<span class="sign">,</span> <span class="comment">// Acceptance indicator for parametric parameters</span>
+<span class="line_number">302 </span>           <span class="sign">*</span>Weight<span class="sign">,</span> <span class="comment">// Weight of spline component</span>
+<span class="line_number">303 </span>           <span class="sign">*</span>WeightPriorvar<span class="sign">,</span> <span class="comment">//Prior variance of weight</span>
+<span class="line_number">304 </span>           <span class="sign">*</span>WeightTun<span class="sign">,</span> <span class="comment">//Tuning parameter for weight</span>
+<span class="line_number">305 </span>           <span class="sign">*</span>WeightHyper<span class="sign">,</span> <span class="comment">//Hyperparameters for weight</span>
+<span class="line_number">306 </span>           <span class="sign">*</span>WeightAccept<span class="sign">,</span> <span class="comment">// Acceptance for weight</span>
+<span class="line_number">307 </span>           <span class="sign">*</span>Accept<span class="sign">,</span> <span class="comment">// Acceptance indicator for x (only used by frailty)</span>
+<span class="line_number">308 </span>           <span class="sign">*</span>tun<span class="sign">,</span> <span class="comment">// Tuning parameter (general)</span>
+<span class="line_number">309 </span>           <span class="sign">*</span>X<span class="sign">,</span> <span class="comment">// Observations</span>
+<span class="line_number">310 </span>           <span class="sign">*</span>SplineY<span class="sign">,</span> <span class="comment">// Spline estimates</span>
+<span class="line_number">311 </span>           <span class="sign">*</span>ParamY<span class="sign">,</span> <span class="comment">// Parametric estimates</span>
+<span class="line_number">312 </span>           <span class="sign">*</span>Y<span class="sign">,</span> <span class="comment">// estimates</span>
+<span class="line_number">313 </span>           <span class="sign">*</span>SplineYcum<span class="sign">,</span> <span class="comment">// Spline cumulative</span>
+<span class="line_number">314 </span>           <span class="sign">*</span>ParamYcum<span class="sign">,</span> <span class="comment">// parametric cumulative</span>
+<span class="line_number">315 </span>           <span class="sign">*</span>Ycum<span class="sign">;</span> <span class="comment">// Cumulative</span>
+<span class="line_number">316 </span><span class="sign">}</span> <span class="sign">*</span>curveP<span class="sign">;</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

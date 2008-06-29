@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCmakeLikelihood.html#robo9">CmakeLikelihood</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo64">CmakeLikelihood/LikelihoodSplineFrailty</a></li>
+</ul>
+<hr />
+<a name="CmakeLikelihood2fLikelihoodSplineFrailty"></a>
+<a name="robo64"></a><h2>CmakeLikelihood/LikelihoodSplineFrailty [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>LikelihoodSplineFrailty</strong> --- likelihood of frailty spline parameters
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute loglikelihood of parameters for the spline component of the frailty curve.
+    See also <a href="../R/splinefrailty_rmakeLikelihood2Fmklik2Espline2Efrail.html#robo135">mklik.spline.frail</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1747 </span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">double</span> <strong>LikelihoodSplineFrailty</strong><span class="sign">(</span>curveP hazard<span class="sign">,</span> curveP frailty<span class="sign">,</span> regressionP regression<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    hazard        <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the hazard
+    frailty       <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the frailty
+    regression    <a href="./mainloop_c01structures2FCRegression.html#robo25">CRegression</a> structure
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    lik    loglikelihood of frailty-&gt;SplinePar
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1751 </span><span class="sign">{</span>
+<span class="line_number">1752 </span>    <span class="comment">// sum of log-hazards</span>
+<span class="line_number">1753 </span>    <span class="keyword">double</span> lik <span class="sign">=</span>  <a href="./mainloop_cCmakeLikelihood2FLikelihoodFrailtyLogSum.html#robo59">LikelihoodFrailtyLogSum</a><span class="sign">(</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">,</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineY<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1754 </span>    <span class="comment">// smoothness penalty</span>
+<span class="line_number">1755 </span>    lik <span class="sign">-</span><span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplinePenaltyFactor<span class="sign">[</span>0<span class="sign">]</span><span class="sign">*</span><a href="./mainloop_cCmakeLikelihood2FSmoothnessPenalty.html#robo68">SmoothnessPenalty</a><span class="sign">(</span>frailty<span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">1756 </span>    <span class="comment">// penalize parameters that are too small or too big</span>
+<span class="line_number">1757 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> lik <span class="sign">-</span><span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">[</span>i<span class="sign">]</span><span class="sign">&lt;</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineMin<span class="sign">[</span>0<span class="sign">]</span> <span class="sign">?</span>
+<span class="line_number">1758 </span>        <span class="keyword">pow</span><span class="sign">(</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">-</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineMin<span class="sign">[</span>0<span class="sign">]</span><span class="sign">,</span>2<span class="sign">)</span> <span class="sign">:</span> 0<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">1759 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> lik <span class="sign">+</span><span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">&gt;</span> <a href="./mainloop_cCDefines2FMAX5FPAR.html#robo50">MAX_PAR</a> <span class="sign">?</span> <span class="sign">-</span>INFINITY<span class="sign">:</span> 0<span class="sign">.</span>0<span class="sign">;</span> 
+<span class="line_number">1760 </span>    <span class="keyword">return</span> lik<span class="sign">;</span>
+<span class="line_number">1761 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

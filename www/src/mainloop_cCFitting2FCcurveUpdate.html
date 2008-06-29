@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_c2FCFitting.html#robo2">CFitting</a><a class="menuitem" href="../robo_modules.html#robo_top_of_doc">Modules</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo7">CFitting/CcurveUpdate</a></li>
+<ul>
+<li>1.1. <a href="./mainloop_cCcurveUpdate2FEvalCurveAtOnePoint.html#robo29">CcurveUpdate/EvalCurveAtOnePoint</a></li>
+<li>1.2. <a href="./mainloop_cCcurveUpdate2FEvalParamAtOnePoint.html#robo30">CcurveUpdate/EvalParamAtOnePoint</a></li>
+<li>1.3. <a href="./mainloop_cCcurveUpdate2FEvalParametric.html#robo31">CcurveUpdate/EvalParametric</a></li>
+<li>1.4. <a href="./mainloop_cCcurveUpdate2FEvalSpline.html#robo32">CcurveUpdate/EvalSpline</a></li>
+<li>1.5. <a href="./mainloop_cCcurveUpdate2FEvalSplineAtOnePoint.html#robo33">CcurveUpdate/EvalSplineAtOnePoint</a></li>
+<li>1.6. <a href="./mainloop_cCcurveUpdate2FFrailtySplineVar.html#robo34">CcurveUpdate/FrailtySplineVar</a></li>
+<li>1.7. <a href="./mainloop_cCcurveUpdate2FMakeSplineBasis.html#robo35">CcurveUpdate/MakeSplineBasis</a></li>
+<li>1.8. <a href="./mainloop_cCcurveUpdate2FPopulateLocalCurve.html#robo36">CcurveUpdate/PopulateLocalCurve</a></li>
+<li>1.9. <a href="./mainloop_cCcurveUpdate2FPopulateLocalHistory.html#robo37">CcurveUpdate/PopulateLocalHistory</a></li>
+<li>1.10. <a href="./mainloop_cCcurveUpdate2FPopulateLocalRegression.html#robo38">CcurveUpdate/PopulateLocalRegression</a></li>
+<li>1.11. <a href="./mainloop_cCcurveUpdate2FRemakeSplineBasis.html#robo39">CcurveUpdate/RemakeSplineBasis</a></li>
+<li>1.12. <a href="./mainloop_cCcurveUpdate2FReweightCurve.html#robo40">CcurveUpdate/ReweightCurve</a></li>
+<li>1.13. <a href="./mainloop_cCcurveUpdate2FUpdateCurveX.html#robo41">CcurveUpdate/UpdateCurveX</a></li>
+<li>1.14. <a href="./mainloop_cCcurveUpdate2FUpdateParamPar.html#robo42">CcurveUpdate/UpdateParamPar</a></li>
+<li>1.15. <a href="./mainloop_cCcurveUpdate2FUpdateSplineBasis.html#robo43">CcurveUpdate/UpdateSplineBasis</a></li>
+<li>1.16. <a href="./mainloop_cCcurveUpdate2FUpdateSplinePar.html#robo44">CcurveUpdate/UpdateSplinePar</a></li>
+</ul>
+</ul>
+<hr />
+<a name="CFitting2fCcurveUpdate"></a>
+<a name="robo7"></a><h2>CFitting/CcurveUpdate [ Modules ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>  <strong>CcurveUpdate</strong> --- update curves
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>  Functions to re-estimate and update curves in the course of estimation.
+</p>
+<p class="item_name">CONTENTS</p>
+<pre>  <a href="./mainloop_cCcurveUpdate2FEvalCurveAtOnePoint.html#robo29">EvalCurveAtOnePoint</a> --- evaluate a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> at a single point
+  <a href="./mainloop_cCcurveUpdate2FEvalParamAtOnePoint.html#robo30">EvalParamAtOnePoint</a> --- evaluate parametric component at a single point
+  <a href="./mainloop_cCcurveUpdate2FEvalParametric.html#robo31">EvalParametric</a> --- evaluate the parametric component of a curve with new parameters
+  <a href="./mainloop_cCcurveUpdate2FEvalSpline.html#robo32">EvalSpline</a> --- evaluate spline component
+  <a href="./mainloop_cCcurveUpdate2FEvalSplineAtOnePoint.html#robo33">EvalSplineAtOnePoint</a> --- evaluate spline at a given value of x
+  <a href="./mainloop_cCcurveUpdate2FFrailtySplineVar.html#robo34">FrailtySplineVar</a> --- compute frailty variance of a spline component
+  <a href="./mainloop_cCcurveUpdate2FMakeSplineBasis.html#robo35">MakeSplineBasis</a> --- make a the spline basis from scratch
+  <a href="./mainloop_cCcurveUpdate2FPopulateLocalCurve.html#robo36">PopulateLocalCurve</a> --- populate a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure from an <a href="../R/splinefrailty_r01structures2FRCurve.html#robo26">RCurve</a>
+  <a href="./mainloop_cCcurveUpdate2FPopulateLocalHistory.html#robo37">PopulateLocalHistory</a> --- populate a local <a href="./mainloop_c01structures2FCHistory.html#robo24">CHistory</a> curve
+  <a href="./mainloop_cCcurveUpdate2FPopulateLocalRegression.html#robo38">PopulateLocalRegression</a> --- populate a local <a href="../R/splinefrailty_r01structures2FRRegression.html#robo28">RRegression</a> structure
+  <a href="./mainloop_cCcurveUpdate2FRemakeSplineBasis.html#robo39">RemakeSplineBasis</a> --- update spline basis after a birth-death-move operation
+  <a href="./mainloop_cCcurveUpdate2FReweightCurve.html#robo40">ReweightCurve</a> --- weight a curve's parametric and spline components
+  <a href="./mainloop_cCcurveUpdate2FUpdateCurveX.html#robo41">UpdateCurveX</a> --- change an X value of a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure
+  <a href="./mainloop_cCcurveUpdate2FUpdateParamPar.html#robo42">UpdateParamPar</a> --- update parametric component with new parameters
+  <a href="./mainloop_cCcurveUpdate2FUpdateSplineBasis.html#robo43">UpdateSplineBasis</a> --- recompute basis if one of the X values changes
+  <a href="./mainloop_cCcurveUpdate2FUpdateSplinePar.html#robo44">UpdateSplinePar</a> --- update the spline parameters
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

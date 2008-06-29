@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo29">CcurveUpdate/EvalCurveAtOnePoint</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fEvalCurveAtOnePoint"></a>
+<a name="robo29"></a><h2>CcurveUpdate/EvalCurveAtOnePoint [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>EvalCurveAtOnePoint</strong> --- evaluate a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> at a single point
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Given a point x, compute the value of the curve at that point, even if it is
+    not included in the curve's set of observations.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1482 </span><span class="keyword">double</span> <strong>EvalCurveAtOnePoint</strong><span class="sign">(</span>curveP theCurve<span class="sign">,</span> <span class="keyword">double</span> x<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    theCurve      <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> to be evaluated
+    x             double, point at which to evaluate it.
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    y             <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> evaluated at x
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1486 </span><span class="sign">{</span>
+<span class="line_number">1487 </span>    <span class="comment">// this would actually work on frailties, I think, but it never gets called</span>
+<span class="line_number">1488 </span>    <span class="comment">// for frailties, so I just put this in as a safeguard.</span>
+<span class="line_number">1489 </span>    <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"Error: using <strong>EvalCurveAtOnePoint</strong> on hazard"</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1490 </span>    <span class="comment">// evaluate spline component</span>
+<span class="line_number">1491 </span>    <span class="keyword">double</span> splY<span class="sign">=</span><a href="./mainloop_cCcurveUpdate2FEvalSplineAtOnePoint.html#robo33">EvalSplineAtOnePoint</a><span class="sign">(</span>theCurve<span class="sign">,</span>x<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1492 </span>    <span class="comment">// evaluate parametric component</span>
+<span class="line_number">1493 </span>    <span class="keyword">double</span> parY<span class="sign">=</span><a href="./mainloop_cCcurveUpdate2FEvalParamAtOnePoint.html#robo30">EvalParamAtOnePoint</a><span class="sign">(</span>theCurve<span class="sign">,</span>x<span class="sign">,</span>0<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1494 </span>    <span class="comment">// weight the two components</span>
+<span class="line_number">1495 </span>    <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasPar <span class="sign">&amp;</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span>
+<span class="line_number">1496 </span>        <span class="keyword">return</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>Weight<span class="sign">[</span>0<span class="sign">]</span> <span class="sign">*</span> splY <span class="sign">+</span> <span class="sign">(</span>1<span class="sign">-</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>Weight<span class="sign">[</span>0<span class="sign">]</span><span class="sign">)</span><span class="sign">*</span>parY<span class="sign">;</span>
+<span class="line_number">1497 </span>    <span class="keyword">else</span> <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasPar<span class="sign">)</span>
+<span class="line_number">1498 </span>        <span class="keyword">return</span> parY<span class="sign">;</span>
+<span class="line_number">1499 </span>    <span class="keyword">else</span> <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>hasSpline<span class="sign">)</span>
+<span class="line_number">1500 </span>        <span class="keyword">return</span> splY<span class="sign">;</span>
+<span class="line_number">1501 </span>    <span class="keyword">else</span> <span class="keyword">return</span> 0<span class="sign">;</span>
+<span class="line_number">1502 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

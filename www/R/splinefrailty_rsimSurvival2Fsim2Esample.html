@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FsimSurvival.html#robo6">simSurvival</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo178">simSurvival/sim.sample</a></li>
+</ul>
+<hr />
+<a name="simSurvival2fsim2esample"></a>
+<a name="robo178"></a><h2>simSurvival/sim.sample [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>sim.sample</strong> --- main simulation function
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Generate a simulated sample of survival data
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">788 </span><strong>sim.sample</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>m <span class="sign">=</span> 10<span class="sign">,</span> Ji <span class="sign">=</span> <span class="keyword">rep</span><span class="sign">(</span>5<span class="sign">,</span> 10<span class="sign">)</span><span class="sign">,</span> params <span class="sign">=</span> NULL<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    m      number of clusters
+    Ji     cluster size
+    params a list with multiple optional components. If any
+           of these is not given, defaults are used.
+       beta        "true" regression coefficient
+       haz.type    type of baseline hazard (see <a href="./splinefrailty_rsimSurvival2Fgenerateevents.html#robo173">generateevents</a>)
+       haz.params  parameters for baseline hazard
+       frail.type  type of frailty distribution (see <a href="./splinefrailty_rsimSurvival2Fgeneraterandom.html#robo174">generaterandom</a>)
+       frail.params    parameters for frailty
+       Z.type      type of covariate
+       Z.params    params for covariate
+       C.type      type of censoring process
+       C.params    params for censoring
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    agdata     An A-G data frame containing a simulated sample
+    Ui         "true" frailties for the sample
+    params     parameters used to generate the sample
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">791 </span><span class="sign">{</span>
+<span class="line_number">792 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>Ji<span class="sign">)</span> <span class="sign">=</span><span class="sign">=</span> 1<span class="sign">)</span> Ji <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rep</span><span class="sign">(</span>Ji<span class="sign">,</span> m<span class="sign">)</span>
+<span class="line_number">793 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>Ji<span class="sign">)</span> <span class="sign">!</span><span class="sign">=</span> m<span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"Length of Ji does not match m"</span><span class="sign">)</span>
+<span class="line_number">794 </span>    params<span class="sign">.</span>in <span class="sign">&lt;</span><span class="sign">-</span> params
+<span class="line_number">795 </span>    <span class="comment">#   Default parameters</span>
+<span class="line_number">796 </span>    params<span class="sign">.</span>default <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">list</span><span class="sign">(</span>
+<span class="line_number">797 </span>        beta <span class="sign">=</span> 1<span class="sign">,</span>
+<span class="line_number">798 </span>        haz<span class="sign">.</span>type <span class="sign">=</span> <span class="quote">"weibull"</span><span class="sign">,</span>
+<span class="line_number">799 </span>        haz<span class="sign">.</span>params <span class="sign">=</span> <span class="keyword">list</span><span class="sign">(</span>lambda0 <span class="sign">=</span> 1<span class="sign">,</span> gamweib <span class="sign">=</span> 1<span class="sign">.</span>8<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">800 </span>        frail<span class="sign">.</span>type <span class="sign">=</span> <span class="quote">"lognormal"</span><span class="sign">,</span>
+<span class="line_number">801 </span>        frail<span class="sign">.</span>params <span class="sign">=</span> <span class="keyword">list</span><span class="sign">(</span>mu <span class="sign">=</span> 1<span class="sign">,</span> sigma2<span class="sign">=</span><span class="sign">.</span>25<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">802 </span>        Z<span class="sign">.</span>type <span class="sign">=</span> <span class="quote">"normal"</span><span class="sign">,</span>
+<span class="line_number">803 </span>        Z<span class="sign">.</span>params <span class="sign">=</span> <span class="keyword">list</span><span class="sign">(</span>mu <span class="sign">=</span> 0<span class="sign">,</span> sigma2 <span class="sign">=</span> 1<span class="sign">)</span><span class="sign">,</span>
+<span class="line_number">804 </span>        C<span class="sign">.</span>type <span class="sign">=</span> <span class="quote">"weibull"</span><span class="sign">,</span>
+<span class="line_number">805 </span>        C<span class="sign">.</span>params <span class="sign">=</span> <span class="keyword">list</span><span class="sign">(</span>lambda0 <span class="sign">=</span> 1<span class="sign">,</span> gamweib <span class="sign">=</span> 1<span class="sign">.</span>8<span class="sign">)</span>
+<span class="line_number">806 </span>    <span class="sign">)</span>
+<span class="line_number">807 </span>    params <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">.</span>default
+<span class="line_number">808 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>is<span class="sign">.</span>null<span class="sign">(</span>params<span class="sign">.</span>in<span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">809 </span>        <span class="keyword">for</span><span class="sign">(</span>n in names<span class="sign">(</span>params<span class="sign">.</span>in<span class="sign">)</span><span class="sign">)</span> eval<span class="sign">(</span>parse<span class="sign">(</span>text <span class="sign">=</span> paste<span class="sign">(</span><span class="quote">"params$"</span><span class="sign">,</span> n<span class="sign">,</span> <span class="quote">" &lt;- params.in$"</span><span class="sign">,</span> 
+<span class="line_number">810 </span>            n<span class="sign">,</span> sep <span class="sign">=</span> <span class="quote">""</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">811 </span>        <span class="keyword">if</span><span class="sign">(</span>params<span class="sign">.</span>in<span class="sign">$</span>haz<span class="sign">.</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"bspline"</span> <span class="sign">&amp;</span> is<span class="sign">.</span>null<span class="sign">(</span>params<span class="sign">.</span>in<span class="sign">$</span>haz<span class="sign">.</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">812 </span>            tmax <span class="sign">=</span> 3<span class="sign">;</span>
+<span class="line_number">813 </span>            N <span class="sign">=</span> 4
+<span class="line_number">814 </span>            b <span class="sign">&lt;</span><span class="sign">-</span> bs<span class="sign">(</span>0<span class="sign">,</span> knots <span class="sign">=</span> seq<span class="sign">(</span>from <span class="sign">=</span> 0<span class="sign">,</span> to <span class="sign">=</span> tmax<span class="sign">,</span> <span class="keyword">length</span> <span class="sign">=</span> N <span class="sign">+</span> 1<span class="sign">)</span><span class="sign">[</span> <span class="sign">-</span> <span class="sign">(</span>N <span class="sign">+</span> 1<span class="sign">)</span><span class="sign">]</span><span class="sign">,</span> 
+<span class="line_number">815 </span>                Boundary<span class="sign">.</span>knots <span class="sign">=</span> c<span class="sign">(</span>0<span class="sign">,</span> 2<span class="sign">)</span><span class="sign">,</span> degree <span class="sign">=</span> 3<span class="sign">)</span>
+<span class="line_number">816 </span>            w <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span><span class="sign">.</span>3<span class="sign">,</span> <span class="sign">.</span>2<span class="sign">,</span> <span class="sign">.</span>4<span class="sign">,</span> <span class="sign">.</span>2<span class="sign">,</span> <span class="sign">.</span>6<span class="sign">,</span> <span class="sign">.</span>8<span class="sign">,</span> 1<span class="sign">)</span> <span class="sign">*</span> 4
+<span class="line_number">817 </span>            params<span class="sign">$</span>haz<span class="sign">.</span>params <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">list</span><span class="sign">(</span>b <span class="sign">=</span> b<span class="sign">,</span> w <span class="sign">=</span> w<span class="sign">)</span>
+<span class="line_number">818 </span>        <span class="sign">}</span>
+<span class="line_number">819 </span>    <span class="sign">}</span>
+<span class="line_number">820 </span>    <span class="comment"># Make covariates</span>
+<span class="line_number">821 </span>    Zij <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rsimSurvival2Fgeneraterandom.html#robo174">generaterandom</a><span class="sign">(</span><span class="keyword">sum</span><span class="sign">(</span>Ji<span class="sign">)</span><span class="sign">,</span> params<span class="sign">$</span>Z<span class="sign">.</span>type<span class="sign">,</span> params<span class="sign">$</span>Z<span class="sign">.</span>params<span class="sign">)</span>
+<span class="line_number">822 </span>    <span class="comment"># Make censoring</span>
+<span class="line_number">823 </span>    Cij <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rsimSurvival2Fgeneraterandom.html#robo174">generaterandom</a><span class="sign">(</span><span class="keyword">sum</span><span class="sign">(</span>Ji<span class="sign">)</span><span class="sign">,</span> params<span class="sign">$</span>C<span class="sign">.</span>type<span class="sign">,</span> params<span class="sign">$</span>C<span class="sign">.</span>params<span class="sign">)</span>
+<span class="line_number">824 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>is<span class="sign">.</span>null<span class="sign">(</span>params<span class="sign">$</span>C<span class="sign">.</span>max<span class="sign">)</span><span class="sign">)</span> Cij<span class="sign">[</span>Cij <span class="sign">&gt;</span> params<span class="sign">$</span>C<span class="sign">.</span>max<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>C<span class="sign">.</span>max
+<span class="line_number">825 </span>    <span class="comment"># Make frailties</span>
+<span class="line_number">826 </span>    Ui <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rsimSurvival2Fgeneraterandom.html#robo174">generaterandom</a><span class="sign">(</span>m<span class="sign">,</span> params<span class="sign">$</span>frail<span class="sign">.</span>type<span class="sign">,</span> params<span class="sign">$</span>frail<span class="sign">.</span>params<span class="sign">)</span>
+<span class="line_number">827 </span>    <span class="comment"># Make event times</span>
+<span class="line_number">828 </span>    Tij <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rsimSurvival2Fgenerateevents.html#robo173">generateevents</a><span class="sign">(</span>m<span class="sign">,</span> Ji<span class="sign">,</span> params<span class="sign">$</span>beta<span class="sign">,</span> Ui<span class="sign">,</span> Zij<span class="sign">,</span> params<span class="sign">$</span>haz<span class="sign">.</span>type<span class="sign">,</span> params<span class="sign">$</span>haz<span class="sign">.</span>params<span class="sign">)</span>
+<span class="line_number">829 </span>    <span class="comment"># Make event indicators</span>
+<span class="line_number">830 </span>    deltaij <span class="sign">&lt;</span><span class="sign">-</span> as<span class="sign">.</span>numeric<span class="sign">(</span>Tij <span class="sign">&lt;</span> Cij<span class="sign">)</span>
+<span class="line_number">831 </span>    <span class="comment"># apply censoring</span>
+<span class="line_number">832 </span>    Tij<span class="sign">[</span>deltaij <span class="sign">=</span><span class="sign">=</span> 0<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> Cij<span class="sign">[</span>deltaij <span class="sign">=</span><span class="sign">=</span> 0<span class="sign">]</span>
+<span class="line_number">833 </span>    
+<span class="line_number">834 </span>    <span class="comment"># make output data frame</span>
+<span class="line_number">835 </span>    agdata <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rsimSurvival2Fmakeagdata.html#robo175">makeagdata</a><span class="sign">(</span>m<span class="sign">,</span> Ji<span class="sign">,</span> Tij<span class="sign">,</span> deltaij<span class="sign">,</span> data<span class="sign">.</span>frame<span class="sign">(</span>Z <span class="sign">=</span> Zij<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">836 </span>    <span class="keyword">return</span><span class="sign">(</span><span class="keyword">list</span><span class="sign">(</span>agdata <span class="sign">=</span> agdata<span class="sign">,</span> Ui <span class="sign">=</span> Ui<span class="sign">,</span> params <span class="sign">=</span> params<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">837 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

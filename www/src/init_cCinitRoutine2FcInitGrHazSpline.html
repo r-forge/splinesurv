@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./init_cinitRoutine2FCinitRoutine.html#robo13">CinitRoutine</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo52">CinitRoutine/cInitGrHazSpline</a></li>
+</ul>
+<hr />
+<a name="CinitRoutine2fcInitGrHazSpline"></a>
+<a name="robo52"></a><h2>CinitRoutine/cInitGrHazSpline [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>cInitGrHazSpline</strong> --- gradient of likelihood of spline parameters for hazard
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute the gradient of the loglikelihood of parameters of the hazard spline component,
+    called by <a href="../R/splinefrailty_rCWrappers2Fcmkgr2Espline2Ehaz.html#robo116">cmkgr.spline.haz</a> during initialization only.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">625 </span><span class="keyword">void</span> <strong>cInitGrHazSpline</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>gr<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>par<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>status<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>lp<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>frailrep<span class="sign">,</span>
+<span class="line_number">626 </span>    <span class="keyword">double</span> <span class="sign">*</span>hazParY<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>hazParYcum<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>weight<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>B<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>C<span class="sign">,</span>
+<span class="line_number">627 </span>    <span class="keyword">double</span> <span class="sign">*</span>P<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>penaltyType<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>sigma2<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ny<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nj<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>   see <a href="../R/splinefrailty_rCWrappers2Fcmkgr2Espline2Ehaz.html#robo116">cmkgr.spline.haz</a> for inputs and outputs.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">631 </span><span class="sign">{</span>
+<span class="line_number">632 </span>    <span class="keyword">double</span> <span class="sign">*</span> epar <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*nj) * sizeof(double));
+<span class="line_number">633 </span>    double * hazY = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">634 </span>    double * temp = (double *)</span> <span class="keyword">malloc</span><span class="sign">(</span><span class="comment">(*ny) * sizeof(double));
+<span class="line_number">635 </span>    const int c1 = 1;
+<span class="line_number">636 </span>    F77_CALL(dcopy)(ny, hazParY, &amp;c1, hazY, &amp;c1);
+<span class="line_number">637 </span>    for(int i=0; i&lt; *nj; i++) epar[i]=exp(par[i]);
+<span class="line_number">638 </span>    const double c1d=1;
+<span class="line_number">639 </span>    const double cm1d=-1;
+<span class="line_number">640 </span>    <a href="./init_cCinitRoutine2FcInitMultAndWeight.html#robo55">cInitMultAndWeight</a>( hazY, B, epar, weight, ny, nj);
+<span class="line_number">641 </span>    const char trans = 'T';
+<span class="line_number">642 </span>    for(int i=0; i&lt;*ny; i++) hazY[i]=status[i]/hazY[i]; 
+<span class="line_number">643 </span>    for(int i=0; i&lt;*ny; i++) temp[i]=exp(lp[i])*frailrep[i]; 
+<span class="line_number">644 </span>    F77_CALL(dgemv)(&amp;trans,ny,nj,&amp;c1d,B,ny,hazY,&amp;c1,&amp;c1d,gr,&amp;c1);
+<span class="line_number">645 </span>    F77_CALL(dgemv)(&amp;trans,ny,nj,&amp;cm1d,C,ny,temp,&amp;c1,&amp;c1d,gr,&amp;c1);
+<span class="line_number">646 </span>    for(int i=0; i&lt;*nj; i++) gr[i]=gr[i]*epar[i] * *weight;
+<span class="line_number">647 </span>    double *penpar = ((*penaltyType==2) | (*penaltyType==3))  ? epar : par;
+<span class="line_number">648 </span>    <a href="./init_cCinitRoutine2FaddInitSmoothnessPenaltyGr.html#robo51">addInitSmoothnessPenaltyGr</a>(gr, penpar, P, penaltyType, sigma2, nj);
+<span class="line_number">649 </span>    free(epar);
+<span class="line_number">650 </span>    free(hazY);
+<span class="line_number">651 </span>    free(temp);
+<span class="line_number">652 </span>}
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

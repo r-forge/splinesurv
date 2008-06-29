@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/init.c</title>
+<!-- Source: ./splinesurv/src/init.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCsplineUtils.html#robo12">CsplineUtils</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo95">CsplineUtils/cevalCinte</a></li>
+</ul>
+<hr />
+<a name="CsplineUtils2fcevalCinte"></a>
+<a name="robo95"></a><h2>CsplineUtils/cevalCinte [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>cevalCinte</strong> --- construct matrix of partial integrals of a B-spline basis
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This is needed to compute the cumulative baseline hazard. This function updates the input matrix 
+    cinte, so that cinte[i,j] contains the
+    integral of the j-th B-spline basis function of order ord, defined on the given knots,
+    from 0 to x[i]. It's just a wrapper for <a href="./init_cCsplineUtils2FcevalCinte2.html#robo96">cevalCinte2</a> that evaluates the entire matrix.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">311 </span><span class="keyword">void</span> <strong>cevalCinte</strong><span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span>cinte<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>x<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>nx<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>knots<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>ord<span class="sign">,</span> <span class="keyword">int</span> <span class="sign">*</span>K<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>binte<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    cinte     output matrix of dimension nx x nj
+    x         vector of observations at which to evaluate
+    nx        length of x
+    knots     vector of knot positions, length nj+ord
+    ord       order of the spline
+    binte     vector of integrals of each B-spline basis function, see <a href="./init_cCsplineUtils2FcevalBinte.html#robo94">cevalBinte</a>
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">315 </span><span class="sign">{</span>
+<span class="line_number">316 </span>    <span class="keyword">int</span> nj <span class="sign">=</span> <span class="sign">*</span>K <span class="sign">+</span> <span class="sign">*</span>ord<span class="sign">;</span>
+<span class="line_number">317 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span><span class="sign">*</span>nx<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> <a href="./init_cCsplineUtils2FcevalCinte2.html#robo96">cevalCinte2</a><span class="sign">(</span>cinte<span class="sign">,</span> x<span class="sign">,</span> <span class="sign">*</span>nx<span class="sign">,</span> knots<span class="sign">,</span> nj<span class="sign">,</span> <span class="sign">*</span>ord<span class="sign">,</span> binte<span class="sign">,</span> i<span class="sign">,</span> 0<span class="sign">,</span> nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">318 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/init.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

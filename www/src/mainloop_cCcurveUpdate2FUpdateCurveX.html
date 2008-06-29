@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCcurveUpdate.html#robo7">CcurveUpdate</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo41">CcurveUpdate/UpdateCurveX</a></li>
+</ul>
+<hr />
+<a name="CcurveUpdate2fUpdateCurveX"></a>
+<a name="robo41"></a><h2>CcurveUpdate/UpdateCurveX [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>UpdateCurveX</strong> --- change an X value of a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Changes theCurve-&gt;X[i] to x, and updates Y[i] accordingly
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1516 </span><span class="keyword">void</span> <strong>UpdateCurveX</strong><span class="sign">(</span>curveP theCurve<span class="sign">,</span> <span class="keyword">double</span> x<span class="sign">,</span> <span class="keyword">int</span> i<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    theCurve      a <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure
+    x             double, to replace theCurve-&gt;X[i]
+    i             index between 0 and theCurve-&gt;nx
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1520 </span><span class="sign">{</span>
+<span class="line_number">1521 </span>    <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>isHazard<span class="sign">)</span> Rprintf<span class="sign">(</span><span class="quote">"Error: using <strong>UpdateCurveX</strong> on hazard."</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1522 </span>    <span class="comment">// copy x into theCurve</span>
+<span class="line_number">1523 </span>    theCurve<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> x<span class="sign">;</span>
+<span class="line_number">1524 </span>    <span class="comment">// re-evaluate the curve basis and values</span>
+<span class="line_number">1525 </span>    <a href="./mainloop_cCcurveUpdate2FUpdateSplineBasis.html#robo43">UpdateSplineBasis</a><span class="sign">(</span>theCurve<span class="sign">,</span> i<span class="sign">,</span> 0<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1526 </span>    <a href="./mainloop_cCcurveUpdate2FEvalSpline.html#robo32">EvalSpline</a><span class="sign">(</span>theCurve<span class="sign">,</span>i<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1527 </span>    <a href="./mainloop_cCcurveUpdate2FEvalParametric.html#robo31">EvalParametric</a><span class="sign">(</span>theCurve<span class="sign">,</span>i<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1528 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

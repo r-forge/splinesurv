@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FRFitting.html#robo4">RFitting</a><a class="menuitem" href="../robo_modules.html#robo_top_of_doc">Modules</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo16">RFitting/makeLikelihood</a></li>
+<ul>
+<li>1.1. <a href="./splinefrailty_rmakeLikelihood2Fmkgr2Espline2Ehaz.html#robo129">makeLikelihood/mkgr.spline.haz</a></li>
+<li>1.2. <a href="./splinefrailty_rmakeLikelihood2Fmkhess2Ecoef.html#robo130">makeLikelihood/mkhess.coef</a></li>
+<li>1.3. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Ecoef.html#robo131">makeLikelihood/mklik.coef</a></li>
+<li>1.4. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Efrail.html#robo132">makeLikelihood/mklik.frail</a></li>
+<li>1.5. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eparam2Efrail.html#robo133">makeLikelihood/mklik.param.frail</a></li>
+<li>1.6. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eparam2Ehaz.html#robo134">makeLikelihood/mklik.param.haz</a></li>
+<li>1.7. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Espline2Efrail.html#robo135">makeLikelihood/mklik.spline.frail</a></li>
+<li>1.8. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Espline2Efrail2Einit.html#robo136">makeLikelihood/mklik.spline.frail.init</a></li>
+<li>1.9. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Espline2Ehaz.html#robo137">makeLikelihood/mklik.spline.haz</a></li>
+<li>1.10. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eweight2Efrail.html#robo138">makeLikelihood/mklik.weight.frail</a></li>
+<li>1.11. <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eweight2Ehaz.html#robo139">makeLikelihood/mklik.weight.haz</a></li>
+<li>1.12. <a href="./splinefrailty_rmakeLikelihood2Fsmoothpen.html#robo140">makeLikelihood/smoothpen</a></li>
+</ul>
+</ul>
+<hr />
+<a name="RFitting2fmakeLikelihood"></a>
+<a name="robo16"></a><h2>RFitting/makeLikelihood [ Modules ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>   <strong>makeLikelihood</strong> --- Compute likelihoods of parameters
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>   Compute parameter likelihoods for use in Metropolis-Hastings steps
+</p>
+<p class="item_name">CONTENTS</p>
+<pre>    <a href="./splinefrailty_rmakeLikelihood2Fmkgr2Espline2Ehaz.html#robo129">mkgr.spline.haz</a> --- gradient of hazard spline parameters
+    <a href="./splinefrailty_rmakeLikelihood2Fmkhess2Ecoef.html#robo130">mkhess.coef</a> --- hessian of regression coefficients
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Ecoef.html#robo131">mklik.coef</a> --- likelihood of regression coefficients
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Efrail.html#robo132">mklik.frail</a> --- likelihood of frailty for cluster i
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eparam2Efrail.html#robo133">mklik.param.frail</a> --- likelihood of parametric component for frailty
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eparam2Ehaz.html#robo134">mklik.param.haz</a> --- likelihood of parametric component parameters for hazard
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Espline2Efrail.html#robo135">mklik.spline.frail</a> --- likelihood of frailty spline parameters
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Espline2Efrail2Einit.html#robo136">mklik.spline.frail.init</a> --- likelihood of frailty spline parameters (initialization)
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Espline2Ehaz.html#robo137">mklik.spline.haz</a> --- likelihood of hazard spline parameters
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eweight2Efrail.html#robo138">mklik.weight.frail</a> --- likelihood of weight of spline component for frailty
+    <a href="./splinefrailty_rmakeLikelihood2Fmklik2Eweight2Ehaz.html#robo139">mklik.weight.haz</a> --- likelihood of weight of spline component for hazard
+    <a href="./splinefrailty_rmakeLikelihood2Fsmoothpen.html#robo140">smoothpen</a> --- compute the smoothness penalty for a curve
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

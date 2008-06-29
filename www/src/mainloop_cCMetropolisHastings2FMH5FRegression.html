@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCMetropolisHastings.html#robo10">CMetropolisHastings</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo74">CMetropolisHastings/MH_Regression</a></li>
+</ul>
+<hr />
+<a name="CMetropolisHastings2fMH5fRegression"></a>
+<a name="robo74"></a><h2>CMetropolisHastings/MH_Regression [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>MH_Regression</strong> --- MH step for regression coefficients
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Update the regression coefficients by Metropolis-Hastings. See also <a href="../R/splinefrailty_rMetropolisHastings2Fmh2Ecoef.html#robo144">mh.coef</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">2012 </span><span class="keyword">void</span> <strong>MH_Regression</strong><span class="sign">(</span>curveP hazard<span class="sign">,</span> curveP frailty<span class="sign">,</span> regressionP regression<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    hazard        <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the hazard
+    frailty       <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the frailty
+    regression    <a href="./mainloop_c01structures2FCRegression.html#robo25">CRegression</a> structure
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">2016 </span><span class="sign">{</span>
+<span class="line_number">2017 </span>    <span class="keyword">double</span> baselik<span class="sign">,</span> candlik<span class="sign">;</span>
+<span class="line_number">2018 </span>    <span class="comment">// base likelihood</span>
+<span class="line_number">2019 </span>    baselik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodRegression.html#robo63">LikelihoodRegression</a><span class="sign">(</span>hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2020 </span>    <span class="keyword">double</span> <span class="sign">*</span> cand <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">calloc</span><span class="sign">(</span> regression<span class="sign">-</span><span class="sign">&gt;</span>p<span class="sign">,</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2021 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldlp <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> regression<span class="sign">-</span><span class="sign">&gt;</span>n <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2022 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldelp <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> regression<span class="sign">-</span><span class="sign">&gt;</span>n <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2023 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldfrailelp <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> regression<span class="sign">-</span><span class="sign">&gt;</span>n <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2024 </span>    <span class="keyword">double</span> <span class="sign">*</span> oldcoef <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">malloc</span><span class="sign">(</span> regression<span class="sign">-</span><span class="sign">&gt;</span>p <span class="sign">*</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2025 </span>    <span class="comment">// store the old regression information</span>
+<span class="line_number">2026 </span>    char trans <span class="sign">=</span> <span class="squote">'N'</span><span class="sign">;</span> <span class="keyword">double</span> c0 <span class="sign">=</span> 0<span class="sign">;</span> <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span> <span class="keyword">double</span> c1d <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">2027 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>p<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>coefficients<span class="sign">,</span> oldcoef<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2028 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>lp<span class="sign">,</span> oldlp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2029 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">,</span> oldelp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2030 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>frailelp<span class="sign">,</span> oldfrailelp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2031 </span>    <span class="comment">//generate candidate parameters</span>
+<span class="line_number">2032 </span>    <a href="./mainloop_cCmiscUtils2Fmvrnorm.html#robo91">mvrnorm</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>p<span class="sign">,</span> cand<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>coefficients<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>CholCov<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>tun<span class="sign">[</span>0<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span> 
+<span class="line_number">2033 </span>    <span class="comment">// Change the regression object with the new lp and elps</span>
+<span class="line_number">2034 </span>    <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>p<span class="sign">,</span> cand<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>coefficients<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2035 </span>    F77_CALL<span class="sign">(</span>dgemv<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span>trans<span class="sign">,</span> <span class="sign">&amp;</span><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>p<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span>c1d<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>covariates<span class="sign">,</span>
+<span class="line_number">2036 </span>            <span class="sign">&amp;</span><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">)</span><span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>coefficients<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> <span class="sign">&amp;</span>c0<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>lp<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2037 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i <span class="sign">&lt;</span> regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> regression<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> <span class="keyword">exp</span><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>lp<span class="sign">[</span>i<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2038 </span>    <a href="./mainloop_cCmiscUtils2FdiagmvWrapper.html#robo83">diagmvWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>frailrep<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>frailelp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2039 </span>    candlik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodRegression.html#robo63">LikelihoodRegression</a><span class="sign">(</span>hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2040 </span>    <span class="keyword">int</span> acc <span class="sign">=</span> <a href="./mainloop_cCMetropolisHastings2FAcceptReject.html#robo69">AcceptReject</a><span class="sign">(</span>baselik<span class="sign">,</span> candlik<span class="sign">,</span> 1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2041 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>acc<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">2042 </span>        <span class="comment">// not accepted, so restore old regression</span>
+<span class="line_number">2043 </span>        <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>p<span class="sign">,</span> oldcoef<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>coefficients<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2044 </span>        <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> oldlp<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>lp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2045 </span>        <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> oldelp<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2046 </span>        <a href="./mainloop_cCmiscUtils2FdcopyWrapper.html#robo80">dcopyWrapper</a><span class="sign">(</span>regression<span class="sign">-</span><span class="sign">&gt;</span>n<span class="sign">,</span> oldfrailelp<span class="sign">,</span> regression<span class="sign">-</span><span class="sign">&gt;</span>frailelp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2047 </span>    <span class="sign">}</span>
+<span class="line_number">2048 </span>    regression<span class="sign">-</span><span class="sign">&gt;</span>Accept<span class="sign">[</span>0<span class="sign">]</span> <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span> acc<span class="sign">;</span> 
+<span class="line_number">2049 </span>    <span class="keyword">free</span><span class="sign">(</span>cand<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2050 </span>    <span class="keyword">free</span><span class="sign">(</span>oldlp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2051 </span>    <span class="keyword">free</span><span class="sign">(</span>oldelp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2052 </span>    <span class="keyword">free</span><span class="sign">(</span>oldfrailelp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2053 </span>    <span class="keyword">free</span><span class="sign">(</span>oldcoef<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">2054 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:49
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

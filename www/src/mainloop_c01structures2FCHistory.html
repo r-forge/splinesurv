@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="../R/splinefrailty_r2F01structures.html#robo1">01structures</a><a class="menuitem" href="../robo_definitions.html#robo_top_of_doc">Definitions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo24">01structures/CHistory</a></li>
+</ul>
+<hr />
+<a name="01structures2fCHistory"></a>
+<a name="robo24"></a><h2>01structures/CHistory [ Definitions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>CHistory</strong> --- structure to store MCMC history
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    This structure contains the state of the chain after every stored iteration.
+</p>
+
+<p>    The components are described by commments in the source.
+</p>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">363 </span><span class="keyword">typedef</span> <span class="keyword">struct</span> hist <span class="sign">{</span>
+<span class="line_number">364 </span>    <span class="keyword">int</span> ny<span class="sign">;</span> <span class="comment">// number of iterations</span>
+<span class="line_number">365 </span>    <span class="keyword">double</span> <span class="sign">*</span>frailty<span class="sign">,</span> <span class="comment">// values of the frailties</span>
+<span class="line_number">366 </span>           <span class="sign">*</span>coefficients<span class="sign">,</span> <span class="comment">// regression coefficients</span>
+<span class="line_number">367 </span>           <span class="sign">*</span>HazardSplinePar<span class="sign">,</span> <span class="comment">// spline parameters for the hazard</span>
+<span class="line_number">368 </span>           <span class="sign">*</span>HazardSplineKnots<span class="sign">,</span> <span class="comment">// knots for the hazard spline</span>
+<span class="line_number">369 </span>           <span class="sign">*</span>FrailtySplinePar<span class="sign">,</span> <span class="comment">// parameters for the frailty spline</span>
+<span class="line_number">370 </span>           <span class="sign">*</span>FrailtySplineKnots<span class="sign">,</span> <span class="comment">// knots for the frailty spline</span>
+<span class="line_number">371 </span>           <span class="sign">*</span>FrailtySplineFvar<span class="sign">,</span> <span class="comment">// variance of the frailty spline</span>
+<span class="line_number">372 </span>           <span class="sign">*</span>HazardParamPar<span class="sign">,</span> <span class="comment">// parametric component parameters for the hazard</span>
+<span class="line_number">373 </span>           <span class="sign">*</span>FrailtyParamPar<span class="sign">,</span> <span class="comment">// parametric component parameters for the frailty</span>
+<span class="line_number">374 </span>           <span class="sign">*</span>HazardWeight<span class="sign">,</span> <span class="comment">// weight of the spline component for the hazard</span>
+<span class="line_number">375 </span>           <span class="sign">*</span>FrailtyWeight<span class="sign">,</span> <span class="comment">// weight of the spline component for the frailty</span>
+<span class="line_number">376 </span>           <span class="sign">*</span>priorvar<span class="sign">,</span> <span class="comment">// prior error variances</span>
+<span class="line_number">377 </span>           <span class="sign">*</span>accept<span class="sign">;</span> <span class="comment">// acceptance rates for each of the components</span>
+<span class="line_number">378 </span><span class="sign">}</span> <span class="sign">*</span>historyP<span class="sign">;</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

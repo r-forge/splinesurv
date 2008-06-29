@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_rRFitting2FsplineUtils.html#robo19">splineUtils</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo188">splineUtils/plotspline</a></li>
+</ul>
+<hr />
+<a name="splineUtils2fplotspline"></a>
+<a name="robo188"></a><h2>splineUtils/plotspline [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>plotspline</strong> --- plot a spline given a set of knots and parameters
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Create a plot of a spline curve, optionally plotting knots and component
+    splines
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">428 </span><strong>plotspline</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>knots<span class="sign">,</span> theta<span class="sign">,</span> ord<span class="sign">,</span> npoints <span class="sign">=</span> 1000<span class="sign">,</span> plotknots <span class="sign">=</span> T<span class="sign">,</span> plotmean <span class="sign">=</span> F<span class="sign">,</span>
+<span class="line_number">429 </span>        plotsplines <span class="sign">=</span> F<span class="sign">,</span> norm <span class="sign">=</span> F<span class="sign">,</span> xlim <span class="sign">=</span> NULL<span class="sign">,</span> ylim <span class="sign">=</span> NULL<span class="sign">,</span> col <span class="sign">=</span> <span class="quote">"red"</span><span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    knots          vector of length K+Q containing a set of knot positions, with
+                   the Q border knots repeated at each end.
+    theta          vector of length K with spline parameters
+    ord            spline order Q
+    npoints        number of points at which to evaluate the spline
+    plotknots      whether to plot the knots as vertical lines
+    plotmean       whether to plot the spline mean as a vertical line
+    plotsplines    whether to plot the component spline basis functions
+    norm           whether to normalize the spline (as for the frailty)
+    ...            other parameters for plot
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    none
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">432 </span><span class="sign">{</span>
+<span class="line_number">433 </span>    knots <span class="sign">&lt;</span><span class="sign">-</span> knots<span class="sign">[</span>knots<span class="sign">&gt;</span><span class="sign">-</span>Inf<span class="sign">]</span>
+<span class="line_number">434 </span>    theta <span class="sign">&lt;</span><span class="sign">-</span> theta<span class="sign">[</span>theta<span class="sign">&gt;</span><span class="sign">-</span>Inf<span class="sign">]</span>
+<span class="line_number">435 </span>    <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>null<span class="sign">(</span>xlim<span class="sign">)</span><span class="sign">)</span> xlim <span class="sign">=</span> range<span class="sign">(</span>knots<span class="sign">)</span>
+<span class="line_number">436 </span>    <span class="comment"># Generate point set for evaluation</span>
+<span class="line_number">437 </span>    x <span class="sign">=</span> seq<span class="sign">(</span>from <span class="sign">=</span> xlim<span class="sign">[</span>1<span class="sign">]</span><span class="sign">,</span> to <span class="sign">=</span> xlim<span class="sign">[</span>2<span class="sign">]</span><span class="sign">,</span> <span class="keyword">length</span> <span class="sign">=</span> npoints<span class="sign">)</span>
+<span class="line_number">438 </span>    dx <span class="sign">=</span> <span class="keyword">diff</span><span class="sign">(</span>xlim<span class="sign">)</span> <span class="sign">/</span> npoints
+<span class="line_number">439 </span>    <span class="comment">#   Compute spline basis</span>
+<span class="line_number">440 </span>    spl <span class="sign">&lt;</span><span class="sign">-</span> <a href="../src/init_cCsplineUtils2Fcsplinedesign.html#robo102">csplinedesign</a><span class="sign">(</span>knots<span class="sign">,</span> x <span class="sign">=</span> x<span class="sign">,</span> ord <span class="sign">=</span> ord<span class="sign">)</span>
+<span class="line_number">441 </span>    <span class="keyword">if</span><span class="sign">(</span>norm<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">442 </span>        Bint <span class="sign">&lt;</span><span class="sign">-</span> <a href="../src/init_cCsplineUtils2FcevalBinte.html#robo94">cevalBinte</a><span class="sign">(</span>knots<span class="sign">,</span> ord<span class="sign">)</span>
+<span class="line_number">443 </span>        <span class="keyword">for</span><span class="sign">(</span>i in 1<span class="sign">:</span><span class="keyword">dim</span><span class="sign">(</span>spl<span class="sign">)</span><span class="sign">[</span>1<span class="sign">]</span><span class="sign">)</span> spl<span class="sign">[</span>i<span class="sign">,</span> <span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> spl<span class="sign">[</span>i<span class="sign">,</span> <span class="sign">]</span> <span class="sign">/</span> Bint
+<span class="line_number">444 </span>    <span class="sign">}</span>
+<span class="line_number">445 </span>    <span class="comment">#   Evaluate the spline at the set of points x</span>
+<span class="line_number">446 </span>    splsum <span class="sign">&lt;</span><span class="sign">-</span> spl<span class="sign">%</span><span class="sign">*</span><span class="sign">%</span><span class="keyword">exp</span><span class="sign">(</span>theta<span class="sign">)</span> 
+<span class="line_number">447 </span>    <span class="keyword">if</span><span class="sign">(</span>norm<span class="sign">)</span> splsum <span class="sign">&lt;</span><span class="sign">-</span> splsum <span class="sign">/</span> <span class="keyword">sum</span><span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>theta<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">448 </span>    ymax <span class="sign">&lt;</span><span class="sign">-</span> max<span class="sign">(</span>splsum<span class="sign">)</span>
+<span class="line_number">449 </span>    <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>null<span class="sign">(</span>ylim<span class="sign">)</span><span class="sign">)</span> ylim <span class="sign">&lt;</span><span class="sign">-</span> c<span class="sign">(</span>0<span class="sign">,</span> ymax<span class="sign">)</span>
+<span class="line_number">450 </span>    <span class="comment">#   Plot basis functions</span>
+<span class="line_number">451 </span>    <span class="keyword">if</span><span class="sign">(</span>plotsplines<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">452 </span>        matplot<span class="sign">(</span>x<span class="sign">,</span> spl <span class="sign">/</span> max<span class="sign">(</span>spl<span class="sign">)</span> <span class="sign">*</span> ylim<span class="sign">[</span>2<span class="sign">]</span> <span class="sign">/</span> 2<span class="sign">,</span> type <span class="sign">=</span> <span class="quote">"l"</span><span class="sign">,</span> lty <span class="sign">=</span> 2<span class="sign">,</span> xlim <span class="sign">=</span> xlim<span class="sign">,</span>
+<span class="line_number">453 </span>                ylim <span class="sign">=</span> ylim<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">454 </span>        lines<span class="sign">(</span>x<span class="sign">,</span> splsum<span class="sign">,</span> col <span class="sign">=</span> col<span class="sign">,</span> lwd <span class="sign">=</span> 2<span class="sign">,</span> lty <span class="sign">=</span> 1<span class="sign">)</span>
+<span class="line_number">455 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">456 </span>        plot<span class="sign">(</span>x<span class="sign">,</span> splsum<span class="sign">,</span> col <span class="sign">=</span> col<span class="sign">,</span> type <span class="sign">=</span> <span class="quote">"l"</span><span class="sign">,</span> lwd <span class="sign">=</span> 2<span class="sign">,</span> lty <span class="sign">=</span> 1<span class="sign">,</span> xlim <span class="sign">=</span> xlim<span class="sign">,</span>
+<span class="line_number">457 </span>                ylim <span class="sign">=</span> ylim<span class="sign">,</span> <span class="sign">.</span><span class="sign">.</span><span class="sign">.</span><span class="sign">)</span>
+<span class="line_number">458 </span>    <span class="sign">}</span>
+<span class="line_number">459 </span>    <span class="keyword">if</span><span class="sign">(</span>plotknots<span class="sign">)</span> abline<span class="sign">(</span>v <span class="sign">=</span> knots<span class="sign">,</span> col <span class="sign">=</span> <span class="quote">"grey"</span><span class="sign">)</span>
+<span class="line_number">460 </span>    <span class="comment"># Compute and plot the mean</span>
+<span class="line_number">461 </span>    <span class="keyword">if</span><span class="sign">(</span>plotmean<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">462 </span>        Bint <span class="sign">&lt;</span><span class="sign">-</span> colSums<span class="sign">(</span>spl<span class="sign">)</span> <span class="sign">/</span> dx
+<span class="line_number">463 </span>        spl<span class="sign">.</span>norm <span class="sign">&lt;</span><span class="sign">-</span> spl<span class="sign">%</span><span class="sign">*</span><span class="sign">%</span><a href="./splinefrailty_rmiscUtils2Fmdiag.html#robo157">mdiag</a><span class="sign">(</span>1 <span class="sign">/</span> Bint<span class="sign">)</span>
+<span class="line_number">464 </span>        Eint <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rep</span><span class="sign">(</span>0<span class="sign">,</span> <span class="keyword">dim</span><span class="sign">(</span>spl<span class="sign">)</span><span class="sign">[</span>2<span class="sign">]</span><span class="sign">)</span>
+<span class="line_number">465 </span>        <span class="keyword">for</span><span class="sign">(</span>i in 1<span class="sign">:</span><span class="keyword">dim</span><span class="sign">(</span>spl<span class="sign">)</span><span class="sign">[</span>2<span class="sign">]</span><span class="sign">)</span> Eint<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">sum</span><span class="sign">(</span>spl<span class="sign">.</span>norm<span class="sign">[</span><span class="sign">,</span> i<span class="sign">]</span> <span class="sign">*</span> x<span class="sign">)</span> <span class="sign">/</span> dx
+<span class="line_number">466 </span>        E <span class="sign">&lt;</span><span class="sign">-</span> Eint<span class="sign">%</span><span class="sign">*</span><span class="sign">%</span><span class="keyword">exp</span><span class="sign">(</span>theta<span class="sign">)</span> <span class="sign">/</span> <span class="keyword">sum</span><span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>theta<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">467 </span>        abline<span class="sign">(</span>v <span class="sign">=</span> E<span class="sign">,</span> col <span class="sign">=</span> <span class="quote">"grey"</span><span class="sign">,</span> lwd <span class="sign">=</span> 2<span class="sign">)</span>
+<span class="line_number">468 </span>    <span class="sign">}</span>
+<span class="line_number">469 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

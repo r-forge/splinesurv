@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCmakeLikelihood.html#robo9">CmakeLikelihood</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo68">CmakeLikelihood/SmoothnessPenalty</a></li>
+</ul>
+<hr />
+<a name="CmakeLikelihood2fSmoothnessPenalty"></a>
+<a name="robo68"></a><h2>CmakeLikelihood/SmoothnessPenalty [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>SmoothnessPenalty</strong> --- compute smoothness penalties
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Compute the smoothness penalty for a spline <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> as part of
+    making likelihoods.
+</p>
+
+<p>    The penalty can be either a penalty on the sum of squared second differences
+    or the integrated squared second derivative, or a Gaussian penalty. The
+    penalty matrix and penalty type stored in the <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure should be
+    of matching type.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">975 </span><span class="keyword">double</span> <strong>SmoothnessPenalty</strong><span class="sign">(</span>curveP theCurve<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    theCurve  <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> structure
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    pen   the smoothness penalty, already divided by 2*(prior variance)
+          that is, the entire smoothness penalty term.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number"> 979 </span><span class="sign">{</span>
+<span class="line_number"> 980 </span>    <span class="keyword">double</span> pen<span class="sign">;</span>
+<span class="line_number"> 981 </span>    <span class="keyword">int</span> c1 <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number"> 982 </span>    <span class="comment">// Gaussian penalty</span>
+<span class="line_number"> 983 </span>    <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePenaltyType <span class="sign">=</span><span class="sign">=</span> pnone<span class="sign">)</span><span class="sign">{</span> 
+<span class="line_number"> 984 </span>        pen <span class="sign">=</span> <span class="keyword">pow</span><span class="sign">(</span>F77_CALL<span class="sign">(</span>dnrm2<span class="sign">)</span><span class="sign">(</span><span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">,</span>2<span class="sign">.</span>0<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number"> 985 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number"> 986 </span>        <span class="keyword">double</span> <span class="sign">*</span> temp <span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span> <span class="sign">*</span><span class="sign">)</span> <span class="keyword">calloc</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">,</span> sizeof<span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number"> 987 </span>        <span class="keyword">double</span> <span class="sign">*</span> par<span class="sign">;</span>
+<span class="line_number"> 988 </span>        <span class="comment">// 2diff penalty works directly with parameters, 2deriv works with exp(theta)</span>
+<span class="line_number"> 989 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePenaltyType <span class="sign">=</span><span class="sign">=</span> pdiff<span class="sign">)</span> par <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePar<span class="sign">;</span>
+<span class="line_number"> 990 </span>        <span class="keyword">else</span> par <span class="sign">=</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplineEPar<span class="sign">;</span>
+<span class="line_number"> 991 </span>        <span class="keyword">double</span> c1d <span class="sign">=</span> 1<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number"> 992 </span>        char uplo <span class="sign">=</span> <span class="squote">'U'</span><span class="sign">;</span>
+<span class="line_number"> 993 </span>        <span class="comment">// compute par %*% P %*% par</span>
+<span class="line_number"> 994 </span>        F77_CALL<span class="sign">(</span>dsymv<span class="sign">)</span><span class="sign">(</span> <span class="sign">&amp;</span>uplo<span class="sign">,</span> <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> <span class="sign">&amp;</span>c1d<span class="sign">,</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePenaltyMatrix<span class="sign">,</span>
+<span class="line_number"> 995 </span>                <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> par<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> <span class="sign">&amp;</span>c1d<span class="sign">,</span> temp<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number"> 996 </span>        pen <span class="sign">=</span> F77_CALL<span class="sign">(</span>ddot<span class="sign">)</span><span class="sign">(</span> <span class="sign">&amp;</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>nj<span class="sign">)</span><span class="sign">,</span> temp<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">,</span> par<span class="sign">,</span> <span class="sign">&amp;</span>c1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number"> 997 </span>        <span class="keyword">if</span><span class="sign">(</span>theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePenaltyType <span class="sign">=</span><span class="sign">=</span> plogderiv<span class="sign">)</span> pen<span class="sign">=</span>log<span class="sign">(</span>pen<span class="sign">+</span>1<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number"> 998 </span>        <span class="keyword">free</span><span class="sign">(</span>temp<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number"> 999 </span>    <span class="sign">}</span>
+<span class="line_number">1000 </span>    <span class="comment">// normalize by prior variance</span>
+<span class="line_number">1001 </span>    pen <span class="sign">=</span> pen <span class="sign">/</span> <span class="sign">(</span>2 <span class="sign">*</span> theCurve<span class="sign">-</span><span class="sign">&gt;</span>SplinePriorvar<span class="sign">[</span>0<span class="sign">]</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1002 </span>    <span class="keyword">return</span> pen<span class="sign">;</span>
+<span class="line_number">1003 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FsimSurvival.html#robo6">simSurvival</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo174">simSurvival/generaterandom</a></li>
+</ul>
+<hr />
+<a name="simSurvival2fgeneraterandom"></a>
+<a name="robo174"></a><h2>simSurvival/generaterandom [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>generaterandom</strong> --- Generate random numbers
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Generate random numbers from any of the following distributions:
+</p>
+<pre>     fixed         not random, fixed at a certain value
+     weibull       Weibull, parametrized by rate and shape
+     gamma         Gamma, parametrized by mean and variance
+     normal        Normal, parametrized by mean and variance
+     lognormal     Lognormal, parametrized by mean and variance
+     normmix       Mixture of normals, parametrized by means, variances and weights
+     lognormmix    Mixture of lognormals, parametrized by means, variances and weights
+     unifmix       Mixture of uniforms, parametrized by weights and bounds
+</pre>
+<p></p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">522 </span><strong>generaterandom</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>n<span class="sign">,</span> type<span class="sign">,</span> params<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>     n         number of variates to generate 
+     type      string, one of the types above
+     params    a list with parameters, which are different for each type. See the code
+               for each type
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>     out       n random numbers with the specified distribution
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">525 </span><span class="sign">{</span>
+<span class="line_number">526 </span>    <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span><span class="sign">(</span>type<span class="sign">%</span>in<span class="sign">%</span>c<span class="sign">(</span><span class="quote">"fixed"</span><span class="sign">,</span> <span class="quote">"weibull"</span><span class="sign">,</span> <span class="quote">"gamma"</span><span class="sign">,</span> <span class="quote">"normal"</span><span class="sign">,</span> <span class="quote">"lognormal"</span><span class="sign">,</span> <span class="quote">"normmix"</span><span class="sign">,</span>
+<span class="line_number">527 </span>            <span class="quote">"lognormmix"</span><span class="sign">,</span> <span class="quote">"unifmix"</span><span class="sign">)</span><span class="sign">)</span><span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"Invalid distribution type"</span><span class="sign">)</span>
+<span class="line_number">528 </span>    <span class="comment"># fixed at params$value</span>
+<span class="line_number">529 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"fixed"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">530 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span><span class="sign">(</span><span class="quote">"value"</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"Parameter value not specified for type fixed"</span><span class="sign">)</span>
+<span class="line_number">531 </span>        <span class="keyword">return</span><span class="sign">(</span><span class="keyword">rep</span><span class="sign">(</span>params<span class="sign">$</span>value<span class="sign">,</span> n<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">532 </span>    <span class="sign">}</span>
+<span class="line_number">533 </span>    <span class="comment"># weibull with rate params$lambda0 and shape params$gamweib</span>
+<span class="line_number">534 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"weibull"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">535 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>all<span class="sign">(</span>c<span class="sign">(</span><span class="quote">"lambda0"</span><span class="sign">,</span> <span class="quote">"gamweib"</span><span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span> 
+<span class="line_number">536 </span>                stop<span class="sign">(</span><span class="quote">"Parameters lambda0, gamweib not specified for type weibull"</span><span class="sign">)</span>
+<span class="line_number">537 </span>        lambda0 <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>lambda0
+<span class="line_number">538 </span>        gamweib <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>gamweib
+<span class="line_number">539 </span>        <span class="keyword">return</span><span class="sign">(</span>rweibull<span class="sign">(</span>n<span class="sign">,</span> shape <span class="sign">=</span> gamweib<span class="sign">,</span> scale <span class="sign">=</span> lambda0<span class="sign">^</span><span class="sign">(</span><span class="sign">-</span>1 <span class="sign">/</span> gamweib<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">540 </span>    <span class="sign">}</span>
+<span class="line_number">541 </span>    <span class="comment"># gamma with mean params$mu and variance params$sigma2</span>
+<span class="line_number">542 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"gamma"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">543 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>all<span class="sign">(</span>c<span class="sign">(</span><span class="quote">"mu"</span><span class="sign">,</span> <span class="quote">"sigma2"</span><span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">544 </span>                stop<span class="sign">(</span><span class="quote">"Parameters mu, sigma2 not specified for type gamma"</span><span class="sign">)</span>
+<span class="line_number">545 </span>        mu <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>mu
+<span class="line_number">546 </span>        sigma2 <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>sigma2
+<span class="line_number">547 </span>        <span class="keyword">return</span><span class="sign">(</span><span class="keyword">rgamma</span><span class="sign">(</span>n<span class="sign">,</span> shape <span class="sign">=</span> mu<span class="sign">^</span>2 <span class="sign">/</span> sigma2<span class="sign">,</span> scale <span class="sign">=</span> sigma2 <span class="sign">/</span> mu<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">548 </span>    <span class="sign">}</span>
+<span class="line_number">549 </span>    <span class="comment"># normal with mean params$mu and variance params$sigma2</span>
+<span class="line_number">550 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"normal"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">551 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>all<span class="sign">(</span>c<span class="sign">(</span><span class="quote">"mu"</span><span class="sign">,</span> <span class="quote">"sigma2"</span><span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span> 
+<span class="line_number">552 </span>                stop<span class="sign">(</span><span class="quote">"Parameters mu, sigma2 not specified for type normal"</span><span class="sign">)</span>
+<span class="line_number">553 </span>        mu <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>mu
+<span class="line_number">554 </span>        sigma2 <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>sigma2
+<span class="line_number">555 </span>        <span class="keyword">return</span><span class="sign">(</span><span class="keyword">rnorm</span><span class="sign">(</span>n<span class="sign">,</span> mean <span class="sign">=</span> mu<span class="sign">,</span> sd <span class="sign">=</span> <span class="keyword">sqrt</span><span class="sign">(</span>sigma2<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">556 </span>    <span class="sign">}</span>
+<span class="line_number">557 </span>    <span class="comment"># lognormal with mean params$mu and variance params$sigma2</span>
+<span class="line_number">558 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"lognormal"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">559 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>all<span class="sign">(</span>c<span class="sign">(</span><span class="quote">"mu"</span><span class="sign">,</span> <span class="quote">"sigma2"</span><span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">560 </span>                stop<span class="sign">(</span><span class="quote">"Parameters mu, sigma2 not specified for type lognormal"</span><span class="sign">)</span>
+<span class="line_number">561 </span>        mu <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>mu
+<span class="line_number">562 </span>        sigma2 <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>sigma2
+<span class="line_number">563 </span>        sigma2prime <span class="sign">&lt;</span><span class="sign">-</span> log<span class="sign">(</span>1 <span class="sign">+</span> sigma2 <span class="sign">/</span> mu<span class="sign">^</span>2<span class="sign">)</span>        
+<span class="line_number">564 </span>        muprime <span class="sign">&lt;</span><span class="sign">-</span> log<span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">-</span> 1 <span class="sign">/</span> 2 <span class="sign">*</span> sigma2prime
+<span class="line_number">565 </span>        <span class="keyword">return</span><span class="sign">(</span>rlnorm<span class="sign">(</span>n<span class="sign">,</span> meanlog <span class="sign">=</span> muprime<span class="sign">,</span> sdlog <span class="sign">=</span> <span class="keyword">sqrt</span><span class="sign">(</span>sigma2prime<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">566 </span>    <span class="sign">}</span>
+<span class="line_number">567 </span>    <span class="comment"># normal mixture with weights params$w, means params$mu and variances params$sigma2</span>
+<span class="line_number">568 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"normmix"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">569 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>all<span class="sign">(</span>c<span class="sign">(</span><span class="quote">"mu"</span><span class="sign">,</span> <span class="quote">"sigma2"</span><span class="sign">,</span> <span class="quote">"w"</span><span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">570 </span>                stop<span class="sign">(</span><span class="quote">"Parameters mu, sigma2, w not specified for type normmix"</span><span class="sign">)</span>
+<span class="line_number">571 </span>        mu <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>mu
+<span class="line_number">572 </span>        sigma2 <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>sigma2
+<span class="line_number">573 </span>        w <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>w <span class="sign">/</span> <span class="keyword">sum</span><span class="sign">(</span>params<span class="sign">$</span>w<span class="sign">)</span>
+<span class="line_number">574 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>w<span class="sign">)</span> <span class="sign">=</span><span class="sign">=</span> 1<span class="sign">)</span> w <span class="sign">=</span> <span class="keyword">rep</span><span class="sign">(</span>w<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">575 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">!</span><span class="sign">=</span> <span class="keyword">length</span><span class="sign">(</span>sigma2<span class="sign">)</span> <span class="sign">|</span> <span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">!</span><span class="sign">=</span> <span class="keyword">length</span><span class="sign">(</span>w<span class="sign">)</span> <span class="sign">|</span>
+<span class="line_number">576 </span>                <span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">&lt;</span> 2<span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"Bad parameter lengths for type normmix"</span><span class="sign">)</span>
+<span class="line_number">577 </span>        out <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rsimSurvival2FMYmvrnorm.html#robo176">MYmvrnorm</a><span class="sign">(</span>n<span class="sign">,</span> mu<span class="sign">,</span> <a href="./splinefrailty_rmiscUtils2Fmdiag.html#robo157">mdiag</a><span class="sign">(</span>sigma2<span class="sign">)</span><span class="sign">)</span> 
+<span class="line_number">578 </span>        <span class="keyword">return</span><span class="sign">(</span>t<span class="sign">(</span>out<span class="sign">)</span><span class="sign">[</span>findInterval<span class="sign">(</span>runif<span class="sign">(</span>n<span class="sign">)</span><span class="sign">,</span> <span class="keyword">cumsum</span><span class="sign">(</span>w<span class="sign">)</span><span class="sign">)</span> <span class="sign">+</span> 1 <span class="sign">+</span> 0<span class="sign">:</span><span class="sign">(</span>n <span class="sign">-</span> 1<span class="sign">)</span> <span class="sign">*</span> <span class="keyword">length</span><span class="sign">(</span>w<span class="sign">)</span><span class="sign">]</span><span class="sign">)</span>
+<span class="line_number">579 </span>    <span class="sign">}</span>
+<span class="line_number">580 </span>    <span class="comment"># lognormal mixture with weights params$w, means params$mu and variances params$sigma2</span>
+<span class="line_number">581 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"lognormmix"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">582 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>all<span class="sign">(</span>c<span class="sign">(</span><span class="quote">"mu"</span><span class="sign">,</span> <span class="quote">"sigma2"</span><span class="sign">,</span> <span class="quote">"w"</span><span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">583 </span>                stop<span class="sign">(</span><span class="quote">"Parameters mu, sigma2, w not specified for type lognormmix"</span><span class="sign">)</span>
+<span class="line_number">584 </span>        mu <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>mu
+<span class="line_number">585 </span>        sigma2 <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>sigma2
+<span class="line_number">586 </span>        w <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>w <span class="sign">/</span> <span class="keyword">sum</span><span class="sign">(</span>params<span class="sign">$</span>w<span class="sign">)</span>
+<span class="line_number">587 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>w<span class="sign">)</span> <span class="sign">=</span><span class="sign">=</span> 1<span class="sign">)</span> w <span class="sign">=</span> <span class="keyword">rep</span><span class="sign">(</span>w<span class="sign">,</span> <span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">588 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">!</span><span class="sign">=</span> <span class="keyword">length</span><span class="sign">(</span>sigma2<span class="sign">)</span> <span class="sign">|</span> <span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">!</span><span class="sign">=</span> <span class="keyword">length</span><span class="sign">(</span>w<span class="sign">)</span> <span class="sign">|</span>
+<span class="line_number">589 </span>                <span class="keyword">length</span><span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">&lt;</span> 2<span class="sign">)</span> stop<span class="sign">(</span><span class="quote">"Bad parameter lengths for type lognormmix"</span><span class="sign">)</span>
+<span class="line_number">590 </span>        sigma2prime <span class="sign">&lt;</span><span class="sign">-</span> log<span class="sign">(</span>1 <span class="sign">+</span> sigma2 <span class="sign">/</span> mu<span class="sign">^</span>2<span class="sign">)</span>        
+<span class="line_number">591 </span>        muprime <span class="sign">&lt;</span><span class="sign">-</span> log<span class="sign">(</span>mu<span class="sign">)</span> <span class="sign">-</span> 1 <span class="sign">/</span> 2 <span class="sign">*</span> sigma2prime
+<span class="line_number">592 </span>        out <span class="sign">&lt;</span><span class="sign">-</span> <a href="./splinefrailty_rsimSurvival2FMYmvrnorm.html#robo176">MYmvrnorm</a><span class="sign">(</span>n<span class="sign">,</span> muprime<span class="sign">,</span> <a href="./splinefrailty_rmiscUtils2Fmdiag.html#robo157">mdiag</a><span class="sign">(</span>sigma2prime<span class="sign">)</span><span class="sign">)</span> 
+<span class="line_number">593 </span>        <span class="keyword">return</span><span class="sign">(</span><span class="keyword">exp</span><span class="sign">(</span>t<span class="sign">(</span>out<span class="sign">)</span><span class="sign">[</span>findInterval<span class="sign">(</span>runif<span class="sign">(</span>n<span class="sign">)</span><span class="sign">,</span> <span class="keyword">cumsum</span><span class="sign">(</span>w<span class="sign">)</span><span class="sign">)</span> <span class="sign">+</span> 1 <span class="sign">+</span> 0<span class="sign">:</span><span class="sign">(</span>n <span class="sign">-</span> 1<span class="sign">)</span> <span class="sign">*</span> <span class="keyword">length</span><span class="sign">(</span>w<span class="sign">)</span><span class="sign">]</span><span class="sign">)</span><span class="sign">)</span>   
+<span class="line_number">594 </span>    <span class="sign">}</span>
+<span class="line_number">595 </span>    <span class="comment"># uniform mixture with weights params$w, bounds params$bounds</span>
+<span class="line_number">596 </span>    <span class="keyword">if</span><span class="sign">(</span>type <span class="sign">=</span><span class="sign">=</span> <span class="quote">"unifmix"</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">597 </span>        <span class="keyword">if</span><span class="sign">(</span><span class="sign">!</span>all<span class="sign">(</span>c<span class="sign">(</span><span class="quote">"w"</span><span class="sign">,</span> <span class="quote">"bounds"</span><span class="sign">)</span><span class="sign">%</span>in<span class="sign">%</span>names<span class="sign">(</span>params<span class="sign">)</span><span class="sign">)</span><span class="sign">)</span>
+<span class="line_number">598 </span>                stop<span class="sign">(</span><span class="quote">"Parameters w, bounds not specified for type unifmix"</span><span class="sign">)</span>
+<span class="line_number">599 </span>        w <span class="sign">&lt;</span><span class="sign">-</span> params<span class="sign">$</span>w <span class="sign">/</span> <span class="keyword">sum</span><span class="sign">(</span>params<span class="sign">$</span>w<span class="sign">)</span>
+<span class="line_number">600 </span>        bounds <span class="sign">&lt;</span><span class="sign">-</span> matrix<span class="sign">(</span>params<span class="sign">$</span>bounds<span class="sign">,</span> ncol <span class="sign">=</span> 2<span class="sign">,</span> byrow <span class="sign">=</span> TRUE<span class="sign">)</span>
+<span class="line_number">601 </span>        out <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">rep</span><span class="sign">(</span>0<span class="sign">,</span> n<span class="sign">)</span>
+<span class="line_number">602 </span>        <span class="keyword">for</span><span class="sign">(</span>i in 1<span class="sign">:</span>n<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">603 </span>            <span class="keyword">which</span> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">sum</span><span class="sign">(</span>runif<span class="sign">(</span>1<span class="sign">)</span> <span class="sign">&gt;</span> <span class="keyword">cumsum</span><span class="sign">(</span>w<span class="sign">)</span><span class="sign">)</span> <span class="sign">+</span> 1
+<span class="line_number">604 </span>            out<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">&lt;</span><span class="sign">-</span> runif<span class="sign">(</span>1<span class="sign">,</span> bounds<span class="sign">[</span><span class="keyword">which</span><span class="sign">,</span> 1<span class="sign">]</span><span class="sign">,</span> bounds<span class="sign">[</span><span class="keyword">which</span><span class="sign">,</span> 2<span class="sign">]</span><span class="sign">)</span>
+<span class="line_number">605 </span>        <span class="sign">}</span>
+<span class="line_number">606 </span>        <span class="keyword">return</span><span class="sign">(</span>out<span class="sign">)</span>
+<span class="line_number">607 </span>    <span class="sign">}</span>
+<span class="line_number">608 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

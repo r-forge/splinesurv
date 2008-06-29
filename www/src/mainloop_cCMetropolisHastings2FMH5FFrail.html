@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCMetropolisHastings.html#robo10">CMetropolisHastings</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo71">CMetropolisHastings/MH_Frail</a></li>
+</ul>
+<hr />
+<a name="CMetropolisHastings2fMH5fFrail"></a>
+<a name="robo71"></a><h2>CMetropolisHastings/MH_Frail [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>MH_Frail</strong> --- MH step for frailties
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Update frailty estimates by Metropolis-Hastings. See also <a href="../R/splinefrailty_rMetropolisHastings2Fmh2Efrail.html#robo145">mh.frail</a>.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1924 </span><span class="keyword">void</span> <strong>MH_Frail</strong><span class="sign">(</span>curveP hazard<span class="sign">,</span> curveP frailty<span class="sign">,</span> regressionP regression<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    hazard        <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the hazard
+    frailty       <a href="./mainloop_c01structures2FCCurve.html#robo23">CCurve</a> for the frailty
+    regression    <a href="./mainloop_c01structures2FCRegression.html#robo25">CRegression</a> structure
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1928 </span><span class="sign">{</span>
+<span class="line_number">1929 </span>    <span class="keyword">double</span> acc <span class="sign">=</span> 0<span class="sign">;</span>
+<span class="line_number">1930 </span>    <span class="keyword">double</span> baselik<span class="sign">,</span> candlik<span class="sign">;</span>
+<span class="line_number">1931 </span>    <span class="keyword">int</span> j<span class="sign">;</span>
+<span class="line_number">1932 </span>    <span class="comment">// update the frailties one at a time</span>
+<span class="line_number">1933 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i <span class="sign">&lt;</span> regression<span class="sign">-</span><span class="sign">&gt;</span>m<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1934 </span>        <span class="keyword">double</span> u <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>i<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1935 </span>        <span class="keyword">double</span> y <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">[</span>i<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1936 </span>        <span class="keyword">double</span> v <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>tun<span class="sign">[</span>0<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1937 </span>        <span class="keyword">double</span> uj<span class="sign">,</span>yj<span class="sign">,</span>candj<span class="sign">;</span>
+<span class="line_number">1938 </span>        <span class="comment">// generate candidate from gamma distribution</span>
+<span class="line_number">1939 </span>        <span class="keyword">double</span> cand <span class="sign">=</span> <span class="keyword">rgamma</span><span class="sign">(</span> <span class="keyword">pow</span><span class="sign">(</span>u<span class="sign">,</span>2<span class="sign">)</span><span class="sign">/</span>v<span class="sign">,</span> v<span class="sign">/</span>u<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1940 </span>        <span class="keyword">double</span> pcu <span class="sign">=</span> 1<span class="sign">;</span> <span class="keyword">double</span> puc <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">1941 </span>        <span class="comment">// if the candidate is invalid (e.g. beyond boundary knots), fail</span>
+<span class="line_number">1942 </span>        <span class="keyword">if</span><span class="sign">(</span>isnan<span class="sign">(</span>cand<span class="sign">)</span> <span class="sign">|</span><span class="sign">|</span> <span class="sign">(</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>hasSpline <span class="sign">&amp;</span><span class="sign">&amp;</span>
+<span class="line_number">1943 </span>            <span class="sign">(</span>cand <span class="sign">&gt;</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineKnots<span class="sign">[</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>nj <span class="sign">+</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineOrd <span class="sign">-</span>1<span class="sign">]</span>
+<span class="line_number">1944 </span>             <span class="sign">|</span> cand <span class="sign">&lt;</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineKnots<span class="sign">[</span>0<span class="sign">]</span><span class="sign">)</span> <span class="sign">)</span> <span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1945 </span>            <span class="keyword">continue</span><span class="sign">;</span>
+<span class="line_number">1946 </span>        <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">1947 </span>            <span class="comment">// find another frailty to move by the same amount</span>
+<span class="line_number">1948 </span>            j <span class="sign">=</span> i<span class="sign">;</span>
+<span class="line_number">1949 </span>            <span class="keyword">while</span><span class="sign">(</span>j <span class="sign">=</span><span class="sign">=</span> i<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1950 </span>                j <span class="sign">=</span> <span class="sign">(</span><span class="keyword">int</span><span class="sign">)</span> floor<span class="sign">(</span>runif<span class="sign">(</span>0<span class="sign">,</span><span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>nx<span class="sign">)</span><span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1951 </span>            <span class="sign">}</span>
+<span class="line_number">1952 </span>            <span class="comment">//Rprintf("i: %d,  j: %d\n",i,j);</span>
+<span class="line_number">1953 </span>            uj <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1954 </span>            yj <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1955 </span>            candj <span class="sign">=</span> u <span class="sign">+</span> uj <span class="sign">-</span> cand<span class="sign">;</span>
+<span class="line_number">1956 </span>            <span class="comment">// if the moved element is invalid, fail</span>
+<span class="line_number">1957 </span>            <span class="keyword">if</span><span class="sign">(</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>hasSpline <span class="sign">&amp;</span><span class="sign">&amp;</span>
+<span class="line_number">1958 </span>                <span class="sign">(</span>candj <span class="sign">&gt;</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineKnots<span class="sign">[</span>frailty<span class="sign">-</span><span class="sign">&gt;</span>nj <span class="sign">+</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineOrd <span class="sign">-</span>1<span class="sign">]</span>
+<span class="line_number">1959 </span>                 <span class="sign">|</span> candj <span class="sign">&lt;</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>SplineKnots<span class="sign">[</span>0<span class="sign">]</span><span class="sign">)</span> <span class="sign">)</span> <span class="keyword">continue</span><span class="sign">;</span>
+<span class="line_number">1960 </span>            <span class="comment">// base likelihood</span>
+<span class="line_number">1961 </span>            baselik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodFrailty.html#robo58">LikelihoodFrailty</a><span class="sign">(</span>i<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span>
+<span class="line_number">1962 </span>                <span class="sign">+</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodFrailty.html#robo58">LikelihoodFrailty</a><span class="sign">(</span>j<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1963 </span>            <span class="comment">// update the curve with the candidate, without touching the basis</span>
+<span class="line_number">1964 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> cand<span class="sign">;</span>
+<span class="line_number">1965 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> <a href="./mainloop_cCcurveUpdate2FEvalCurveAtOnePoint.html#robo29">EvalCurveAtOnePoint</a><span class="sign">(</span>frailty<span class="sign">,</span> cand<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1966 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> candj<span class="sign">;</span>
+<span class="line_number">1967 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> <a href="./mainloop_cCcurveUpdate2FEvalCurveAtOnePoint.html#robo29">EvalCurveAtOnePoint</a><span class="sign">(</span>frailty<span class="sign">,</span> candj<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1968 </span>            <span class="comment">// candidate likelihood</span>
+<span class="line_number">1969 </span>            candlik <span class="sign">=</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodFrailty.html#robo58">LikelihoodFrailty</a><span class="sign">(</span>i<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span>
+<span class="line_number">1970 </span>                <span class="sign">+</span> <a href="./mainloop_cCmakeLikelihood2FLikelihoodFrailty.html#robo58">LikelihoodFrailty</a><span class="sign">(</span>j<span class="sign">,</span> hazard<span class="sign">,</span> frailty<span class="sign">,</span> regression<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1971 </span>            <span class="comment">// transition probabilities</span>
+<span class="line_number">1972 </span>            puc <span class="sign">=</span> dgamma<span class="sign">(</span>cand<span class="sign">,</span> <span class="keyword">pow</span><span class="sign">(</span>u<span class="sign">,</span>2<span class="sign">)</span><span class="sign">/</span>v<span class="sign">,</span> v<span class="sign">/</span>u<span class="sign">,</span> 0<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1973 </span>            pcu <span class="sign">=</span> dgamma<span class="sign">(</span>u<span class="sign">,</span> <span class="keyword">pow</span><span class="sign">(</span>cand<span class="sign">,</span>2<span class="sign">)</span><span class="sign">/</span>v<span class="sign">,</span> v<span class="sign">/</span>cand<span class="sign">,</span> 0<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1974 </span>        <span class="sign">}</span>
+<span class="line_number">1975 </span>        <span class="keyword">int</span> thisacc <span class="sign">=</span> <a href="./mainloop_cCMetropolisHastings2FAcceptReject.html#robo69">AcceptReject</a><span class="sign">(</span>baselik<span class="sign">,</span> candlik<span class="sign">,</span> pcu<span class="sign">/</span>puc<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1976 </span>        <span class="keyword">if</span><span class="sign">(</span>thisacc<span class="sign">=</span><span class="sign">=</span>0<span class="sign">)</span> <span class="sign">{</span> <span class="comment">//Did not accept, so undo the damage</span>
+<span class="line_number">1977 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> u<span class="sign">;</span>
+<span class="line_number">1978 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">=</span> y<span class="sign">;</span>
+<span class="line_number">1979 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> uj<span class="sign">;</span>
+<span class="line_number">1980 </span>            frailty<span class="sign">-</span><span class="sign">&gt;</span>Y<span class="sign">[</span>j<span class="sign">]</span> <span class="sign">=</span> yj<span class="sign">;</span>
+<span class="line_number">1981 </span>        <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span> <span class="comment">// accepted, so update the curve fully</span>
+<span class="line_number">1982 </span>            <a href="./mainloop_cCcurveUpdate2FUpdateCurveX.html#robo41">UpdateCurveX</a><span class="sign">(</span>frailty<span class="sign">,</span> cand<span class="sign">,</span> i<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1983 </span>            <a href="./mainloop_cCcurveUpdate2FUpdateCurveX.html#robo41">UpdateCurveX</a><span class="sign">(</span>frailty<span class="sign">,</span> candj<span class="sign">,</span> j<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1984 </span>            <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">=</span>regression<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>i<span class="sign">]</span><span class="sign">;</span> k<span class="sign">&lt;</span>regression<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>i<span class="sign">+</span>1<span class="sign">]</span><span class="sign">;</span> k<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1985 </span>                regression<span class="sign">-</span><span class="sign">&gt;</span>frailrep<span class="sign">[</span>k<span class="sign">]</span> <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>i<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1986 </span>                regression<span class="sign">-</span><span class="sign">&gt;</span>frailelp<span class="sign">[</span>k<span class="sign">]</span> <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>i<span class="sign">]</span><span class="sign">*</span>regression<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">[</span>k<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1987 </span>            <span class="sign">}</span>
+<span class="line_number">1988 </span>            <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> k<span class="sign">=</span>regression<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span> k<span class="sign">&lt;</span>regression<span class="sign">-</span><span class="sign">&gt;</span>Jicum<span class="sign">[</span>j<span class="sign">+</span>1<span class="sign">]</span><span class="sign">;</span> k<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1989 </span>                regression<span class="sign">-</span><span class="sign">&gt;</span>frailrep<span class="sign">[</span>k<span class="sign">]</span> <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>j<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1990 </span>                regression<span class="sign">-</span><span class="sign">&gt;</span>frailelp<span class="sign">[</span>k<span class="sign">]</span> <span class="sign">=</span> frailty<span class="sign">-</span><span class="sign">&gt;</span>X<span class="sign">[</span>j<span class="sign">]</span><span class="sign">*</span>regression<span class="sign">-</span><span class="sign">&gt;</span>elp<span class="sign">[</span>k<span class="sign">]</span><span class="sign">;</span>
+<span class="line_number">1991 </span>            <span class="sign">}</span>
+<span class="line_number">1992 </span>        <span class="sign">}</span>
+<span class="line_number">1993 </span>        <span class="comment">// update acceptance rate</span>
+<span class="line_number">1994 </span>        acc <span class="sign">+</span><span class="sign">=</span> <span class="sign">(</span><span class="keyword">double</span><span class="sign">)</span> thisacc<span class="sign">;</span>
+<span class="line_number">1995 </span>    <span class="sign">}</span>
+<span class="line_number">1996 </span>    acc <span class="sign">/</span><span class="sign">=</span> regression<span class="sign">-</span><span class="sign">&gt;</span>m<span class="sign">;</span>
+<span class="line_number">1997 </span>    frailty<span class="sign">-</span><span class="sign">&gt;</span>Accept<span class="sign">[</span>0<span class="sign">]</span> <span class="sign">=</span> acc<span class="sign">;</span>
+<span class="line_number">1998 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

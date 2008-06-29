@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/src/mainloop.c</title>
+<!-- Source: ./splinesurv/src/mainloop.c -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./mainloop_cCFitting2FCmakeLikelihood.html#robo9">CmakeLikelihood</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo60">CmakeLikelihood/LikelihoodHazardLogSum</a></li>
+</ul>
+<hr />
+<a name="CmakeLikelihood2fLikelihoodHazardLogSum"></a>
+<a name="robo60"></a><h2>CmakeLikelihood/LikelihoodHazardLogSum [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>LikelihoodHazardLogSum</strong> --- utility to efficiently compute a sum of log-hazards
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>    Because the log function is quite slow (especially it seems on the MacIntel architecture),
+    this function computes the sum of log-hazards by multiplying several together at a time,
+    then taking logs.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">1614 </span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">double</span> <strong>LikelihoodHazardLogSum</strong><span class="sign">(</span><span class="keyword">int</span> nx<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>status<span class="sign">,</span> <span class="keyword">double</span> <span class="sign">*</span>Y<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    nx        number of observations
+    Y         vector of length nx
+    status    vector of length nx
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>    lik       sum of status*log(Y)
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">1618 </span><span class="sign">{</span>
+<span class="line_number">1619 </span>    <span class="keyword">double</span> lik<span class="sign">=</span>0<span class="sign">;</span>
+<span class="line_number">1620 </span>    <span class="keyword">double</span> thislik <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">1621 </span>    <span class="comment">// sum <a href="./mainloop_cCDefines2FLIK5FMOD.html#robo49">LIK_MOD</a> elements at a time</span>
+<span class="line_number">1622 </span>    <span class="keyword">for</span><span class="sign">(</span><span class="keyword">int</span> i<span class="sign">=</span>0<span class="sign">;</span> i<span class="sign">&lt;</span>nx<span class="sign">;</span> i<span class="sign">+</span><span class="sign">+</span><span class="sign">)</span> <span class="sign">{</span>
+<span class="line_number">1623 </span>        thislik <span class="sign">*</span><span class="sign">=</span> status<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">&gt;</span> 0 <span class="sign">?</span> Y<span class="sign">[</span>i<span class="sign">]</span> <span class="sign">:</span> 1<span class="sign">.</span>0<span class="sign">;</span>
+<span class="line_number">1624 </span>        <span class="keyword">if</span><span class="sign">(</span>i <span class="sign">%</span> <a href="./mainloop_cCDefines2FLIK5FMOD.html#robo49">LIK_MOD</a> <span class="sign">=</span><span class="sign">=</span> 0<span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">1625 </span>            lik <span class="sign">+</span><span class="sign">=</span> log<span class="sign">(</span>thislik<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1626 </span>            thislik <span class="sign">=</span> 1<span class="sign">;</span>
+<span class="line_number">1627 </span>        <span class="sign">}</span>
+<span class="line_number">1628 </span>    <span class="sign">}</span>  
+<span class="line_number">1629 </span>    lik<span class="sign">+</span><span class="sign">=</span>log<span class="sign">(</span>thislik<span class="sign">)</span><span class="sign">;</span>
+<span class="line_number">1630 </span>    <span class="keyword">return</span> lik<span class="sign">;</span>  
+<span class="line_number">1631 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/src/mainloop.c with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>

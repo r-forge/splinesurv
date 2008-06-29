@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
+<link rel="stylesheet" href="../robodoc.css" type="text/css" />
+<title>./splinesurv/R/splinefrailty.r</title>
+<!-- Source: ./splinesurv/R/splinefrailty.r -->
+<!-- Generated with ROBODoc Version 4.99.36 (Jun 17 2008) -->
+</head>
+<body>
+<div id="logo">
+<a name="robo_top_of_doc">splinesurv</a>
+</div> <!-- logo -->
+<div id="navigation">
+<a class="menuitem" href="./splinefrailty_r2FsimSurvival.html#robo6">simSurvival</a><a class="menuitem" href="../robo_functions.html#robo_top_of_doc">Functions</a></div> <!-- navigation -->
+<div id="content">
+<h3>TABLE OF CONTENTS</h3>
+<ul>
+<li>1. <a href="#robo171">simSurvival/bs.survfn</a></li>
+</ul>
+<hr />
+<a name="simSurvival2fbs2esurvfn"></a>
+<a name="robo171"></a><h2>simSurvival/bs.survfn [ Functions ]</h2>
+
+<p class="item_name">NAME</p>
+<pre>    <strong>bs.survfn</strong> --- compute survivor function for B-spline hazard
+</pre>
+<p class="item_name">FUNCTION</p>
+<p>   Given a B-spline baseline hazard, either compute the survivor
+   function at a set of times, or at a single time.
+</p>
+<p class="item_name">SYNOPSIS</p>
+<pre class="source"><span class="line_number">710 </span><strong>bs.survfn</strong> <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">function</span><span class="sign">(</span>b<span class="sign">,</span> w<span class="sign">,</span> n<span class="sign">,</span> t <span class="sign">=</span> NULL<span class="sign">)</span>
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>   b       B-spline basis in the form of bs() output
+   w       weights of each basis function
+   n       number of intervals to use
+   t       time at which to compute survival (whole function if NULL)
+</pre>
+<p class="item_name">OUTPUTS</p>
+<pre>   If t = NULL, the survivor function at n times, else at time t.
+</pre>
+<p class="item_name">SOURCE</p>
+<pre class="source"><span class="line_number">713 </span><span class="sign">{</span>
+<span class="line_number">714 </span>    rbound <span class="sign">&lt;</span><span class="sign">-</span> attr<span class="sign">(</span>b<span class="sign">,</span> <span class="quote">"Boundary.knots"</span><span class="sign">)</span><span class="sign">[</span>2<span class="sign">]</span>
+<span class="line_number">715 </span>    x <span class="sign">&lt;</span><span class="sign">-</span> seq<span class="sign">(</span>from <span class="sign">=</span> 0<span class="sign">,</span> to <span class="sign">=</span> rbound<span class="sign">,</span> <span class="keyword">length</span> <span class="sign">=</span> n<span class="sign">)</span>
+<span class="line_number">716 </span>    h <span class="sign">&lt;</span><span class="sign">-</span> <span class="sign">(</span>predict<span class="sign">(</span>b<span class="sign">,</span> x<span class="sign">)</span><span class="sign">%</span><span class="sign">*</span><span class="sign">%</span>w<span class="sign">)</span>
+<span class="line_number">717 </span>    <span class="keyword">if</span><span class="sign">(</span>is<span class="sign">.</span>null<span class="sign">(</span>t<span class="sign">)</span><span class="sign">)</span><span class="sign">{</span>
+<span class="line_number">718 </span>        H <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">cumsum</span><span class="sign">(</span>h <span class="sign">*</span> rbound <span class="sign">/</span> n<span class="sign">)</span>
+<span class="line_number">719 </span>        S <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">exp</span><span class="sign">(</span><span class="sign">-</span>H<span class="sign">)</span>
+<span class="line_number">720 </span>        <span class="keyword">return</span><span class="sign">(</span>S<span class="sign">)</span>
+<span class="line_number">721 </span>    <span class="sign">}</span><span class="keyword">else</span><span class="sign">{</span>
+<span class="line_number">722 </span>        Ht <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">sum</span><span class="sign">(</span>h<span class="sign">[</span>x <span class="sign">&lt;</span> t<span class="sign">]</span> <span class="sign">*</span> rbound <span class="sign">/</span> n<span class="sign">)</span>
+<span class="line_number">723 </span>        St <span class="sign">&lt;</span><span class="sign">-</span> <span class="keyword">exp</span><span class="sign">(</span><span class="sign">-</span>Ht<span class="sign">)</span>
+<span class="line_number">724 </span>        <span class="keyword">return</span><span class="sign">(</span>St<span class="sign">)</span>
+<span class="line_number">725 </span>    <span class="sign">}</span>
+<span class="line_number">726 </span><span class="sign">}</span>
+</pre>
+
+</div> <!-- content -->
+<div id="footer">
+<p>Generated from ./splinesurv/R/splinefrailty.r with <a href="http://www.xs4all.nl/~rfsber/Robo/robodoc.html">ROBODoc</a> V4.99.36 on Sun Jun 29 2008 13:50:50
+</p>
+</div> <!-- footer -->
+
+<!-- Start of StatCounter Code -->
+<script type="text/javascript">
+var sc_project=3825578; 
+var sc_invisible=1; 
+var sc_partition=34; 
+var sc_click_stat=1; 
+var sc_security="6730661a"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a href="http://www.statcounter.com/" target="_blank"><img class="statcounter" src="http://c.statcounter.com/3825578/0/6730661a/1/" alt="free hit counter script" ></a></div></noscript>
+<!-- End of StatCounter Code -->
+</body>
+
+</html>
