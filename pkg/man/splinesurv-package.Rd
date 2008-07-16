@@ -35,6 +35,8 @@ Index:
 }
 \author{
 Emmanuel Sharef <ess28@cornell.edu>
+Robert L. Strawderman <rls54@cornell.edu>
+David Ruppert <dr24@cornell.edu>
 }
 
 \keyword{ survival }
