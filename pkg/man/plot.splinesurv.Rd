@@ -23,6 +23,11 @@
     \item{plotknots}{boolean indicating whether frailty spline knots should be plotted as vertical lines}
     \item{fn}{function to be applied to the posterior samples. Defaults to 
         \code{mean}, but can be set to \code{median} or any other summary function.}
+    \item{marginal}{ string specifying whether to plot marginal survivor functions.
+        If \code{"none"}, conditional survivor functions are plotted. If \code{"mc"},
+        marginal survivor functions are computed by Monte Carlo integration, and
+        if \code{"numerical"}, by numerical integration. Ignored if 
+        \code{which} is not \code{"survival"}} 
     \item{npoints}{number of points to be used for drawing}
     \item{npost}{number of samples from the posterior to be used for estimating
         the curve}

@@ -11,11 +11,16 @@
 \arguments{
     \item{object}{an object of type \code{\link{splinesurv}}.}
     \item{type}{a string specifying the type of prediction. Setting
-    \code{"hazard"} predicts the baseline hazard (default), \code{survival} predicts the survivor function, \code{"lp"} predicts
+    \code{"hazard"} predicts the baseline hazard (default), \code{"survival"} predicts the survivor function, \code{"lp"} predicts
     the linear predictor, \code{"risk"} produces risk estimates, and
     \code{"frailty"} predicts the frailty density.}
     \item{x}{ a vector containing the values at which prediction is desired. If
     \code{NULL}, a sequence of length 100 over the data range is used.}
+    \item{marginal}{ string specifying whether to plot marginal survivor functions.
+        If \code{"none"}, conditional survivor functions are plotted. If \code{"mc"},
+        marginal survivor functions are computed by Monte Carlo integration, and
+        if \code{"numerical"}, by numerical integration. Ignored if 
+        \code{type} is not \code{"survival"}} 
     \item{newdata}{ a data frame in the same format as the original data
     containing data for prediction. If cluster membership is not set to
     \code{NA}, the frailty is included in predictions of the hazard or 

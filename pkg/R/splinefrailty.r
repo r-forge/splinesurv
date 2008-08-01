@@ -22,6 +22,20 @@
 #   or calls SplineSurvMainLoop in the C compiled code, which does the same
 #   thing, only faster. The R implemented routines are thus primarily for
 #   debugging.
+#   
+#   Source code modules are organized as follows: initRoutine contains functions
+#   used to initialize the algorithm. After initialization, RFitting contains
+#   the routines for running estimation entirely within R, and CFitting contains
+#   analogous functions written in C. These two Fitting modules work independently
+#   of one another, and give the same result, although the CFitting routines of
+#   course run much more quickly. The RFitting routines thus serve primarily as
+#   a sanity check, since they are easier to understand. Each of the fitting modules
+#   has a number of submodules, see their descriptions for detail. The routines use data
+#   structures described in 01structures.
+#   
+#   The S3Methods module contains user-callable functions, many of which are
+#   visible when the package is installed. The simSurvival module contains tools
+#   to generate simulated survival data, used in conducting simulation studies.
 #
 #   The call graph below is rather small and unhelpful. See a larger but 
 #   equally unhelpful pdf version here:
@@ -31,6 +45,9 @@
 #   |dotfile ../../man/calls2.dot
 # USAGE
 #   For usage instructions, see the R package documentation
+# CONTENTS
+#    splinesurv.agdata --- main estimation function
+#    SplineSurvMainLoop --- main loop in C
 # AUTHOR
 #  Emmanuel Sharef
 #*******
@@ -42,6 +59,13 @@
 #    The R and C implementations of this routine use particular data structures
 #    to contain curves, regression information and estimation history, which are
 #    documented here
+# CONTENTS
+#    CCurve --- structure to store a curve in C
+#    CHistory --- structure to store MCMC history in C
+#    CRegression --- structure to store regression information in C
+#    RCurve --- structure to store a curve in R
+#    RHistory --- structure to store MCMC history in R
+#    RRegression --- structure to store regression information in R
 #******
 
 #****h* /RFitting
@@ -52,6 +76,21 @@
 #   main loop. Some of these may make calls to C code occasionally, but the model-
 #   fitting on the whole is done in R. This gives the same results as C, but it's
 #   easier to debug and understand.
+# 
+#   This module is organized into several submodules. MetropolisHastings contains
+#   the functions that consitute the main MCMC loop. These rely on likelihood computations
+#   in the makeLikelihood module. Updating and evaluating B-splines and curves is
+#   handled in the curveUpdate module, which relies on C functions accessible via the
+#   CWrappers module. Other utlities related to B-splines are in splineUtils, and 
+#   miscellaneous utilities are in miscUtils.
+# CONTENTS
+#   curveUpdate --- Update B-spline curves
+#   CWrappers --- Wrappers for functions written in C
+#   makeLikelihood --- Compute likelihoods of parameters
+#   MetropolisHastings --- MH and RJMCMC steps
+#   miscUtils --- miscellaneous
+#   splineUtils --- Utilities for evaluating splines and related integrals
+#   ZZdebug --- debugging functions
 #******
 
 
@@ -61,6 +100,19 @@
 # FUNCTION
 #     Evaluate B-splines and integrals over B-splines, either in R or fast
 #     C code.
+# CONTENTS
+#    evalBinte --- compute the integrals of each spline basis function
+#    evalCinte --- compute partial integrals over the spline basis
+#    evalEinte --- compute the expected distance from 1 of a B-spline
+#    frailtysplinefvar --- compute the spline component frailty variance
+#    ki --- addressing of spline indices
+#    makesplinebasis --- construct B-spline basis functions
+#    mysplineDesign --- works like splineDesign()
+#    nBsmom --- compute the N-th moment of a B-spline basis function
+#    nknotsPrior --- evaluate the prior on the number of knots
+#    plotspline --- plot a spline given a set of knots and parameters
+#    splineconv --- compute the convolution of two splines
+#    splinederivint --- compute the convolution of the derivatives of two spline bases
 #******
 
 #****h* RFitting/miscUtils
@@ -68,6 +120,14 @@
 #   miscUtils --- miscellaneous
 # FUNCTION
 #   Miscellanous useful utilities
+# CONTENTS
+#    accrate.predict.lm --- predicted acceptance rate distance from 25%
+#    haspar --- check if a curve has a parametric component
+#    hasspline --- check if a curve has a spline component
+#    makeoutputcurve --- construct the curve to be returned in the output
+#    mdiag  --- replacement for diag()
+#    repairfrailtypar --- fix frailty parameters
+#    submean --- compute the mean of a subset of a vector
 #*******
 
 #****h* /simSurvival
@@ -76,7 +136,16 @@
 # FUNCTION
 #     Generate simulated clustered survival data with arbitrary baseline hazard
 #     and frailty distributions. The main user-visible function here is sim.sample,
-#     which calls other simulation routines
+#     which calls other simulation routines.
+# CONTENTS
+#    bs.survfn --- compute survivor function for B-spline hazard
+#    dnegbin --- negative binomial distribution
+#    generateevents --- Generate random event times
+#    generaterandom --- Generate random numbers
+#    makeagdata --- convert simulated data into Anderson-Gill format
+#    MYmvrnorm  --- multivariate normal random variates
+#    rinvgamma --- generate inverse-gamma random variates
+#    sim.sample --- main simulation function
 #******
 
 #****h* /initRoutine
@@ -84,7 +153,19 @@
 #   initRoutine --- Initialize the splinesurv routine
 # FUNCTION
 #   Compute initial values for all parameters of interest and allocate the
-#   necessary storage
+#   necessary storage. The module CinitRoutine contains functions implemented
+#   in C that are used during the initialization only.
+# CONTENTS
+#    CinitRoutine --- additional C functions used for initialization only
+#    fitparametric --- fit a parametric component to a curve
+#    inithistory --- initialize the history structure
+#    inverthessian --- invert a Hessian matrix
+#    makePenalty.2deriv --- compute a penalty matrix on second derivatives of B-splines
+#    makePenalty.2diff --- compute a penalty matrix on second differences
+#    makeknots --- make knots for a curve with a spline component
+#    makepenalty --- construct a penalty matrix
+#    nknotsPriorMean --- compute the prior mean of the number of knots of a curve
+#    numHess.par  --- compute a numerical Hessian for the parametric component
 #******
 
 #****h* RFitting/curveUpdate
@@ -94,6 +175,15 @@
 #   Re-evaluate B-spline curves, usually with new parameters, different
 #   knots or component weights. The routines in R are relatively slow and
 #   easier to understand, the ones in C are designed to be faster.
+# CONTENTS
+#    evalparametric --- evaluate the parametric component of a curve
+#    evalspline --- evaluate the spline component of a curve
+#    updatecurvex --- change observations of a curve
+#    updatehistory --- update RHistory structure
+#    updateparametric --- update parametric component parameters
+#    updateregression --- update regression coefficients
+#    updatespline --- update the curve's spline parameters
+#    weightcurve --- re-weight the spline and parametric components of a curve
 #******
 
 #****h* RFitting/makeLikelihood
@@ -101,6 +191,19 @@
 #   makeLikelihood --- Compute likelihoods of parameters
 # FUNCTION
 #   Compute parameter likelihoods for use in Metropolis-Hastings steps
+# CONTENTS
+#    mkgr.spline.haz --- gradient of hazard spline parameters
+#    mkhess.coef --- hessian of regression coefficients
+#    mklik.coef --- likelihood of regression coefficients
+#    mklik.frail --- likelihood of frailty for cluster i
+#    mklik.param.frail --- likelihood of parametric component for frailty
+#    mklik.param.haz --- likelihood of parametric component parameters for hazard
+#    mklik.spline.frail --- likelihood of frailty spline parameters
+#    mklik.spline.frail.init --- likelihood of frailty spline parameters (initialization)
+#    mklik.spline.haz --- likelihood of hazard spline parameters
+#    mklik.weight.frail --- likelihood of weight of spline component for frailty
+#    mklik.weight.haz --- likelihood of weight of spline component for hazard
+#    smoothpen --- compute the smoothness penalty for a curve
 #******
 
 #****h* RFitting/MetropolisHastings
@@ -108,6 +211,19 @@
 #   MetropolisHastings --- MH and RJMCMC steps
 # FUNCTION
 #   Execute each type of MH and Reversible-Jump step needed for the chain
+# CONTENTS
+#    acceptreject --- accept of reject a M-H step
+#    mh --- prototype Metropolis-Hastings
+#    mh.bdm --- RJMCMC for Birth-death-move steps
+#    mh.coef --- MH for regression coefficients
+#    mh.frail --- MH for frailties
+#    mh.frailty.param --- MH for frailty parametric component parameters
+#    mh.frailty.spline --- MH for frailty spline parameters
+#    mh.hazard.param --- MH for hazard parametric component parameters
+#    mh.hazard.spline --- MH for hazard spline parameters
+#    mh.weight --- MH for spline component weight for either hazard or frailty
+#    updatepostvar.curve --- update the prior variance for a curve
+#    updatepostvar.coef --- update prior variance for regression coefficients
 #******
 
 #****h* RFitting/CWrappers
@@ -115,6 +231,15 @@
 #   CWrappers --- Wrappers for functions written in C
 # FUNCTION
 #   Make it easy to call functions written in C from inside R
+# CONTENTS
+#    cevalBinte --- wrapper for the C implementation of evalBinte
+#    cevalCinte --- wrapper for the C implementation of cevalCinte
+#    cevalEinte --- wrapper for the C implementation of cevalEinte
+#    cmakePenalty.2deriv --- wrapper for cMakePenalty2diff
+#    cmkgr.spline.haz --- wrapper for cInitGrHazSpline
+#    cmklik.spline.frail --- wrapper for cInitLikFrailSpline
+#    cmklik.spline.haz --- spline hazard likelihood in C wrapper
+#    csplinedesign --- wrapper for csplinedesign
 #******
 
 #****h* /S3Methods
@@ -122,6 +247,25 @@
 #   S3Methods --- Methods for S3 classes
 # FUNCTION
 #   Define the handling for the splinesurv and splinesurv.summary classes.
+#
+#   The main user-facing function is splinesurv, which controls method-dispatch
+#   and generally dispatches to splinesurv.formula, if called with a formula
+#   argument. The latter is responsible for creating an input data frame in the
+#   format required by splinesurv.agdata, which does the fitting.
+#
+#   Other routines are available to summarize and plot splinesurv fitted objects.
+# CONTENTS
+#    plot.splinesurv --- plot method for splinesurv objects
+#    post.fvar --- compute posterior frailty variance
+#    predict.splinesurv --- prediction method for splinesurv objects
+#    print.splinesurv --- print a splinesurv object
+#    print.summary.splinesurv --- print summary.splinesurv object
+#    printcurvesummary --- summarize a curve for summary.splinesurv
+#    splinesurv --- method dispatch for splinesurv
+#    splinesurv.data.frame --- splinesurv method for data frames
+#    splinesurv.formula --- formula interface for splinesurv
+#    splinesurvtkplot --- plot the curve using tcltk
+#    summary.splinesurv --- creates an object of class summary.splinesurv
 #******
     
 #****h* RFitting/ZZdebug
@@ -129,6 +273,9 @@
 #   ZZdebug --- debugging functions
 # FUNCTIONS
 #   Functions whose sole purpose is debugging, that have not been removed from the codebase
+# CONTENTS
+#    rmkgr.spline.haz --- R reimplementation of cInitGrHazSpline
+#    rmklik.spline.haz --- R re-implementation of the likelihood function in C
 #******
 
 #****d* 01structures/RCurve
@@ -3217,7 +3364,7 @@ rmkgr.spline.haz <- function(spline.par, status, lp, frailrep, hazParY, hazParYc
 
 #****f* CWrappers/cmkgr.spline.haz
 #  NAME
-#    cmkgr.spline.haz -- wrapper for cInitGrHazSpline
+#    cmkgr.spline.haz --- wrapper for cInitGrHazSpline
 #  FUNCTION
 #    Wrapper for cInitGrHazSpline, which computes hazard loglikelihood gradient for
 #    initialization only.
@@ -3623,7 +3770,8 @@ printcurvesummary <- function(curve, w = NULL, param.par = NULL)
 #    various parameters needed by different plotting routines.
 #  SYNOPSIS
 plot.splinesurv <- function(x, which = c("hazard", "survival", "frailty", "coef", "all"),
-    newdata = NULL, iter = NULL, fn = mean, plotknots = TRUE, npoints = 100, npost = 100,
+    newdata = NULL, iter = NULL, fn = mean, marginal = c("none", "mc", "numerical"),
+    plotknots = TRUE, npoints = 100, npost = 100,
     alpha=.05, legend = NULL, lty = 1, col = 2, lwd = 2, lty.knots = 1, col.knots = 8,
     lwd.knots = 1, xlab = NULL, ylab = NULL, main = NULL, xlim = NULL, ylim = NULL,
     tk = FALSE, ...)
@@ -3634,7 +3782,8 @@ plot.splinesurv <- function(x, which = c("hazard", "survival", "frailty", "coef"
     if(tk) {
         # call the routine that uses tcltk via the tkrplot to plot an interactive
         # curve viewer
-        splinesurvtkplot(x, newdata = newdata, plotknots = plotknots, npoints = npoints,
+        splinesurvtkplot(x, newdata = newdata, fn = fn, marginal = marginal, 
+            plotknots = plotknots, npoints = npoints,
             legend = legend, lty = lty, col = col, lwd = lwd, lty.knots = lty.knots,
             col.knots = col.knots, lwd.knots = lwd.knots, xlab = xlab, ylab = ylab,
             main = main, xlim = xlim, ylim = ylim, ...)
@@ -3643,6 +3792,7 @@ plot.splinesurv <- function(x, which = c("hazard", "survival", "frailty", "coef"
     # save old parameters
     oldask <- par("ask")
     which <- match.arg(which)
+    marginal <- match.arg(marginal)
     if(which == "all") par(ask = TRUE)
     if(!is.null(iter) && iter <= 0) iter <- NULL
     # Hazard and survival curve plotting
@@ -3676,6 +3826,7 @@ plot.splinesurv <- function(x, which = c("hazard", "survival", "frailty", "coef"
         }
         if(type == "survival"){
             if(is.null(ylab)) ylab1 <- "Survival" else ylab1 <- ylab
+            if(is.null(ylim)) ylim <- c(0,1)
             if(is.null(main)){
                 if(is.null(newdata)) main1 <- "Baseline survival" 
                 else main1 <- "Survival"
@@ -3684,8 +3835,8 @@ plot.splinesurv <- function(x, which = c("hazard", "survival", "frailty", "coef"
         # a single curve is plotted if either no newdata is given, or newdata has only one row
         if(is.null(newdata) | (!is.null(newdata) && dim(newdata)[1] < 2)){
             # estimate the hazard curve
-            haz <- predict(x, type = type, x = times, newdata = newdata, iter = iter, fn = fn,
-                npost = npost, alpha = alpha)
+            haz <- predict(x, type = type, x = times, marginal = marginal, newdata = newdata, iter = iter, 
+                fn = fn, npost = npost, alpha = alpha)
             plot(haz[, 1:2], type = "l", lty = lty, col = col, lwd = lwd, main = main1,
                 xlab = xlab1, ylab = ylab1, xlim = xlim1, ylim = ylim, ...)
             # plot knots as vertical lines
@@ -3703,7 +3854,7 @@ plot.splinesurv <- function(x, which = c("hazard", "survival", "frailty", "coef"
             haz <- times
             # predict a curve for each row of newdata
             for(i in 1:dim(newdata)[1]) haz <- cbind(haz, predict(x, type = type, x = times,
-                newdata = newdata[i, ,drop = FALSE], iter = iter, fn = fn, npost = npost)[, 2])
+                marginal = marginal, newdata = newdata[i, ,drop = FALSE], iter = iter, fn = fn, npost = npost)[, 2])
             if(length(col) == 1 & length(lty) == 1 & length(lwd) == 1) col = 1:dim(newdata)[1]
             # plot all the new lines
             matplot(haz[, 1], haz[, -1], type = "l", col = col, lwd = lwd, lty = lty,
@@ -3884,29 +4035,34 @@ splinesurvtkplot <- function(x, ...)
 #    See package documentation
 #  SYNOPSIS
 predict.splinesurv <- function(object, type = c("hazard", "survival", "lp", "risk", "frailty"),
-    x = NULL, newdata = NULL, iter = NULL, fn = mean, alpha = NULL, npost = 100, ...)
+    x = NULL, marginal = c("none", "mc", "numerical"), newdata = NULL, iter = NULL, 
+    fn = mean, alpha = NULL, npost = 100, ...)
 #  SOURCE
 #
 {
+    #browser()
+    marginal <- match.arg(marginal)
     type <- match.arg(type)
     fit <- object; haz <- 1
     ntimes <- 100
     # check for valid newdata
     if((type == "hazard" | type == "survival") & !is.null(newdata)) if(dim(newdata)[1] > 1) 
         stop("newdata may only have one row")
+        
+    # get the set of "x" values at which the curve will be predicted
+    if(type == "hazard" | type == "survival") {
+        if(is.null(x) | is.character(x))   
+            x <- seq(from = min(fit$data$time), to = max(fit$data$time), length = ntimes) 
+    }
+    if(type == "frailty" & is.null(x)) {
+        knots <- fit$history$frailty.spline.knots[1, ]
+        knots <- knots[knots>-Inf]
+        bounds <- range(knots)
+        x <- seq(from = bounds[1], to = bounds[2], length = ntimes) 
+    }
+
     # if iter=NULL and a curve is required, call the routine again with a subset of iters
     if((type == "hazard" | type == "frailty" | type == "survival") & is.null(iter)){
-        # get the set of "x" values at which the curve will be predicted
-        if(type == "hazard" | type == "survival") {
-            if(is.null(x) | is.character(x))   
-                x <- seq(from = min(fit$data$time), to = max(fit$data$time), length = ntimes) 
-        }
-        if(type == "frailty" & is.null(x)) {
-            knots <- fit$history$frailty.spline.knots[1, ]
-            knots <- knots[knots>-Inf]
-            bounds <- range(knots)
-            x <- seq(from = bounds[1], to = bounds[2], length = ntimes) 
-        }
         # get the set of iterations that will be used
         ngooditer <- min(fit$control$maxiter - fit$control$burnin, npost)
         iters <- round(seq(from = fit$control$burnin + 1, to = fit$control$maxiter,
@@ -3916,7 +4072,7 @@ predict.splinesurv <- function(object, type = c("hazard", "survival", "lp", "ris
         i <- 1
         # call predict for a single iteration (after this if statement)
         for(iter in iters) {
-            thispred <- predict(fit, type, x, newdata, iter, ...)
+            thispred <- predict(fit, type, x, marginal=marginal, newdata=newdata, iter=iter, ...)
             preds[, i] <- thispred[, 2]
             i <- i + 1
         }
@@ -3945,7 +4101,7 @@ predict.splinesurv <- function(object, type = c("hazard", "survival", "lp", "ris
             preds <- matrix(0, length(times), ngooditer)
             i <- 1
             for(iter in iters) {
-                thispred <- predict(fit, type, times, newdata, iter, ...)
+                thispred <- predict(fit, type, times, marginal=marginal, newdata=newdata, iter=iter, ...)
                 preds[, i] <- thispred[, 2]
                 i <- i + 1
             }
@@ -3971,12 +4127,14 @@ predict.splinesurv <- function(object, type = c("hazard", "survival", "lp", "ris
         haz <- hazard$y
         # if newdata is nonzero, compute the frailty and covariate multiplier for each row
         if(!is.null(newdata)){
-            risk <- predict(fit, "risk", NULL, newdata, iter)$risk[1]
+            risk <- predict(fit, "risk", NULL, marginal=marginal, newdata=newdata, iter=iter)$risk[1]
             haz <- haz * risk
             clusterind <- attr(fit$terms, "special")$cluster
             if(!is.null(clusterind)) cluster <- newdata[[clusterind]] else cluster <- NULL
-            if(!is.null(cluster) && !is.na(cluster)) 
-                frail <- fit$history$frailty[iter, cluster] else frail <- 1
+            if(!is.null(cluster) && !is.na(cluster)){ 
+                frail <- fit$history$frailty[iter, cluster] 
+                marginal <- FALSE  # if frailty is specified, marginal is not allowed
+            }else frail <- 1
             haz <- haz * frail
         }
         if(type == "hazard") return(data.frame(time = times, hazard = haz))
@@ -3984,6 +4142,16 @@ predict.splinesurv <- function(object, type = c("hazard", "survival", "lp", "ris
         if(type == "survival"){
             dx <- c(diff(times), 0)
             surv <- exp(-cumsum(haz * dx))
+            if(marginal == "mc")
+                surv <- apply(outer(surv, 
+                    fit$history$frailty[iter, ], function(x, y) x^y), 1, mean)                
+            if(marginal == "numerical") {
+                frailpred <- predict(fit, "frailty", iter = iter)
+                dx <- frailpred$x[2] - frailpred$x[1]
+                frailpred$density <- frailpred$density / sum(frailpred$density * dx)
+                survfns <- outer(surv, frailpred$x, function(x, y) x^y)
+                surv <- survfns %*% frailpred$density * dx
+            }
             return(data.frame(time = times, survival = surv))
         }
     } 
@@ -4038,8 +4206,6 @@ predict.splinesurv <- function(object, type = c("hazard", "survival", "lp", "ris
     {
         # construct a temp frailty curve that can be evaluated
         frailty <- fit$frailty
-        if(is.null(x)) x <- seq(from = max(0, min(frailty$spline.knots)), 
-            to = max(frailty$spline.knots), length = ntimes)
         frailty$x <- x; frailty$haspar <- haspar(frailty);
         frailty$hasspline <- hasspline(frailty); frailty$spline.norm <- TRUE
         if(is.null(iter)){
