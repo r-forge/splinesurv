@@ -1,4 +1,4 @@
-export(sim.sample,splinesurv)
+export(sim.sample,splinesurv,dic.splinesurv)
 import(MASS,survival)
 useDynLib(splinesurv)
 S3method(print,splinesurv)

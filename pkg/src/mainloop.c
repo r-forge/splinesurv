@@ -15,6 +15,19 @@
  *  The main function is SplineSurvMainLoop, which calls several Metropolis-Hastings
  *  functions in the CMetropolisHastings module, which in turn rely on likelihood
  *  functions in the CmakeLikelihood module.
+ *
+ *  This module is organized into several submodules. The main
+ *  MCMC loop is contained in CMetropolisHastings, which relies on likelihood
+ *  functions in CmakeLikelihood. In order to evaluate likelihoods, B-spline
+ *  curves need to be updated regularly, the functionality for which is provided
+ *  by CCurveUpdate, which relies on CsplineUtils.
+ * CONTENTS
+ *  CcurveUpdate --- update curves
+ *  CDefines --- control parameter definitions
+ *  CmakeLikelihood --- likelihood functions in C
+ *  CMetropolisHastings --- MH steps in C
+ *  CmiscUtils --- miscellaneous utilities in C
+ *  CsplineUtils --- spline utilities in C
  ********/ 
 
 /****h* CFitting/CmiscUtils
@@ -22,6 +35,21 @@
  *  CmiscUtils --- miscellaneous utilities in C
  * FUNCTION
  *  Various useful small utilities, including random number generators.
+ * CONTENTS
+ *  dcopyWrapper --- wrapper for Fortran call to dcopy
+ *  ddotWrapper --- Wrapper for Fortran call to ddot
+ *  dfactorial --- compute the factorial of a double
+ *  diagmvWrapper --- Wrapper for Fortran call to diagmv
+ *  dmax --- maximum of two doubles
+ *  dmin --- minimum of two doubles
+ *  dnegbin --- negative binomial density
+ *  EvalNknotsPrior --- evaluate the prior on the number of knots
+ *  getListElement --- get an element of a SEXP list by name
+ *  imax --- maximum of two integers
+ *  imin --- minimum of two integers
+ *  mvrnorm --- multivariate normal random numbers
+ *  rinvgamma --- inverse gamma random numbers
+ *  UpdateHistory --- update history of parameters
  *********/
 
 /****h* CFitting/CsplineUtils
@@ -29,6 +57,17 @@
  *  CsplineUtils --- spline utilities in C
  * FUNCTION
  *  Tools to manage and evaluate B-splines and related integrals
+ * CONTENTS
+ *  cevalBinte --- compute the integrals of each spline basis function
+ *  cevalCinte --- construct matrix of partial integrals of a B-spline basis
+ *  cevalCinte2 --- compute partial integrals of B-spline basis functions
+ *  cevalCinteOld --- old method for computing cevalCinte
+ *  cevalEinte --- compute the N-th moment of the distance from 1 of a B-spline
+ *  cnBsmom --- compute the N-h moment of a B-spline basis function
+ *  cSplineConvolution --- compute the convolution of two basis functions
+ *  cSplineDerivInt --- compute the convolution of the derivatives of two spline basis functions
+ *  csplinedesign --- create a B-spline basis
+ *  csplineeval --- evaluate a B-spline function
  *********/
 
 /****h* CFitting/CcurveUpdate
@@ -36,6 +75,23 @@
  *  CcurveUpdate --- update curves
  * FUNCTION
  *  Functions to re-estimate and update curves in the course of estimation.
+ * CONTENTS
+ *  EvalCurveAtOnePoint --- evaluate a CCurve at a single point
+ *  EvalParamAtOnePoint --- evaluate parametric component at a single point
+ *  EvalParametric --- evaluate the parametric component of a curve with new parameters
+ *  EvalSpline --- evaluate spline component
+ *  EvalSplineAtOnePoint --- evaluate spline at a given value of x
+ *  FrailtySplineVar --- compute frailty variance of a spline component
+ *  MakeSplineBasis --- make a the spline basis from scratch
+ *  PopulateLocalCurve --- populate a CCurve structure from an RCurve
+ *  PopulateLocalHistory --- populate a local CHistory curve
+ *  PopulateLocalRegression --- populate a local RRegression structure
+ *  RemakeSplineBasis --- update spline basis after a birth-death-move operation
+ *  ReweightCurve --- weight a curve's parametric and spline components
+ *  UpdateCurveX --- change an X value of a CCurve structure
+ *  UpdateParamPar --- update parametric component with new parameters
+ *  UpdateSplineBasis --- recompute basis if one of the X values changes
+ *  UpdateSplinePar --- update the spline parameters
  *********/
 
 /****h* CFitting/CmakeLikelihood
@@ -43,19 +99,50 @@
  *  CmakeLikelihood --- likelihood functions in C
  * FUNCTION
  *  Functions to compute the loglikelihood required by the MCMC steps, in C
+ * CONTENTS
+ *    LikelihoodFrailty --- likelihood of the frailty itself
+ *    LikelihoodFrailtyLogSum --- utility to efficiently compute a sum of log-frailties
+ *    LikelihoodHazardLogSum --- utility to efficiently compute a sum of log-hazards
+ *    LikelihoodParamFrailty --- likelihood of frailty parametric parameter
+ *    LikelihoodParamHazard --- likelihood of hazard parametric parameters
+ *    LikelihoodRegression --- likelihood of regression coefficients
+ *    LikelihoodSplineFrailty --- likelihood of frailty spline parameters
+ *    LikelihoodSplineHazard --- likelihood of hazard spline parameters
+ *    LikelihoodWeightFrailty --- likelihood of weight for frailty curve
+ *    LikelihoodWeightHazard --- likelihood of weight for hazard curve
+ *    SmoothnessPenalty --- compute smoothness penalties
  *********/
 
 /****h* CFitting/CMetropolisHastings
- *  NAME
+ * NAME
  *    CMetropolisHastings --- MH steps in C
- *  DESCRIPTION
+ * FUNCTION
  *    Functions to successively update each of the parameter sets by Metropolis-Hastings
- *    or reversible jump M-H.
+ *    or reversible jump M-H. These consitute the MCMC loop.
+ * CONTENTS
+ *    AcceptReject --- accept-reject step for Metropolis-Hastings
+ *    MH_BDM --- birth-death-move steps for spline knots
+ *    MH_Frail --- MH step for frailties
+ *    MH_ParamFrailty --- MH for frailty parametric component parameters
+ *    MH_ParamHazard --- MH for hazard parametric component parameters
+ *    MH_Regression --- MH step for regression coefficients
+ *    MH_SplineFrailty --- MH for frailty spline parameters
+ *    MH_SplineHazard --- MH for hazard spline parameters
+ *    MH_Weight --- MH for weight of spline component
+ *    UpdatePostvarCurve --- update prior variance for a CCurve
+ *    UpdatePostvarRegression --- update prior variance for regression coefficients
  *********/
 
 /****h* CFitting/CDefines
- *  NAME
+ * NAME
  *    CDefines --- control parameter definitions
+ * CONTENTS
+ *    DEBUG --- debugging marker
+ *    LIK_MOD --- modulus to use for summing likelihoods
+ *    MAX_PAR --- hard limit on maximum parameter value allowed
+ *    enumPenalty --- an enum for different penalty types
+ *    enumDistribution --- an enum for different parametric distributions
+ *    enumNknotsPrior --- an enum for different priors on the number of knots
  *********/
 
 #include <R_ext/Linpack.h>    
@@ -287,7 +374,8 @@ typedef struct hist {
            *HazardWeight, // weight of the spline component for the hazard
            *FrailtyWeight, // weight of the spline component for the frailty
            *priorvar, // prior error variances
-           *accept; // acceptance rates for each of the components
+           *accept, // acceptance rates for each of the components
+           *loglik; // full log-likelihood history
 } *historyP;
 /************/
 
@@ -779,7 +867,7 @@ void PopulateLocalCurve( curveP theCurve, SEXP Rcurve)
 
 /****f* CcurveUpdate/PopulateLocalRegression
  *  NAME
- *    PopulateLocalRegression
+ *    PopulateLocalRegression --- populate a local RRegression structure
  *  SYNOPSIS
  *    void PopulateLocalRegression( regressionP theReg, SEXP Rregression){
  *  FUNCTION
@@ -864,6 +952,7 @@ void PopulateLocalHistory( historyP theHist, SEXP Rhistory)
     if(elmt != R_NilValue ) theHist->FrailtyWeight = REAL(elmt);
     theHist->priorvar = REAL(getListElement(Rhistory, "priorvar"));
     theHist->accept = REAL(getListElement(Rhistory, "accept"));
+    theHist->loglik = REAL(getListElement(Rhistory, "loglik"));
 }
 /************ PopulateLocalHistory */
 
@@ -1794,6 +1883,95 @@ double LikelihoodWeightFrailty(curveP hazard, curveP frailty, regressionP regres
 }
 /************ LikelihoodWeightFrailty */
 
+/****f* CmakeLikelihood/LikelihoodFull
+ *  NAME
+ *    LikelihoodFull --- Full posterior likelihood
+ *  FUNCTION
+ *    Compute the full posterior likelihood of parameters at the current iteration. 
+ *    Needed for DIC.    
+ *  INPUTS
+ *    hazard        CCurve for the hazard
+ *    frailty       CCurve for the frailty
+ *    regression    CRegression structure
+ *  OUTPUTS
+ *    lik   full loglikelihood
+ *  SYNOPSIS
+ */
+double LikelihoodFull(curveP hazard, curveP frailty, regressionP regression)
+/*
+ *  SOURCE
+*/
+{
+    double * hazYcum = hazard->Ycum;
+    double * frailelp = regression->frailelp;
+    double lik =  0.0;
+    int c1 = 1;
+    // Hazard, frailty and regression (top-level)
+    lik += LikelihoodHazardLogSum(regression->n, regression->status, regression->frailrep);
+    lik += LikelihoodHazardLogSum(hazard->nx, regression->status, hazard->Y);
+    lik += ddotWrapper(regression->n, regression->status, regression->lp);
+
+    lik -= ddotWrapper(regression->n, regression->frailelp, hazard->Ycum);
+    lik += LikelihoodFrailtyLogSum(frailty->nx, frailty->Y);
+
+    // priors on regression and spline parameters and their variances
+    lik -= (regression->p)/2 * log(regression->priorvar[0]);
+    lik -= pow(F77_CALL(dnrm2)(&(regression->p), regression->coefficients, &c1),2)/
+        (2.0*regression->priorvar[0]);
+    lik -= (regression->hyper[0]+1) * log(regression->priorvar[0])
+           + (regression->hyper[1])/(regression->priorvar[0]);
+    if(hazard->hasSpline){
+        lik -= (hazard->nj)/2 * log(hazard->SplinePriorvar[0])
+            + hazard->SplinePenaltyFactor[0]*SmoothnessPenalty(hazard); 
+        lik -= (hazard->SplineHyper[0]+1) * log(hazard->SplinePriorvar[0])
+            + hazard->SplineHyper[1]/hazard->SplinePriorvar[0];
+            }
+    if(frailty->hasSpline){
+        lik -= (frailty->nj)/2 * log(frailty->SplinePriorvar[0])
+            + frailty->SplinePenaltyFactor[0]*SmoothnessPenalty(frailty); 
+        lik -= (frailty->SplineHyper[0]+1) * log(frailty->SplinePriorvar[0])
+            + frailty->SplineHyper[1]/frailty->SplinePriorvar[0];
+    }
+    // Priors on parametric components and their variances
+    if(hazard->hasPar){
+        lik -= (hazard->np)/2 * log(hazard->ParamPriorvar[0]);
+        lik -= pow(F77_CALL(dnrm2)(&(hazard->np), hazard->ParamPar, &c1),2)/(2*hazard->ParamPriorvar[0]);
+        lik -= (hazard->ParamHyper[0]+1) * log(hazard->ParamPriorvar[0])
+            + hazard->ParamHyper[1]/hazard->ParamPriorvar[0];
+    }
+    if(frailty->hasPar){
+        lik -= (frailty->np)/2 * log(frailty->ParamPriorvar[0]);
+        lik -= pow(F77_CALL(dnrm2)(&(frailty->np), frailty->ParamPar, &c1),2)/(2*frailty->ParamPriorvar[0]);
+        lik -= (frailty->ParamHyper[0]+1) * log(frailty->ParamPriorvar[0])
+            + frailty->ParamHyper[1]/frailty->ParamPriorvar[0];
+    }
+
+    // Prior on weights
+    if(hazard->hasSpline & hazard->hasPar)
+        lik += (hazard->WeightHyper[0] - 1.0) * log(hazard->Weight[0])
+              +(hazard->WeightHyper[1] - 1.0) * log(1.0 - hazard->Weight[0]);
+    if(frailty->hasSpline & frailty->hasPar)
+        lik += (frailty->WeightHyper[0] - 1.0) * log(frailty->Weight[0])
+              +(frailty->WeightHyper[1] - 1.0) * log(1.0 - frailty->Weight[0]);
+
+    // Prior on number and positions of knots
+    if(hazard->hasSpline & hazard->SplineAdaptive){
+        lik += log(dfactorial((double) hazard->SplineNknotsMax - hazard->SplineNknots)
+                * dfactorial((double) hazard->SplineNknots)
+                / dfactorial((double) hazard->SplineNknotsMax));
+        lik += log(EvalNknotsPrior(hazard->SplineNknots, hazard));
+    }
+    if(frailty->hasSpline & frailty->SplineAdaptive){
+        lik += log(dfactorial((double) frailty->SplineNknotsMax - frailty->SplineNknots)
+                * dfactorial((double) frailty->SplineNknots)
+                / dfactorial((double) frailty->SplineNknotsMax));
+        lik += log(EvalNknotsPrior(frailty->SplineNknots, frailty));
+    }
+
+    return lik;
+}
+/************ LikelihoodFull */
+
 /****f* CMetropolisHastings/AcceptReject
  *  NAME
  *    AcceptReject --- accept-reject step for Metropolis-Hastings
@@ -1852,7 +2030,7 @@ void MH_Frail(curveP hazard, curveP frailty, regressionP regression)
         double cand = rgamma( pow(u,2)/v, v/u);
         double pcu = 1; double puc = 1;
         // if the candidate is invalid (e.g. beyond boundary knots), fail
-        if(isnan(cand) || ( frailty->hasSpline &&
+        if(isnan(cand) || cand<1e-5 || ( frailty->hasSpline &&
             (cand > frailty->SplineKnots[frailty->nj + frailty->SplineOrd -1]
              | cand < frailty->SplineKnots[0]) ) ){
             continue;
@@ -1867,9 +2045,9 @@ void MH_Frail(curveP hazard, curveP frailty, regressionP regression)
             yj = frailty->Y[j];
             candj = u + uj - cand;
             // if the moved element is invalid, fail
-            if( frailty->hasSpline &&
+            if( candj<1e-5 || (frailty->hasSpline &&
                 (candj > frailty->SplineKnots[frailty->nj + frailty->SplineOrd -1]
-                 | candj < frailty->SplineKnots[0]) ) continue;
+                 | candj < frailty->SplineKnots[0]) )) continue;
             // base likelihood
             baselik = LikelihoodFrailty(i, hazard, frailty, regression)
                 + LikelihoodFrailty(j, hazard, frailty, regression);
@@ -2094,8 +2272,9 @@ void MH_SplineFrailty(curveP hazard, curveP frailty, regressionP regression)
             k = (int) floor(runif(0,(double) frailty->nj));
         
         // Generate candidate parameter at j
-        cand[j] = frailty->SplinePar[j]+frailty->SplineTun[0]*
+        cand[j] = dmax(frailty->SplinePar[j],frailty->SplineMin[0])+frailty->SplineTun[0]*
             rnorm(0,frailty->SplineCandSD[j]);
+        if(cand[j]<frailty->SplineMin[0]) cand[j] = 1e-10;
         // Try to compute value at k to compensate for change at j
         double newmean = frailty->SplineBasisExp[j] * (exp(cand[j])-exp(oldPar[j]));
         double candk = log(oldEPar[k] - newmean/frailty->SplineBasisExp[k]);
@@ -2619,6 +2798,9 @@ void UpdateHistory(curveP hazard, curveP frailty, regressionP regression, histor
     history->accept[iter-1 + ny*5] = hazard->WeightAccept[0];
     history->accept[iter-1 + ny*6] = frailty->WeightAccept[0];
     history->accept[iter-1 + ny*7] = frailty->Accept[0];
+
+    // store full loglikelihood
+    history->loglik[iter-1] = LikelihoodFull(hazard, frailty, regression);
 }
 /************ UpdateHistory */
 

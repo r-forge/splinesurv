@@ -4,6 +4,14 @@
  *  FUNCTION
  *    Set of functions, mainly likelihood and gradient functions called during 
  *    initialization of the splinesurv.agdata function.
+ *  CONTENTS
+ *    addInitSmoothnessPenaltyGr --- adds gradient of smoothness penalty to an input vector
+ *    cInitGrHazSpline --- gradient of likelihood of spline parameters for hazard
+ *    cInitLikFrailSpline --- loglikelihood of parameters for spline component of frailty curve
+ *    cInitLikHazSpline --- spline hazard likelihood for initialization
+ *    cInitMultAndWeight --- multiply a spline component and add it to a weighted parametric component
+ *    cMakePenalty2diff --- compute a penalty matrix on second derivatives
+ *    InitSmoothnessPenalty --- compute the smoothness penalty during initialization
  *********/
 
 #include <R_ext/BLAS.h>    
@@ -654,7 +662,8 @@ void cInitGrHazSpline(double *gr, double *par, double *status, double *lp, doubl
  *    see cmklik.spline.frail
  *  SYNOPSIS
  */
-void cInitLikFrailSpline(double *lik, double *par, double *frailParY, double *weight, double *B, double *E, double *M, double *P, int * penaltyType, double *sigma2, int *ny, int *nj)
+void cInitLikFrailSpline(double *lik, double *par, double *frailParY, double *weight, double *B,
+        double *E, double *M, double *P, int * penaltyType, double *sigma2, int *ny, int *nj)
 /*
  *  SOURCE
 */

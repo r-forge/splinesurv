@@ -385,6 +385,7 @@
 #
 #       frailty                 frailty estimates for each cluster
 #       coefficients            regression coefficient estimates
+#       loglik                  full log-likelihood
 #       hazard.spline.par       hazard spline parameters
 #       hazard.spline.knots     hazard spline knots
 #       frailty.spline.par      frailty spline parameters
@@ -1015,6 +1016,7 @@ inithistory <- function(hazard, frailty, regression, control)
     maxiter <- control$maxiter
     history$frailty <- matrix(0, maxiter, length(frailty$x))
     history$coefficients <- matrix(0, maxiter, length(regression$coefficients))
+    history$loglik <- matrix(0, maxiter, 1)
     # ssorate for spline knots and parameters
     if(hazard$hasspline) {
         history$hazard.spline.par <- matrix(-Inf, maxiter, 
@@ -1072,6 +1074,7 @@ updatehistory <- function(history, i, hazard, frailty, regression)
     # store frailties and coefficients
     history$frailty[i, ] <- frailty$x
     history$coefficients[i, ] <- regression$coefficients
+    history$loglik[i, ] <- regression$loglik
     # store spline knots and parameters
     if(hazard$hasspline) {
         history$hazard.spline.par[i, 1:length(hazard$spline.par)] <- hazard$spline.par
@@ -1197,12 +1200,20 @@ makeoutputcurve <- function(curve)
 {
     outcurve <- list(name = curve$name,
                     type = curve$type,
+                    spline.adaptive = curve$spline.adaptive,
                     spline.nknots = curve$spline.nknots,
+                    spline.nknots.prior = curve$spline.nknots.prior,
+                    spline.maxoccknots = curve$spline.maxoccknots,
+                    spline.nknots.hyper = curve$spline.nknots.hyper,
                     spline.knotspacing = curve$spline.knotspacing,
                     spline.ord = curve$spline.ord,
                     spline.norm = curve$spline.norm,
                     spline.penalty = curve$spline.penalty,
-                    param.dist = curve$param.dist
+                    spline.penaltyfactor = curve$spline.penaltyfactor,
+                    spline.hyper = curve$spline.hyper,
+                    param.dist = curve$param.dist,
+                    param.hyper = curve$param.hyper,
+                    weight.hyper = curve$weight.hyper
                 )
     return(outcurve)   
 }
@@ -4230,6 +4241,105 @@ predict.splinesurv <- function(object, type = c("hazard", "survival", "lp", "ris
 }
 #************ predict.splinesurv 
 
+#****f* S3Methods/dic.splinesurv
+#  NAME
+#    dic -- Deviance Information Criterion for a model
+#  FUNCTION
+#    Compute the DIC for a fitted model
+#  INPUTS
+#    object     a splinesurv object
+#  SYNOPSIS
+dic.splinesurv <- function(object){
+#  SOURCE
+#
+    x <- object
+    ll<-x$history$loglik[(x$control$burnin+1):x$control$maxiter]
+    lm<-mean(ll[abs(ll-median(ll))<5*abs(median(ll))])
+    Dbar <- -2*lm
+    ll<-ll[ll>quantile(ll,.025) & ll<quantile(ll,.975)]
+    V <- var(-2 *ll)
+    Dpost <- -2 * likpost.splinesurv(x)
+    pD <- V/2
+    dic <- Dbar + pD
+    dic2 <- Dpost + V
+    list(dic=dic,dic2=dic2,Dbar=Dbar,Dpost=Dpost,pD=pD)
+}
+#************ dic.splinesurv
+
+#****f* S3Methods/likpost.splinesurv
+#  NAME
+#    likpost -- posterior log-likelihood
+#  FUNCTION
+#    Compute the log-likelihood at the posterior mean for a fitted model
+#  INPUTS
+#    object     a splinesurv object
+#  SYNOPSIS
+likpost.splinesurv <- function(x){
+#  SOURCE
+#
+    P <- x$post
+    D <- x$data
+
+    post.haz <- predict(x, "hazard", x=D$time)$hazard
+    post.hazcum <- predict(x, "survival", x=seq(from=min(D$time), to=max(D$time), length=1000))
+    post.hazcum <- -log(post.hazcum$surv[findInterval(D$time, post.hazcum$time, all=T)])
+    post.frail <- predict(x, "frailty", x=P$frailty)$density
+    post.lp <- predict(x, "lp")
+
+    # Evaluate full loglikelihood at posterior
+    lik <- 0
+    lik <- lik + sum(D$delta * (log(P$frailty[D$i]) + log(post.haz) + post.lp))
+    lik <- lik - sum(P$frailty[D$i] * post.hazcum * exp(post.lp))
+    lik <- lik + sum(log(post.frail))
+
+    lik <- lik - length(P$coef)/2 * log(P$priorvar$coef) - sum(P$coef^2)/(2*P$priorvar$coef)
+    lik <- lik - ((x$control$hyper[1]+1) * log(P$priorvar$coef) +
+            x$control$hyper[2]/P$priorvar$coef)
+    # spline components
+    if(hasspline(x$hazard)){
+        lik <- lik - (x$hazard$spline.nknots + 2*x$hazard$spline.ord - 2)/2 * 
+            log(P$priorvar$hazard.spline) #TODO: add some proxy for smoothness penalty here
+        lik <- lik - (x$hazard$spline.hyper[1]+1) * log(P$priorvar$hazard.spline) +
+                x$hazard$spline.hyper[2]/P$priorvar$hazard.spline
+    }
+    if(hasspline(x$frailty)){
+        lik <- lik - (x$frailty$spline.nknots + 2*x$frailty$spline.ord)/2 * 
+            log(P$priorvar$frailty.spline) #TODO: add some proxy for smoothness penalty here
+        lik <- lik - (x$frailty$spline.hyper[1]+1) * log(P$priorvar$frailty.spline) +
+                x$frailty$spline.hyper[2]/P$priorvar$frailty.spline
+    }
+    # parametric components
+    if(haspar(x$hazard))
+        lik <- lik - length(P$hazard.param.par)/2 * log(P$priorvar$hazard.param) -
+                sum(P$hazard.param.par^2)/(2*P$priorvar$hazard.param) -
+                (x$hazard$param.hyper[1]+1) * log(P$priorvar$hazard.param) -
+                x$hazard$param.hyper[2]/P$priorvar$hazard.param
+    if(haspar(x$frailty))
+        lik <- lik - length(P$frailty.param.par)/2 * log(P$priorvar$frailty.param) -
+                sum(P$frailty.param.par^2)/(2*P$priorvar$frailty.param) -
+                (x$frailty$param.hyper[1]+1) * log(P$priorvar$frailty.param) -
+                x$frailty$param.hyper[2]/P$priorvar$frailty.param
+
+    # priors on weights
+    if(haspar(x$hazard) & hasspline(x$hazard))
+        lik <- lik + (x$hazard$weight.hyper[1]-1) * log(P$hazard.weight) +
+                     (x$hazard$weight.hyper[2]-1) * log(1 - P$hazard.weight)
+    if(haspar(x$frailty) & hasspline(x$frailty))
+        lik <- lik + (x$frailty$weight.hyper[1]-1) * log(P$frailty.weight) +
+                     (x$frailty$weight.hyper[2]-1) * log(1 - P$frailty.weight)
+
+    # priors on number/position of knots
+    if(hasspline(x$hazard) & x$hazard$spline.adaptive)
+        lik <- lik + log(1/choose(x$hazard$spline.maxoccknots,x$hazard$spline.nknots)) +
+                log(nknotsPrior(round(x$hazard$spline.nknots),x$hazard))
+    if(hasspline(x$frailty) & x$frailty$spline.adaptive)
+        lik <- lik + log(1/choose(x$frailty$spline.maxoccknots,x$frailty$spline.nknots)) +
+                log(nknotsPrior(round(x$frailty$spline.nknots),x$frailty))
+        
+    lik
+}
+#************ likpost.splinesurv
+
 }}}
 
 {{{ #Main
@@ -4461,7 +4571,8 @@ splinesurv.agdata <- function(x, hazard = NULL, frailty = NULL, regression = NUL
         priorvar = 0.1,
         hyper = c(0.01, 0.01),
         tun = 1,
-        accept = 0
+        accept = 0,
+        loglik = 0
     )
     regression <- reg.default
     regnames <- names(regression)
@@ -4733,6 +4844,7 @@ splinesurv.agdata <- function(x, hazard = NULL, frailty = NULL, regression = NUL
     }}}
 
     if(frailty$hasspline) frailty$spline.fvar <- frailtysplinefvar(frailty)
+
     #browser()
     gcout <- gc()
     # Store initial values in parameter history
@@ -4924,7 +5036,9 @@ splinesurv.agdata <- function(x, hazard = NULL, frailty = NULL, regression = NUL
                             hazard.weight = submean(history$hazard.weight, sub),
                             frailty.spline.par = submean(history$frailty.spline.par, sub),
                             frailty.param.par = submean(history$frailty.param.par, sub),
-                            frailty.weight = submean(history$frailty.weight, sub)
+                            frailty.weight = submean(history$frailty.weight, sub),
+                            priorvar = as.list(submean(history$priorvar, sub)),
+                            loglik = submean(history$loglik, sub)
                         )
         # save mean number of knots in spline.nknots for output
         if(hasspline(hazard)) 
@@ -4950,6 +5064,7 @@ splinesurv.agdata <- function(x, hazard = NULL, frailty = NULL, regression = NUL
     rownames(history$frailty) <- rownames(history$coefficients) <-
         rownames(history$splinepar.haz) <- rownames(history$splinepar.frail) <- NULL
     control$iter <- iter
+    control$hyper <- regression$hyper
     }}}
 
     gcout <- gc()

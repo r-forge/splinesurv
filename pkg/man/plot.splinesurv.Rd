@@ -7,10 +7,10 @@
 } 
 \usage{
 \method{plot}{splinesurv}(x, which = c("hazard", "survival", "frailty", "coef", "all"), 
-    newdata = NULL, iter=NULL, fn = mean, plotknots = TRUE, npoints = 100,
-    npost = 100, alpha = .05, legend = NULL, lty = 1, col = 2, lwd = 2,
-    lty.knots = 1, col.knots = 8, lwd.knots = 1, xlab = NULL, ylab = NULL, 
-    main = NULL, xlim = NULL, ylim = NULL, tk = FALSE, ...)
+    newdata = NULL, iter=NULL, fn = mean, marginal = c("none", "mc", "numerical"), 
+    plotknots = TRUE, npoints = 100, npost = 100, alpha = .05, legend = NULL,
+    lty = 1, col = 2, lwd = 2, lty.knots = 1, col.knots = 8, lwd.knots = 1, xlab = NULL, 
+    ylab = NULL, main = NULL, xlim = NULL, ylim = NULL, tk = FALSE, ...)
 }
 \arguments{
     \item{x}{an object of type \code{\link{splinesurv}}.}

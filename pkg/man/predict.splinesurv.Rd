@@ -6,7 +6,9 @@
 } 
 \usage{
 \method{predict}{splinesurv}(object, type = c("hazard","survival","lp","risk","frailty"),
-        x = NULL, newdata = NULL, iter = NULL, fn = mean, alpha = NULL, npost = 100, ...)
+        x = NULL, marginal = c("none", "mc", "numerical"), 
+        newdata = NULL, iter = NULL, fn = mean,
+        alpha = NULL, npost = 100, ...)
 }
 \arguments{
     \item{object}{an object of type \code{\link{splinesurv}}.}
