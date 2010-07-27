@@ -28,6 +28,7 @@ a parametric component.
 Index:
 \preformatted{
 \link{plot.splinesurv}         Plots for splinesurv objects
+\link{predict.splinesurv}         Prediction for splinesurv objects
 \link{splinesurv}              Bayesian survival analysis with B-spline
                         baseline hazard and random effects density
 \link{summary.splinesurv}      Summary method for splinesurv objects

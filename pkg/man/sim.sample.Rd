@@ -34,7 +34,7 @@ sim.sample(m = 10, Ji = rep(5,10), params=NULL)
     \describe{
         \item{\code{*.type="fixed"}}{\code{*.params} is a list with component \code{value}, containing
             the fixed value.}
-        \item{\code{*.type="weibull"}}{\code{*.params} is a list with components \code{\lambda0} and
+        \item{\code{*.type="weibull"}}{\code{*.params} is a list with components \code{lambda0} and
             \code{gamweib}, for components \eqn{\lambda} and \eqn{\gamma} of the Weibull
             distribution.}
         \item{\code{*.type="gamma", *.type="normal", *.type="lognormal"}}{
@@ -46,7 +46,7 @@ sim.sample(m = 10, Ji = rep(5,10), params=NULL)
     }
     For \code{haz.type}, the possible values and parameters are:
     \describe{
-        \item{\code{haz.type="weibull"}}{\code{haz.params} is a list with components \code{\lambda0} and
+        \item{\code{haz.type="weibull"}}{\code{haz.params} is a list with components \code{lambda0} and
             \code{gamweib}, for components \eqn{\lambda} and \eqn{\gamma} of the Weibull
             distribution.}
         \item{\code{haz.type="stepfunction"}}{\code{haz.params} is a list with vectors \code{breaks} giving
