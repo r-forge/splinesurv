@@ -192,9 +192,8 @@
     the control parameters used in the procedure, even those not set explicitly
     in the call.}
 }
-\references{E. Sharef, D. Ruppert and R. Strawderman. \dQuote{A Bayesian
-approach to clustered survival analysis with nonparametric baseline hazard and
-frailty distributions}, \emph{in preparation}.
+\references{
+E. Sharef, R. Strawderman, D. Ruppert, M. Cowen, and L. Halasyamani, \dQuote{Bayesian adaptive B-spline estimation in proportional hazards frailty models}, Electron. J. Statist. Volume 4 (2010), 606-642
 }
 \seealso{
 \code{\link{summary.splinesurv}}, \code{\link{plot.splinesurv}}, \code{\link{coxph}}

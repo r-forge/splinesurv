@@ -1,5 +1,6 @@
 ============ 0.6 ============
 
+0.6-14: Documentation corrections for CRAN submission
 0.6-13: Correction to DIC
 0.6-12: DIC implemented
 0.6-11: Allow frailty spline parameters to be 0

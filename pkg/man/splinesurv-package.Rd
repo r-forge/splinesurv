@@ -39,6 +39,9 @@ Emmanuel Sharef <ess28@cornell.edu>
 Robert L. Strawderman <rls54@cornell.edu>
 David Ruppert <dr24@cornell.edu>
 }
+\references{
+Bayesian adaptive B-spline estimation in proportional hazards frailty models, Emmanuel Sharef, Robert L. Strawderman, David Ruppert, Mark Cowen, and Lakshmi Halasyamani, Electron. J. Statist. Volume 4 (2010), 606-642
+}
 
 \keyword{ survival }
 

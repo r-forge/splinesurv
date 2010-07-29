@@ -1,5 +1,5 @@
 Package: splinesurv
-Version: 0.6-13
+Version: 0.6-14
 Title: Nonparametric bayesian survival analysis
 Author: Emmanuel Sharef <ess28@cornell.edu>, Robert L. Strawderman <rls54@cornell.edu>, and David Ruppert <dr24@cornell.edu>
 Maintainer: Emmanuel Sharef <ess28@cornell.edu>
@@ -10,3 +10,4 @@ Description: Utilities for nonparametric Bayesian analysis of clustered
  using penalized B-splines. Options include adaptive knot selection and the 
  inclusion of a parametric component.
 License: GPL (>= 2)
+URL: http://splinesurv.r-forge.r-project.org/, http://projecteuclid.org/euclid.ejs/1278439436
